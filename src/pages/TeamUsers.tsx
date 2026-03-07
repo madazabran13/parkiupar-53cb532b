@@ -29,7 +29,6 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrador',
   operator: 'Operador',
   viewer: 'Visor',
-  enduser: 'Usuario Final',
   superadmin: 'Super Admin',
 };
 

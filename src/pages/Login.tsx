@@ -34,7 +34,6 @@ export default function Login() {
     // Navigation handled by auth state change + role redirect
     setTimeout(() => {
       if (role === 'superadmin') navigate('/superadmin');
-      else if (role === 'enduser') navigate('/map');
       else navigate('/dashboard');
     }, 500);
   };

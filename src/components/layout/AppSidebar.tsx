@@ -31,7 +31,7 @@ const MENU_ITEMS = {
   rates: { label: 'Tarifas', icon: DollarSign, path: '/rates', roles: ['admin'] },
   reports: { label: 'Reportes', icon: BarChart3, path: '/reports', roles: ['admin'] },
   capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'operator'] },
-  map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer', 'enduser'] },
+  map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
 } as const;
 
