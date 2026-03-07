@@ -159,8 +159,49 @@ export default function MapPage() {
       maxZoom: 19,
     }).addTo(mapInstance.current);
     L.control.zoom({ position: 'bottomright' }).addTo(mapInstance.current);
+
+    // Try geolocation on load
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          mapInstance.current?.flyTo([latitude, longitude], 15, { duration: 1.5 });
+          addUserMarker(latitude, longitude);
+        },
+        () => {} // silently fail
+      );
+    }
+
     return () => { mapInstance.current?.remove(); mapInstance.current = null; };
   }, []);
+
+  const addUserMarker = (lat: number, lng: number) => {
+    if (!mapInstance.current) return;
+    userMarkerRef.current?.remove();
+    userMarkerRef.current = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: 'user-location-marker',
+        html: `<div style="width:18px;height:18px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 4px rgba(59,130,246,0.3),0 2px 8px rgba(0,0,0,0.2);"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      }),
+    }).addTo(mapInstance.current).bindPopup('Tu ubicación');
+  };
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        mapInstance.current?.flyTo([latitude, longitude], 16, { duration: 1 });
+        addUserMarker(latitude, longitude);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true }
+    );
+  };
 
   useEffect(() => {
     if (!mapInstance.current) return;
