@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Car, Bike, Truck } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import type { VehicleCategory } from '@/types';
+import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 
 const ICON_OPTIONS = [
   { value: 'car', label: 'Carro', icon: Car },

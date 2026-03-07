@@ -9,6 +9,7 @@ import { MapPin, Phone, Search, List, X } from 'lucide-react';
 import type { Tenant } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { MapSkeleton } from '@/components/ui/PageSkeletons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 

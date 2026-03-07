@@ -295,6 +295,8 @@ export default function Capacity() {
     ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRatePerHour, exitFractionMin)
     : null;
 
+  if (loadingCapacity) return <CapacitySkeleton />;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
