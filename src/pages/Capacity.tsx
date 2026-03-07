@@ -120,12 +120,12 @@ export default function Capacity() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Aforo</h1>
-          <p className="text-muted-foreground">Visualización de la capacidad del parqueadero</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Aforo</h1>
+          <p className="text-sm text-muted-foreground">Visualización de la capacidad del parqueadero</p>
         </div>
-        <Button variant="outline" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }}>
+        <Button variant="outline" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }} className="w-full sm:w-auto">
           <Settings className="h-4 w-4 mr-1" /> Configurar
         </Button>
       </div>
