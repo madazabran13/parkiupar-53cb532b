@@ -37,8 +37,6 @@ export default function SuperAdmin() {
   const [tPhone, setTPhone] = useState('');
   const [tEmail, setTEmail] = useState('');
   const [tSpaces, setTSpaces] = useState('20');
-  const [tPrimaryColor, setTPrimaryColor] = useState('#1e40af');
-  const [tSecondaryColor, setTSecondaryColor] = useState('#3b82f6');
   const [tLat, setTLat] = useState('10.4735');
   const [tLng, setTLng] = useState('-73.2503');
   const [tPlanId, setTPlanId] = useState('');
