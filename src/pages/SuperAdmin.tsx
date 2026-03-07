@@ -100,8 +100,15 @@ export default function SuperAdmin() {
     if (error) { toast.error(`Error: ${error.message}`); return; }
     if (status === 'approved' && tenantId && planId) {
       const plan = plans.find(p => p.id === planId);
-      if (plan) {
-        await supabase.from('tenants').update({ plan_id: planId, total_spaces: plan.max_spaces }).eq('id', tenantId);
+      const tenant = tenants.find(t => t.id === tenantId);
+      if (plan && tenant) {
+        const occupied = tenant.total_spaces - tenant.available_spaces;
+        const newAvailable = Math.max(plan.max_spaces - occupied, 0);
+        await supabase.from('tenants').update({
+          plan_id: planId,
+          total_spaces: plan.max_spaces,
+          available_spaces: newAvailable,
+        }).eq('id', tenantId);
       }
     }
     toast.success(status === 'approved' ? 'Solicitud aprobada y plan actualizado' : 'Solicitud rechazada');
