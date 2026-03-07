@@ -55,10 +55,9 @@ export function AppSidebar() {
     ? SUPERADMIN_ITEMS
     : Object.values(MENU_ITEMS).filter((item) => {
         if (!role || !(item.roles as readonly string[]).includes(role)) return false;
-        // Filter by plan modules if tenant has a plan
         if (planModules.length > 0) {
           const moduleKey = MODULE_KEY_MAP[item.path];
-          if (moduleKey && !planModules.includes(moduleKey)) return false;
+          if (moduleKey && moduleKey !== '_always_' && !planModules.includes(moduleKey)) return false;
         }
         return true;
       });
