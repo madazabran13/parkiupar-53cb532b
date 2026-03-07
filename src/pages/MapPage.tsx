@@ -26,13 +26,21 @@ function getAvailabilityColor(available: number, total: number): string {
   return '#22c55e'; // green
 }
 
-function createColoredIcon(color: string) {
+function createColoredIcon(color: string, available: number, total: number) {
+  const pct = total > 0 ? Math.round((available / total) * 100) : 0;
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12],
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+        <div style="background:${color};width:36px;height:36px;border-radius:50%;border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;">
+          <span style="color:white;font-weight:700;font-size:11px;line-height:1;">${available}</span>
+        </div>
+        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${color};margin-top:-2px;"></div>
+      </div>
+    `,
+    iconSize: [36, 48],
+    iconAnchor: [18, 48],
+    popupAnchor: [0, -48],
   });
 }
 
