@@ -188,20 +188,20 @@ export default function Parking() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
-          <p className="text-muted-foreground">Registra entradas y salidas</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
+          <p className="text-sm text-muted-foreground">Registra entradas y salidas</p>
         </div>
-        <Button onClick={() => setEntryOpen(true)}>
+        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-1" /> Registrar Entrada
         </Button>
       </div>
 
       <Tabs defaultValue="active">
-        <TabsList>
-          <TabsTrigger value="active">Activos ({activeSessions.length})</TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="active" className="flex-1 sm:flex-none">Activos ({activeSessions.length})</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 sm:flex-none">Historial</TabsTrigger>
         </TabsList>
         <TabsContent value="active" className="mt-4">
           <DataTable
