@@ -23,7 +23,8 @@ type Period = 'today' | 'week' | 'month' | 'custom';
 
 export default function Reports() {
   const { tenantId } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
+  const canDownload = planModules.length === 0 || planModules.includes('reports_download');
   const [period, setPeriod] = useState<Period>('today');
   const [vehicleFilter, setVehicleFilter] = useState<string>('all');
   const [customFrom, setCustomFrom] = useState('');
