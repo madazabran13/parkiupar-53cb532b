@@ -22,6 +22,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/capacity': 'capacity',
   '/map': 'map',
   '/team': 'team',
+  '/my-plan': '_always_',
 };
 
 const MENU_ITEMS = {
@@ -33,6 +34,7 @@ const MENU_ITEMS = {
   capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'operator'] },
   map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
+  myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
 } as const;
 
 const SUPERADMIN_ITEMS = [
