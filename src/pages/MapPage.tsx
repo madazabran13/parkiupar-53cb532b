@@ -472,7 +472,19 @@ export default function MapPage() {
         )}
 
         {/* Map */}
-        <div ref={mapRef} className="flex-1 rounded-lg border overflow-hidden min-h-[300px]" />
+        <div className="flex-1 relative">
+          <div ref={mapRef} className="absolute inset-0 rounded-lg border overflow-hidden" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute top-3 right-3 z-[1000] h-9 w-9 bg-background/90 backdrop-blur-sm shadow-md"
+            onClick={handleLocate}
+            disabled={locating}
+            title="Mi ubicación"
+          >
+            <Locate className={`h-4 w-4 ${locating ? 'animate-pulse text-primary' : ''}`} />
+          </Button>
+        </div>
       </div>
     </div>
   );
