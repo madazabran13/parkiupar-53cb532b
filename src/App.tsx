@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -32,10 +33,10 @@ const App = () => (
         <AuthProvider>
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             {/* Map without auth - will redirect to dashboard map if logged in */}
             <Route path="/map-public" element={<MapPage />} />
 
