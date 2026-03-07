@@ -12,6 +12,7 @@ import { calculateLiveFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
   car: Car,

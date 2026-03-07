@@ -61,7 +61,7 @@ export default function Capacity() {
     queryKeys: [['capacity-sessions', tenantId || '']],
   });
 
-  const { data: activeSessions = [] } = useQuery({
+  const { data: activeSessions = [], isLoading: loadingCapacity } = useQuery({
     queryKey: ['capacity-sessions', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {

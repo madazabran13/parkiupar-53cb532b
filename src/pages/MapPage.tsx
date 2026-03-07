@@ -50,7 +50,7 @@ export default function MapPage() {
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
 
-  const { data: tenants = [] } = useQuery({
+  const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
     queryFn: async () => {
       const { data } = await supabase
