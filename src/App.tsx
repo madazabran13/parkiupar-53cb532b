@@ -15,6 +15,7 @@ import Dashboard from "@/pages/Dashboard";
 import Parking from "@/pages/Parking";
 import Customers from "@/pages/Customers";
 import Rates from "@/pages/Rates";
+import MyPlan from "@/pages/MyPlan";
 import TeamUsers from "@/pages/TeamUsers";
 import Reports from "@/pages/Reports";
 import Capacity from "@/pages/Capacity";
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/capacity" element={<Capacity />} />
               <Route path="/team" element={<TeamUsers />} />
               <Route path="/map" element={<MapPage />} />
+              <Route path="/my-plan" element={<MyPlan />} />
             </Route>
 
             {/* Superadmin routes */}

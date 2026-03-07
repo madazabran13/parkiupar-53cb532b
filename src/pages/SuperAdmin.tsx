@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Building2, CreditCard, Users, Car } from 'lucide-react';
+import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
@@ -80,6 +81,33 @@ export default function SuperAdmin() {
       return (data || []) as unknown as Plan[];
     },
   });
+
+  const { data: planRequests = [] } = useQuery({
+    queryKey: ['plan-requests'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('plan_requests')
+        .select('*, tenant:tenants(name), current_plan:plans!plan_requests_current_plan_id_fkey(name), requested_plan:plans!plan_requests_requested_plan_id_fkey(name, price_monthly)')
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const pendingRequests = planRequests.filter((r: any) => r.status === 'pending');
+
+  const handleRequestAction = async (requestId: string, status: 'approved' | 'rejected', tenantId?: string, planId?: string, notes?: string) => {
+    const { error } = await supabase.from('plan_requests').update({ status, admin_notes: notes || null }).eq('id', requestId);
+    if (error) { toast.error(`Error: ${error.message}`); return; }
+    if (status === 'approved' && tenantId && planId) {
+      const plan = plans.find(p => p.id === planId);
+      if (plan) {
+        await supabase.from('tenants').update({ plan_id: planId, total_spaces: plan.max_spaces }).eq('id', tenantId);
+      }
+    }
+    toast.success(status === 'approved' ? 'Solicitud aprobada y plan actualizado' : 'Solicitud rechazada');
+    queryClient.invalidateQueries({ queryKey: ['plan-requests'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+  };
 
   // Global metrics
   const totalTenants = tenants.length;
@@ -258,13 +286,55 @@ export default function SuperAdmin() {
 
       <Tabs value={currentTab} onValueChange={(v) => navigate(v === 'tenants' ? '/superadmin' : `/superadmin/${v}`)}>
         <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
+          <TabsTrigger value="tenants" className="flex-1 sm:flex-none relative">
+            Parqueaderos
+            {pendingRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                {pendingRequests.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
           <TabsTrigger value="users" className="flex-1 sm:flex-none">Usuarios</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
+          {/* Pending Plan Requests */}
+          {pendingRequests.length > 0 && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-amber-500" />
+                  Solicitudes de Cambio de Plan ({pendingRequests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {pendingRequests.map((req: any) => (
+                  <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        <span className="font-semibold">{req.tenant?.name}</span> solicita cambiar a <Badge variant="outline">{req.requested_plan?.name}</Badge>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Desde: {req.current_plan?.name || 'Sin plan'} · {new Date(req.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                        {req.message && ` · "${req.message}"`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Button size="sm" variant="default" className="h-7 gap-1 text-xs" onClick={() => handleRequestAction(req.id, 'approved', req.tenant_id, req.requested_plan_id)}>
+                        <CheckCircle2 className="h-3 w-3" /> Aprobar
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-destructive" onClick={() => handleRequestAction(req.id, 'rejected')}>
+                        <XCircle className="h-3 w-3" /> Rechazar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex justify-end">
             <Button onClick={() => { resetTenantForm(); setTenantDialogOpen(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo Parqueadero

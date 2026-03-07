@@ -22,6 +22,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/capacity': 'capacity',
   '/map': 'map',
   '/team': 'team',
+  '/my-plan': '_always_',
 };
 
 const MENU_ITEMS = {
@@ -33,6 +34,7 @@ const MENU_ITEMS = {
   capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'operator'] },
   map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
+  myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
 } as const;
 
 const SUPERADMIN_ITEMS = [
@@ -53,10 +55,9 @@ export function AppSidebar() {
     ? SUPERADMIN_ITEMS
     : Object.values(MENU_ITEMS).filter((item) => {
         if (!role || !(item.roles as readonly string[]).includes(role)) return false;
-        // Filter by plan modules if tenant has a plan
         if (planModules.length > 0) {
           const moduleKey = MODULE_KEY_MAP[item.path];
-          if (moduleKey && !planModules.includes(moduleKey)) return false;
+          if (moduleKey && moduleKey !== '_always_' && !planModules.includes(moduleKey)) return false;
         }
         return true;
       });
