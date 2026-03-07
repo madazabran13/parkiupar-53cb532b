@@ -113,6 +113,16 @@ export default function MapPage() {
       const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
       const pct = tenant.total_spaces > 0 ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100) : 0;
       const statusLabel = tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
+      const rates = ratesMap[tenant.id] || [];
+      const ratesHtml = rates.length > 0
+        ? `<div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:8px;">
+            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Tarifas</div>
+            ${rates.map(r => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">
+              <span style="color:#475569;">${r.name}</span>
+              <span style="font-weight:600;color:#1a1a1a;">$${Number(r.rate_per_hour).toLocaleString()}/h</span>
+            </div>`).join('')}
+          </div>`
+        : '';
 
       const marker = L.marker([Number(tenant.latitude), Number(tenant.longitude)], {
         icon: createColoredIcon(color, tenant.available_spaces),
@@ -123,7 +133,7 @@ export default function MapPage() {
       });
 
       marker.bindPopup(`
-        <div style="min-width:200px;font-family:system-ui,-apple-system,sans-serif;">
+        <div style="min-width:220px;font-family:system-ui,-apple-system,sans-serif;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
             <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
             <h3 style="font-weight:700;font-size:14px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
@@ -141,13 +151,14 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-          ${tenant.phone ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;">📞 <a href="tel:${tenant.phone}" style="color:#3b82f6;text-decoration:none;">${tenant.phone}</a></div>` : ''}
+          ${ratesHtml}
+          ${tenant.phone ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;margin-top:8px;">📞 <a href="tel:${tenant.phone}" style="color:#3b82f6;text-decoration:none;">${tenant.phone}</a></div>` : ''}
         </div>
-      `, { className: 'parking-popup', maxWidth: 280 });
+      `, { className: 'parking-popup', maxWidth: 300 });
 
       markersRef.current.push(marker);
     });
-  }, [tenants]);
+  }, [tenants, ratesMap]);
 
   const filteredTenants = search
     ? tenants.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()) || (t.address || '').toLowerCase().includes(search.toLowerCase()))
