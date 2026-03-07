@@ -153,11 +153,11 @@ export default function Reports() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
+        <div className="space-y-1 col-span-2 sm:col-span-1">
           <Label className="text-xs">Período</Label>
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="today">Hoy</SelectItem>
               <SelectItem value="week">Esta semana</SelectItem>
@@ -170,18 +170,18 @@ export default function Reports() {
           <>
             <div className="space-y-1">
               <Label className="text-xs">Desde</Label>
-              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-40" />
+              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-full sm:w-40" />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Hasta</Label>
-              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-40" />
+              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-full sm:w-40" />
             </div>
           </>
         )}
-        <div className="space-y-1">
+        <div className="space-y-1 col-span-2 sm:col-span-1">
           <Label className="text-xs">Tipo de vehículo</Label>
           <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
