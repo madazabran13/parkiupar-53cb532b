@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ProfileSettings from '@/components/ProfileSettings';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -302,14 +303,7 @@ export default function SuperAdmin() {
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración General</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Configuración de la plataforma (próximamente).</p>
-            </CardContent>
-          </Card>
+          <ProfileSettings />
         </TabsContent>
       </Tabs>
 
