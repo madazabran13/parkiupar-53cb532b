@@ -83,6 +83,14 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Ingresando...' : 'Iniciar Sesión'}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate('/map-public')}
+            >
+              <MapPin className="h-4 w-4 mr-1" /> Ingresar como Invitado
+            </Button>
             <p className="text-sm text-muted-foreground">
               ¿No tienes cuenta?{' '}
               <Link to="/register" className="text-primary hover:underline">
