@@ -13,18 +13,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Settings, ParkingCircle, Search, Car, LogOut as ExitIcon } from 'lucide-react';
+import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon } from 'lucide-react';
 import { formatCurrency, formatDuration, formatTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
-import { VEHICLE_TYPE_LABELS } from '@/types';
-import type { ParkingSession, VehicleRate, VehicleType, Vehicle } from '@/types';
+import type { ParkingSession, VehicleCategory, Vehicle } from '@/types';
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  car: Car,
+  motorcycle: Bike,
+  truck: Truck,
+  bicycle: Bike,
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  car: 'bg-blue-500 hover:bg-blue-600',
+  motorcycle: 'bg-amber-500 hover:bg-amber-600',
+  truck: 'bg-purple-500 hover:bg-purple-600',
+  bicycle: 'bg-green-600 hover:bg-green-700',
+};
 
 export default function Capacity() {
   const { tenantId } = useAuth();
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
 
-  // Config dialog
   const [configOpen, setConfigOpen] = useState(false);
   const [newCapacity, setNewCapacity] = useState('');
 
@@ -32,7 +44,7 @@ export default function Capacity() {
   const [entryOpen, setEntryOpen] = useState(false);
   const [selectedSpace, setSelectedSpace] = useState<number | null>(null);
   const [plate, setPlate] = useState('');
-  const [vehicleType, setVehicleType] = useState<VehicleType>('car');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
@@ -58,18 +70,39 @@ export default function Capacity() {
     },
   });
 
-  const { data: rates = [] } = useQuery({
-    queryKey: ['rates', tenantId],
+  const { data: categories = [] } = useQuery({
+    queryKey: ['vehicle-categories', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase.from('vehicle_rates').select('*').eq('tenant_id', tenantId!).eq('is_active', true);
-      return (data || []) as unknown as VehicleRate[];
+      const { data } = await supabase.from('vehicle_categories').select('*').eq('tenant_id', tenantId!).eq('is_active', true).order('name');
+      return (data || []) as unknown as VehicleCategory[];
     },
   });
 
-  const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
+  // Build a map from category name to category for rate lookups
+  const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
+  // Also build a map by name for display of sessions (sessions store vehicle_type as text)
+  const categoryByName = Object.fromEntries(categories.map((c) => [c.name.toLowerCase(), c]));
 
-  // Search vehicle by plate (debounced)
+  // Find rate for a session - try matching by vehicle_type text against category name
+  const findRateForSession = (session: ParkingSession): VehicleCategory | undefined => {
+    // First try exact match by vehicle_type against category names
+    const byName = categories.find((c) => c.name.toLowerCase() === session.vehicle_type?.toLowerCase());
+    if (byName) return byName;
+    // Fallback: try matching icon
+    const byIcon = categories.find((c) => c.icon === session.vehicle_type);
+    if (byIcon) return byIcon;
+    // Use rate_per_hour from session if available
+    return undefined;
+  };
+
+  // Set default category when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
+
   const searchPlate = useCallback(async (plateVal: string) => {
     if (!tenantId || plateVal.length < 3) {
       setFoundVehicle(null);
@@ -86,7 +119,9 @@ export default function Capacity() {
     if (data) {
       const v = data as any;
       setFoundVehicle(v as Vehicle);
-      setVehicleType(v.vehicle_type);
+      // Try to match vehicle_type to a category
+      const matchCat = categories.find((c) => c.icon === v.vehicle_type || c.name.toLowerCase() === v.vehicle_type);
+      if (matchCat) setSelectedCategoryId(matchCat.id);
       if (v.customers) {
         setCustomerName(v.customers.full_name || '');
         setCustomerPhone(v.customers.phone || '');
@@ -95,7 +130,7 @@ export default function Capacity() {
       setFoundVehicle(null);
     }
     setSearchingPlate(false);
-  }, [tenantId]);
+  }, [tenantId, categories]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -123,10 +158,10 @@ export default function Capacity() {
     onError: () => toast.error('Error al actualizar'),
   });
 
-  // Register entry from space click
   const entryMutation = useMutation({
     mutationFn: async () => {
       if (!tenantId || !plate || !customerName || !customerPhone) throw new Error('Faltan datos');
+      const category = categoryMap[selectedCategoryId];
 
       // Upsert customer
       const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId).eq('phone', customerPhone).single();
@@ -138,7 +173,8 @@ export default function Capacity() {
         await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
       }
 
-      // Upsert vehicle
+      // Upsert vehicle - use category icon as vehicle_type for DB enum compatibility
+      const vehicleType = (category?.icon || 'car') as 'car' | 'motorcycle' | 'truck' | 'bicycle';
       const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('tenant_id', tenantId).eq('plate', plate.toUpperCase()).single();
       let vehicleId = existingVehicle?.id;
       if (!vehicleId) {
@@ -146,7 +182,6 @@ export default function Capacity() {
         vehicleId = newVehicle?.id;
       }
 
-      const rate = rateMap[vehicleType];
       const { error } = await supabase.from('parking_sessions').insert({
         tenant_id: tenantId,
         vehicle_id: vehicleId,
@@ -156,7 +191,7 @@ export default function Capacity() {
         customer_name: customerName,
         customer_phone: customerPhone,
         space_number: selectedSpace ? String(selectedSpace) : null,
-        rate_per_hour: rate?.rate_per_hour || 0,
+        rate_per_hour: category?.rate_per_hour || 0,
         notes: notes || null,
         status: 'active',
       });
@@ -171,14 +206,13 @@ export default function Capacity() {
     onError: () => toast.error('Error al registrar entrada'),
   });
 
-  // Register exit
   const exitMutation = useMutation({
     mutationFn: async (session: ParkingSession) => {
       const exitTime = new Date().toISOString();
-      const rate = rateMap[session.vehicle_type];
-      const fee = rate
-        ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
-        : { total: 0, totalMinutes: 0 };
+      const category = findRateForSession(session);
+      const ratePerHour = category?.rate_per_hour || session.rate_per_hour || 0;
+      const fractionMin = category?.fraction_minutes || 15;
+      const fee = calculateParkingFee(session.entry_time, exitTime, ratePerHour, fractionMin);
       const { error } = await supabase.from('parking_sessions').update({
         exit_time: exitTime,
         hours_parked: Math.round(fee.totalMinutes / 60 * 100) / 100,
@@ -202,7 +236,7 @@ export default function Capacity() {
     setEntryOpen(false);
     setSelectedSpace(null);
     setPlate('');
-    setVehicleType('car');
+    setSelectedCategoryId(categories.length > 0 ? categories[0].id : '');
     setCustomerName('');
     setCustomerPhone('');
     setNotes('');
@@ -211,11 +245,9 @@ export default function Capacity() {
 
   const handleSpaceClick = (space: typeof finalSpaces[0]) => {
     if (space.occupied && space.session) {
-      // Open exit dialog
       setExitSession(space.session);
       setExitSpace(space.num);
     } else if (!space.occupied) {
-      // Open entry dialog
       setSelectedSpace(space.num);
       setEntryOpen(true);
     }
@@ -243,22 +275,23 @@ export default function Capacity() {
     if (!explicitOccupied.has(num) && filledCount < occupiedSpaces && sessionsWithoutSpace.length > 0) {
       filledCount++;
       const unassigned = sessionsWithoutSpace.shift();
-      return { num, occupied: true, session: unassigned, vehicleType: unassigned?.vehicle_type || 'car' as const };
+      return { num, occupied: true, session: unassigned, vehicleType: unassigned?.vehicle_type || 'car' };
     }
     return { num, occupied: false, session: undefined, vehicleType: undefined };
   });
 
-  const typeColors: Record<string, string> = {
-    car: 'bg-blue-500 hover:bg-blue-600',
-    motorcycle: 'bg-amber-500 hover:bg-amber-600',
-    truck: 'bg-purple-500 hover:bg-purple-600',
-    bicycle: 'bg-green-600 hover:bg-green-700',
+  // Get display name for a vehicle type from categories
+  const getCategoryLabel = (vehicleType: string): string => {
+    const cat = categories.find((c) => c.icon === vehicleType || c.name.toLowerCase() === vehicleType.toLowerCase());
+    return cat?.name || vehicleType;
   };
 
-  const previewRate = rateMap[vehicleType];
-  const exitRate = exitSession ? rateMap[exitSession.vehicle_type] : null;
-  const exitFee = exitSession && exitRate
-    ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRate.rate_per_hour, exitRate.fraction_minutes)
+  const selectedCategory = categoryMap[selectedCategoryId];
+  const exitCategory = exitSession ? findRateForSession(exitSession) : null;
+  const exitRatePerHour = exitCategory?.rate_per_hour || exitSession?.rate_per_hour || 0;
+  const exitFractionMin = exitCategory?.fraction_minutes || 15;
+  const exitFee = exitSession
+    ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRatePerHour, exitFractionMin)
     : null;
 
   return (
@@ -295,13 +328,15 @@ export default function Capacity() {
         </Card>
       </div>
 
-      {/* Legend */}
+      {/* Legend - dynamic from categories */}
       <div className="flex flex-wrap gap-2 sm:gap-3">
         <Badge variant="outline" className="gap-1 text-xs"><div className="h-2.5 w-2.5 rounded bg-green-500" /> Libre</Badge>
-        <Badge variant="outline" className="gap-1 text-xs"><div className="h-2.5 w-2.5 rounded bg-blue-500" /> Carro</Badge>
-        <Badge variant="outline" className="gap-1 text-xs"><div className="h-2.5 w-2.5 rounded bg-amber-500" /> Moto</Badge>
-        <Badge variant="outline" className="gap-1 text-xs"><div className="h-2.5 w-2.5 rounded bg-purple-500" /> Camión</Badge>
-        <Badge variant="outline" className="gap-1 text-xs"><div className="h-2.5 w-2.5 rounded bg-green-600" /> Bicicleta</Badge>
+        {categories.map((cat) => (
+          <Badge key={cat.id} variant="outline" className="gap-1 text-xs">
+            <div className={`h-2.5 w-2.5 rounded ${TYPE_COLORS[cat.icon]?.split(' ')[0] || 'bg-blue-500'}`} />
+            {cat.name}
+          </Badge>
+        ))}
       </div>
 
       {/* Grid */}
@@ -315,10 +350,10 @@ export default function Capacity() {
                 onClick={() => handleSpaceClick(space)}
                 className={`relative flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 ${
                   space.occupied
-                    ? `${typeColors[space.vehicleType || 'car']} text-white border-transparent shadow-sm`
+                    ? `${TYPE_COLORS[space.vehicleType || 'car'] || 'bg-blue-500 hover:bg-blue-600'} text-white border-transparent shadow-sm`
                     : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
                 }`}
-                title={space.session ? `${space.session.plate} - ${VEHICLE_TYPE_LABELS[space.session.vehicle_type]} - Click para dar salida` : `Espacio #${space.num} - Click para registrar`}
+                title={space.session ? `${space.session.plate} - ${getCategoryLabel(space.session.vehicle_type)} - Click para dar salida` : `Espacio #${space.num} - Click para registrar`}
               >
                 <span className="font-bold">{space.num}</span>
                 {space.session && <span className="text-[9px] truncate w-full text-center">{space.session.plate}</span>}
@@ -339,7 +374,6 @@ export default function Capacity() {
             <DialogDescription>Busca por placa si el vehículo ya está registrado</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Plate search */}
             <div className="space-y-2">
               <Label>Placa *</Label>
               <div className="relative">
@@ -356,7 +390,7 @@ export default function Capacity() {
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm space-y-1">
                   <p className="font-medium text-primary">✓ Vehículo encontrado</p>
                   <p className="text-muted-foreground">
-                    {VEHICLE_TYPE_LABELS[foundVehicle.vehicle_type]}
+                    {getCategoryLabel(foundVehicle.vehicle_type)}
                     {foundVehicle.brand && ` · ${foundVehicle.brand}`}
                     {foundVehicle.color && ` · ${foundVehicle.color}`}
                   </p>
@@ -365,15 +399,26 @@ export default function Capacity() {
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de vehículo *</Label>
-              <Select value={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Categoría de vehículo *</Label>
+              {categories.length > 0 ? (
+                <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar categoría" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => {
+                      const Icon = ICON_MAP[cat.icon] || Car;
+                      return (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" /> {cat.name} — {formatCurrency(cat.rate_per_hour)}/h
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay categorías. Crea una en el módulo de Tarifas.</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -392,9 +437,9 @@ export default function Capacity() {
               <Textarea placeholder="Observaciones..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
             </div>
 
-            {previewRate && (
+            {selectedCategory && (
               <div className="rounded-lg border bg-muted p-3 text-sm">
-                <span className="font-medium">Tarifa:</span> {formatCurrency(previewRate.rate_per_hour)}/hora · Fracción de {previewRate.fraction_minutes} min
+                <span className="font-medium">Tarifa ({selectedCategory.name}):</span> {formatCurrency(selectedCategory.rate_per_hour)}/hora · Fracción de {selectedCategory.fraction_minutes} min
               </div>
             )}
           </div>
@@ -402,7 +447,7 @@ export default function Capacity() {
             <Button variant="outline" onClick={closeEntryDialog}>Cancelar</Button>
             <Button
               onClick={() => entryMutation.mutate()}
-              disabled={!plate || !customerName || !customerPhone || entryMutation.isPending}
+              disabled={!plate || !customerName || !customerPhone || !selectedCategoryId || entryMutation.isPending}
             >
               {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
             </Button>
@@ -424,7 +469,7 @@ export default function Capacity() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground">Placa:</span> <strong className="font-mono">{exitSession.plate}</strong></div>
-                <div><span className="text-muted-foreground">Tipo:</span> <strong>{VEHICLE_TYPE_LABELS[exitSession.vehicle_type]}</strong></div>
+                <div><span className="text-muted-foreground">Tipo:</span> <strong>{getCategoryLabel(exitSession.vehicle_type)}</strong></div>
                 <div><span className="text-muted-foreground">Cliente:</span> <strong>{exitSession.customer_name || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Teléfono:</span> <strong>{exitSession.customer_phone || '—'}</strong></div>
                 <div><span className="text-muted-foreground">Entrada:</span> <strong>{formatTime(exitSession.entry_time)}</strong></div>
