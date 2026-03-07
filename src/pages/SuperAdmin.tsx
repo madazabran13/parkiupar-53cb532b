@@ -241,6 +241,7 @@ export default function SuperAdmin() {
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
@@ -275,6 +276,17 @@ export default function SuperAdmin() {
               <Button size="sm" variant="ghost" onClick={() => openEditPlan(row)}><Edit className="h-3 w-3" /></Button>
             )}
           />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuración General</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Configuración de la plataforma (próximamente).</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
