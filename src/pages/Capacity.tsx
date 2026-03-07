@@ -546,8 +546,11 @@ export default function Capacity() {
             <DialogDescription>Establece el total de espacios del parqueadero</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>Total de espacios</Label>
-            <Input type="number" min="1" value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} />
+            <Label>Total de espacios (máx. {maxSpaces})</Label>
+            <Input type="number" min="1" max={maxSpaces} value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} />
+            {parseInt(newCapacity) > maxSpaces && (
+              <p className="text-xs text-destructive">Excede el máximo de tu plan ({maxSpaces} espacios)</p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfigOpen(false)}>Cancelar</Button>
