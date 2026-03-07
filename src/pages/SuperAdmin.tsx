@@ -296,6 +296,10 @@ export default function SuperAdmin() {
           />
         </TabsContent>
 
+        <TabsContent value="users" className="mt-4 space-y-4">
+          <SuperAdminUsers tenants={tenants} />
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
