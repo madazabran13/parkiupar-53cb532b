@@ -60,12 +60,21 @@ export default function MapPage() {
   const markersRef = useRef<L.Marker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState<number>(50000);
   const [locating, setLocating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+    await queryClient.invalidateQueries({ queryKey: ['map-rates'] });
+    setTimeout(() => setRefreshing(false), 600);
+  }, [queryClient]);
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
