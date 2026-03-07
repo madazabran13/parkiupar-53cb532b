@@ -37,7 +37,7 @@ export default function Dashboard() {
     queryKeys: [['active-sessions', tenantId || ''], ['today-completed', tenantId || '']],
   });
 
-  const { data: activeSessions = [] } = useQuery({
+  const { data: activeSessions = [], isLoading: loadingSessions } = useQuery({
     queryKey: ['active-sessions', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
