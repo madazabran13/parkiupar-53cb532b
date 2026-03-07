@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import Parking from "@/pages/Parking";
 import Customers from "@/pages/Customers";
 import Rates from "@/pages/Rates";
+import TeamUsers from "@/pages/TeamUsers";
 import Reports from "@/pages/Reports";
 import Capacity from "@/pages/Capacity";
 import SuperAdmin from "@/pages/SuperAdmin";
