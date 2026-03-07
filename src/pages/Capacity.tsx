@@ -288,6 +288,7 @@ export default function Capacity() {
   };
 
   const selectedCategory = categoryMap[selectedCategoryId];
+  const availableSpacesList = finalSpaces.filter((s) => !s.occupied).map((s) => s.num);
   const exitCategory = exitSession ? findRateForSession(exitSession) : null;
   const exitRatePerHour = exitCategory?.rate_per_hour || exitSession?.rate_per_hour || 0;
   const exitFractionMin = exitCategory?.fraction_minutes || 15;
