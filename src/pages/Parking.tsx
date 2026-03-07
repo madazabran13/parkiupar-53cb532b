@@ -187,6 +187,8 @@ export default function Parking() {
     ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRate.rate_per_hour, exitRate.fraction_minutes)
     : null;
 
+  if (loadingActive && loadingHistory) return <TableSkeleton columns={7} rows={6} />;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
