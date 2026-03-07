@@ -9,166 +9,275 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Edit, Car, Bike, Truck } from 'lucide-react';
+import { Plus, Edit, Trash2, Car, Bike, Truck } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
-import { VEHICLE_TYPE_LABELS } from '@/types';
-import type { VehicleRate, VehicleType } from '@/types';
+import type { VehicleCategory } from '@/types';
 
-const VEHICLE_ICONS: Record<VehicleType, React.ReactNode> = {
-  car: <Car className="h-8 w-8" />,
-  motorcycle: <Bike className="h-8 w-8" />,
-  truck: <Truck className="h-8 w-8" />,
-  bicycle: <Bike className="h-8 w-8" />,
+const ICON_OPTIONS = [
+  { value: 'car', label: 'Carro', icon: Car },
+  { value: 'motorcycle', label: 'Moto', icon: Bike },
+  { value: 'truck', label: 'Camión', icon: Truck },
+  { value: 'bicycle', label: 'Bicicleta', icon: Bike },
+];
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  car: Car,
+  motorcycle: Bike,
+  truck: Truck,
+  bicycle: Bike,
 };
 
 export default function Rates() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
-  const [editing, setEditing] = useState<VehicleRate | null>(null);
-  const [ratePerHour, setRatePerHour] = useState('');
-  const [fractionMinutes, setFractionMinutes] = useState('');
-  const [minimumMinutes, setMinimumMinutes] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<VehicleCategory | null>(null);
+  const [deleting, setDeleting] = useState<VehicleCategory | null>(null);
 
-  const { data: rates = [], isLoading } = useQuery({
-    queryKey: ['rates-all', tenantId],
+  // Form state
+  const [name, setName] = useState('');
+  const [icon, setIcon] = useState('car');
+  const [ratePerHour, setRatePerHour] = useState('');
+  const [fractionMinutes, setFractionMinutes] = useState('15');
+  const [minimumMinutes, setMinimumMinutes] = useState('15');
+
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ['vehicle-categories', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase.from('vehicle_rates').select('*').eq('tenant_id', tenantId!).order('vehicle_type');
-      return (data || []) as unknown as VehicleRate[];
+      const { data } = await supabase
+        .from('vehicle_categories')
+        .select('*')
+        .eq('tenant_id', tenantId!)
+        .order('name');
+      return (data || []) as unknown as VehicleCategory[];
     },
   });
 
-  const updateMutation = useMutation({
+  const resetForm = () => {
+    setName('');
+    setIcon('car');
+    setRatePerHour('');
+    setFractionMinutes('15');
+    setMinimumMinutes('15');
+    setEditing(null);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEdit = (cat: VehicleCategory) => {
+    setEditing(cat);
+    setName(cat.name);
+    setIcon(cat.icon);
+    setRatePerHour(String(cat.rate_per_hour));
+    setFractionMinutes(String(cat.fraction_minutes));
+    setMinimumMinutes(String(cat.minimum_minutes));
+    setDialogOpen(true);
+  };
+
+  const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!editing) return;
-      const { error } = await supabase.from('vehicle_rates').update({
-        rate_per_hour: parseFloat(ratePerHour),
-        fraction_minutes: parseInt(fractionMinutes),
-        minimum_minutes: parseInt(minimumMinutes),
-      }).eq('id', editing.id);
-      if (error) throw error;
+      const payload = {
+        tenant_id: tenantId!,
+        name,
+        icon,
+        rate_per_hour: parseFloat(ratePerHour) || 0,
+        fraction_minutes: parseInt(fractionMinutes) || 15,
+        minimum_minutes: parseInt(minimumMinutes) || 15,
+      };
+      if (editing) {
+        const { error } = await supabase.from('vehicle_categories').update(payload).eq('id', editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('vehicle_categories').insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      toast.success('Tarifa actualizada');
-      setEditing(null);
-      queryClient.invalidateQueries({ queryKey: ['rates-all'] });
-      queryClient.invalidateQueries({ queryKey: ['rates'] });
+      toast.success(editing ? 'Categoría actualizada' : 'Categoría creada');
+      setDialogOpen(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['vehicle-categories'] });
     },
-    onError: () => toast.error('Error al actualizar tarifa'),
+    onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from('vehicle_rates').update({ is_active }).eq('id', id);
+      const { error } = await supabase.from('vehicle_categories').update({ is_active }).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rates-all'] });
-      queryClient.invalidateQueries({ queryKey: ['rates'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vehicle-categories'] }),
   });
 
-  const openEdit = (rate: VehicleRate) => {
-    setEditing(rate);
-    setRatePerHour(String(rate.rate_per_hour));
-    setFractionMinutes(String(rate.fraction_minutes));
-    setMinimumMinutes(String(rate.minimum_minutes));
-  };
-
-  // If no rates exist yet, show a message to create them
-  const allTypes: VehicleType[] = ['car', 'motorcycle', 'truck', 'bicycle'];
-  const existingTypes = rates.map((r) => r.vehicle_type);
-  const missingTypes = allTypes.filter((t) => !existingTypes.includes(t));
-
-  const createRateMutation = useMutation({
-    mutationFn: async (type: VehicleType) => {
-      const { error } = await supabase.from('vehicle_rates').insert({
-        tenant_id: tenantId!,
-        vehicle_type: type,
-        rate_per_hour: type === 'car' ? 3500 : type === 'motorcycle' ? 2000 : type === 'truck' ? 5000 : 1000,
-        fraction_minutes: 15,
-        minimum_minutes: 15,
-      });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('vehicle_categories').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Tarifa creada');
-      queryClient.invalidateQueries({ queryKey: ['rates-all'] });
+      toast.success('Categoría eliminada');
+      setDeleteDialogOpen(false);
+      setDeleting(null);
+      queryClient.invalidateQueries({ queryKey: ['vehicle-categories'] });
     },
+    onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Tarifas</h1>
-        <p className="text-muted-foreground">Configura las tarifas por tipo de vehículo</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Tarifas</h1>
+          <p className="text-muted-foreground">Crea y configura las categorías de vehículos con sus tarifas</p>
+        </div>
+        <Button onClick={openCreate} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-1" /> Nueva Categoría
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {rates.map((rate) => (
-          <Card key={rate.id} className={!rate.is_active ? 'opacity-50' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{VEHICLE_TYPE_LABELS[rate.vehicle_type]}</CardTitle>
-              <div className="text-muted-foreground">{VEHICLE_ICONS[rate.vehicle_type]}</div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="text-2xl font-bold">{formatCurrency(rate.rate_per_hour)}<span className="text-sm font-normal text-muted-foreground">/hora</span></div>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p>Fracción: {rate.fraction_minutes} min</p>
-                <p>Costo/fracción: {formatCurrency(rate.rate_per_hour * rate.fraction_minutes / 60)}</p>
-                <p>Mínimo: {rate.minimum_minutes} min</p>
-              </div>
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <Switch checked={rate.is_active} onCheckedChange={(checked) => toggleMutation.mutate({ id: rate.id, is_active: checked })} />
-                  <Badge variant={rate.is_active ? 'default' : 'secondary'}>{rate.is_active ? 'Activa' : 'Inactiva'}</Badge>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => openEdit(rate)}><Edit className="h-3 w-3" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : categories.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <Car className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold">Sin categorías</h3>
+            <p className="text-muted-foreground mb-4">Crea tu primera categoría de vehículo con su tarifa</p>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-1" /> Crear Categoría
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {categories.map((cat) => {
+            const IconComponent = ICON_MAP[cat.icon] || Car;
+            return (
+              <Card key={cat.id} className={!cat.is_active ? 'opacity-50' : ''}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">{cat.name}</CardTitle>
+                  <IconComponent className="h-8 w-8 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(cat.rate_per_hour)}
+                    <span className="text-sm font-normal text-muted-foreground">/hora</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>Fracción: {cat.fraction_minutes} min</p>
+                    <p>Costo/fracción: {formatCurrency(cat.rate_per_hour * cat.fraction_minutes / 60)}</p>
+                    <p>Mínimo: {cat.minimum_minutes} min</p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={cat.is_active}
+                        onCheckedChange={(checked) => toggleMutation.mutate({ id: cat.id, is_active: checked })}
+                      />
+                      <Badge variant={cat.is_active ? 'default' : 'secondary'}>
+                        {cat.is_active ? 'Activa' : 'Inactiva'}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(cat)}>
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => { setDeleting(cat); setDeleteDialogOpen(true); }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-        {missingTypes.map((type) => (
-          <Card key={type} className="border-dashed">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{VEHICLE_TYPE_LABELS[type]}</CardTitle>
-              <div className="text-muted-foreground opacity-40">{VEHICLE_ICONS[type]}</div>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full" onClick={() => createRateMutation.mutate(type)}>
-                Crear tarifa
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setDialogOpen(open); }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Editar Tarifa - {editing && VEHICLE_TYPE_LABELS[editing.vehicle_type]}</DialogTitle>
-            <DialogDescription>Modifica los valores de la tarifa</DialogDescription>
+            <DialogTitle>{editing ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
+            <DialogDescription>
+              {editing ? 'Modifica los datos de la categoría' : 'Define el nombre, ícono y tarifa'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Tarifa por hora (COP)</Label>
-              <Input type="number" value={ratePerHour} onChange={(e) => setRatePerHour(e.target.value)} />
+              <Label>Nombre *</Label>
+              <Input placeholder="Ej: Carro, Moto, Patineta..." value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Fracción (minutos)</Label>
-              <Input type="number" value={fractionMinutes} onChange={(e) => setFractionMinutes(e.target.value)} />
+              <Label>Ícono</Label>
+              <Select value={icon} onValueChange={setIcon}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ICON_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="flex items-center gap-2">
+                        <opt.icon className="h-4 w-4" /> {opt.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label>Mínimo (minutos)</Label>
-              <Input type="number" value={minimumMinutes} onChange={(e) => setMinimumMinutes(e.target.value)} />
+              <Label>Tarifa por hora (COP) *</Label>
+              <Input type="number" placeholder="3500" value={ratePerHour} onChange={(e) => setRatePerHour(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Fracción (min)</Label>
+                <Input type="number" value={fractionMinutes} onChange={(e) => setFractionMinutes(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Mínimo (min)</Label>
+                <Input type="number" value={minimumMinutes} onChange={(e) => setMinimumMinutes(e.target.value)} />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
-            <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!name || !ratePerHour || saveMutation.isPending}>
+              {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => { if (!open) setDeleting(null); setDeleteDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Eliminar Categoría</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de eliminar la categoría <strong>{deleting?.name}</strong>? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteDialogOpen(false); setDeleting(null); }}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleting && deleteMutation.mutate(deleting.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>
