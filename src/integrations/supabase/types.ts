@@ -14,16 +14,417 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string
+          tenant_id: string
+          total_spent: number
+          total_visits: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone: string
+          tenant_id: string
+          total_spent?: number
+          total_visits?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string
+          tenant_id?: string
+          total_spent?: number
+          total_visits?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parking_sessions: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          entry_time: string
+          exit_time: string | null
+          hours_parked: number | null
+          id: string
+          notes: string | null
+          plate: string
+          rate_per_hour: number | null
+          space_number: string | null
+          status: Database["public"]["Enums"]["session_status"]
+          tenant_id: string
+          total_amount: number | null
+          updated_at: string
+          vehicle_id: string | null
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          entry_time?: string
+          exit_time?: string | null
+          hours_parked?: number | null
+          id?: string
+          notes?: string | null
+          plate: string
+          rate_per_hour?: number | null
+          space_number?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          tenant_id: string
+          total_amount?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          entry_time?: string
+          exit_time?: string | null
+          hours_parked?: number | null
+          id?: string
+          notes?: string | null
+          plate?: string
+          rate_per_hour?: number | null
+          space_number?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          tenant_id?: string
+          total_amount?: number | null
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parking_sessions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parking_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parking_sessions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_spaces: number
+          modules: Json
+          name: string
+          price_monthly: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_spaces?: number
+          modules?: Json
+          name: string
+          price_monthly?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_spaces?: number
+          modules?: Json
+          name?: string
+          price_monthly?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          address: string | null
+          available_spaces: number
+          city: string
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          name: string
+          phone: string | null
+          plan_id: string | null
+          primary_color: string
+          secondary_color: string
+          settings: Json | null
+          slug: string
+          total_spaces: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          available_spaces?: number
+          city?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          name: string
+          phone?: string | null
+          plan_id?: string | null
+          primary_color?: string
+          secondary_color?: string
+          settings?: Json | null
+          slug: string
+          total_spaces?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          available_spaces?: number
+          city?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          name?: string
+          phone?: string | null
+          plan_id?: string | null
+          primary_color?: string
+          secondary_color?: string
+          settings?: Json | null
+          slug?: string
+          total_spaces?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          is_active: boolean
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          is_active?: boolean
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_rates: {
+        Row: {
+          created_at: string
+          fraction_minutes: number
+          id: string
+          is_active: boolean
+          minimum_minutes: number
+          rate_per_hour: number
+          tenant_id: string
+          updated_at: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Insert: {
+          created_at?: string
+          fraction_minutes?: number
+          id?: string
+          is_active?: boolean
+          minimum_minutes?: number
+          rate_per_hour?: number
+          tenant_id: string
+          updated_at?: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Update: {
+          created_at?: string
+          fraction_minutes?: number
+          id?: string
+          is_active?: boolean
+          minimum_minutes?: number
+          rate_per_hour?: number
+          tenant_id?: string
+          updated_at?: string
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_rates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          brand: string | null
+          color: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          plate: string
+          tenant_id: string
+          updated_at: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Insert: {
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          plate: string
+          tenant_id: string
+          updated_at?: string
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Update: {
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          plate?: string
+          tenant_id?: string
+          updated_at?: string
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_parking_fee: {
+        Args: {
+          _entry_time: string
+          _exit_time: string
+          _fraction_minutes?: number
+          _rate_per_hour: number
+        }
+        Returns: number
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_superadmin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "superadmin" | "admin" | "operator" | "viewer" | "enduser"
+      license_type: "basic" | "pro" | "enterprise"
+      session_status: "active" | "completed" | "cancelled"
+      vehicle_type: "car" | "motorcycle" | "truck" | "bicycle"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +551,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["superadmin", "admin", "operator", "viewer", "enduser"],
+      license_type: ["basic", "pro", "enterprise"],
+      session_status: ["active", "completed", "cancelled"],
+      vehicle_type: ["car", "motorcycle", "truck", "bicycle"],
+    },
   },
 } as const
