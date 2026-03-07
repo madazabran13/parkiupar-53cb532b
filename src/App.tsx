@@ -22,6 +22,7 @@ import Reports from "@/pages/Reports";
 import Capacity from "@/pages/Capacity";
 import SuperAdmin from "@/pages/SuperAdmin";
 import MapPage from "@/pages/MapPage";
+import AuditLog from "@/pages/AuditLog";
 import AccessDenied from "@/pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 
