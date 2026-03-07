@@ -13,6 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
 
+const MODULE_KEY_MAP: Record<string, string> = {
+  '/dashboard': 'dashboard',
+  '/parking': 'parking',
+  '/customers': 'customers',
+  '/rates': 'rates',
+  '/reports': 'reports',
+  '/capacity': 'capacity',
+  '/map': 'map',
+};
+
 const MENU_ITEMS = {
   dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'operator', 'viewer'] },
   parking: { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'operator'] },
