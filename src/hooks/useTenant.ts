@@ -6,6 +6,7 @@ import type { Tenant } from '@/types';
 export function useTenant() {
   const { tenantId } = useAuth();
   const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [planModules, setPlanModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,10 +18,14 @@ export function useTenant() {
     const fetchTenant = async () => {
       const { data } = await supabase
         .from('tenants')
-        .select('*')
+        .select('*, plans(modules)')
         .eq('id', tenantId)
         .single();
-      if (data) setTenant(data as unknown as Tenant);
+      if (data) {
+        const { plans, ...tenantData } = data as any;
+        setTenant(tenantData as unknown as Tenant);
+        setPlanModules(Array.isArray(plans?.modules) ? plans.modules : []);
+      }
       setLoading(false);
     };
 
@@ -41,5 +46,5 @@ export function useTenant() {
     return () => { supabase.removeChannel(channel); };
   }, [tenantId]);
 
-  return { tenant, loading };
+  return { tenant, planModules, loading };
 }
