@@ -1,23 +1,322 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Car } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRealtime } from '@/hooks/useRealtime';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { Plus, LogOut as ExitIcon } from 'lucide-react';
+import { formatCurrency, formatDateTime, formatDuration, formatTime } from '@/lib/utils/formatters';
+import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
+import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
+import type { ParkingSession, VehicleRate, VehicleType } from '@/types';
 
 export default function Parking() {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(i);
+  }, []);
+
+  useRealtime({
+    table: 'parking_sessions',
+    filter: tenantId ? `tenant_id=eq.${tenantId}` : undefined,
+    queryKeys: [['sessions-active', tenantId || ''], ['sessions-history', tenantId || '']],
+  });
+
+  // Entry form state
+  const [plate, setPlate] = useState('');
+  const [vehicleType, setVehicleType] = useState<VehicleType>('car');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [spaceNumber, setSpaceNumber] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const { data: rates = [] } = useQuery({
+    queryKey: ['rates', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('vehicle_rates').select('*').eq('tenant_id', tenantId!).eq('is_active', true);
+      return (data || []) as unknown as VehicleRate[];
+    },
+  });
+  const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
+
+  const { data: activeSessions = [], isLoading: loadingActive } = useQuery({
+    queryKey: ['sessions-active', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('parking_sessions').select('*').eq('tenant_id', tenantId!).eq('status', 'active').order('entry_time', { ascending: false });
+      return (data || []) as unknown as ParkingSession[];
+    },
+  });
+
+  const { data: historySessions = [], isLoading: loadingHistory } = useQuery({
+    queryKey: ['sessions-history', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('parking_sessions').select('*').eq('tenant_id', tenantId!).in('status', ['completed', 'cancelled']).order('exit_time', { ascending: false }).limit(200);
+      return (data || []) as unknown as ParkingSession[];
+    },
+  });
+
+  // Register entry
+  const entryMutation = useMutation({
+    mutationFn: async () => {
+      // Upsert customer by phone
+      const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId!).eq('phone', customerPhone).single();
+      let customerId = existingCustomer?.id;
+
+      if (!customerId) {
+        const { data: newCustomer } = await supabase.from('customers').insert({ tenant_id: tenantId!, phone: customerPhone, full_name: customerName }).select('id').single();
+        customerId = newCustomer?.id;
+      } else {
+        await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
+      }
+
+      // Upsert vehicle
+      const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('tenant_id', tenantId!).eq('plate', plate.toUpperCase()).single();
+      let vehicleId = existingVehicle?.id;
+      if (!vehicleId) {
+        const { data: newVehicle } = await supabase.from('vehicles').insert({ tenant_id: tenantId!, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_id: customerId }).select('id').single();
+        vehicleId = newVehicle?.id;
+      }
+
+      const rate = rateMap[vehicleType];
+      const { error } = await supabase.from('parking_sessions').insert({
+        tenant_id: tenantId!,
+        vehicle_id: vehicleId,
+        customer_id: customerId,
+        plate: plate.toUpperCase(),
+        vehicle_type: vehicleType,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        space_number: spaceNumber || null,
+        rate_per_hour: rate?.rate_per_hour || 0,
+        notes: notes || null,
+        status: 'active',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Vehículo registrado');
+      setEntryOpen(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+    },
+    onError: () => toast.error('Error al registrar entrada'),
+  });
+
+  // Register exit
+  const exitMutation = useMutation({
+    mutationFn: async (session: ParkingSession) => {
+      const exitTime = new Date().toISOString();
+      const rate = rateMap[session.vehicle_type];
+      const fee = rate
+        ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
+        : { total: 0, totalMinutes: 0 };
+
+      const { error } = await supabase.from('parking_sessions').update({
+        exit_time: exitTime,
+        hours_parked: Math.round(fee.totalMinutes / 60 * 100) / 100,
+        total_amount: fee.total,
+        status: 'completed' as const,
+      }).eq('id', session.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Salida registrada');
+      setExitSession(null);
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
+    },
+    onError: () => toast.error('Error al registrar salida'),
+  });
+
+  const resetForm = () => {
+    setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes('');
+  };
+
+  const previewRate = rateMap[vehicleType];
+
+  const activeColumns: Column<ParkingSession>[] = [
+    { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono">{r.plate}</Badge> },
+    { key: 'vehicle_type', label: 'Tipo', render: (r) => VEHICLE_TYPE_LABELS[r.vehicle_type] },
+    { key: 'customer_name', label: 'Cliente' },
+    { key: 'customer_phone', label: 'Teléfono' },
+    { key: 'space_number', label: 'Espacio' },
+    { key: 'entry_time', label: 'Entrada', render: (r) => formatTime(r.entry_time) },
+    { key: 'duration', label: 'Tiempo', sortable: false, filterable: false, render: (r) => formatDuration(r.entry_time) },
+    {
+      key: 'live_fee', label: 'Tarifa', sortable: false, filterable: false,
+      render: (r) => {
+        const rate = rateMap[r.vehicle_type];
+        return rate ? formatCurrency(calculateLiveFee(r.entry_time, rate.rate_per_hour, rate.fraction_minutes)) : '—';
+      },
+    },
+  ];
+
+  const historyColumns: Column<ParkingSession>[] = [
+    { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono">{r.plate}</Badge> },
+    { key: 'vehicle_type', label: 'Tipo', render: (r) => VEHICLE_TYPE_LABELS[r.vehicle_type] },
+    { key: 'customer_name', label: 'Cliente' },
+    { key: 'entry_time', label: 'Entrada', render: (r) => formatDateTime(r.entry_time) },
+    { key: 'exit_time', label: 'Salida', render: (r) => r.exit_time ? formatDateTime(r.exit_time) : '—' },
+    { key: 'hours_parked', label: 'Duración', render: (r) => r.exit_time ? formatDuration(r.entry_time, r.exit_time) : '—' },
+    { key: 'total_amount', label: 'Total', render: (r) => r.total_amount != null ? formatCurrency(r.total_amount) : '—' },
+    { key: 'status', label: 'Estado', render: (r) => <Badge variant={r.status === 'completed' ? 'default' : 'destructive'}>{SESSION_STATUS_LABELS[r.status]}</Badge> },
+  ];
+
+  // Exit confirmation data
+  const exitRate = exitSession ? rateMap[exitSession.vehicle_type] : null;
+  const exitFee = exitSession && exitRate
+    ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRate.rate_per_hour, exitRate.fraction_minutes)
+    : null;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
-        <p className="text-muted-foreground">Registra entradas y salidas de vehículos</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
+          <p className="text-muted-foreground">Registra entradas y salidas</p>
+        </div>
+        <Button onClick={() => setEntryOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" /> Registrar Entrada
+        </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5" /> Módulo en desarrollo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Este módulo se implementará en la Fase 5.</p>
-        </CardContent>
-      </Card>
+
+      <Tabs defaultValue="active">
+        <TabsList>
+          <TabsTrigger value="active">Activos ({activeSessions.length})</TabsTrigger>
+          <TabsTrigger value="history">Historial</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active" className="mt-4">
+          <DataTable
+            columns={activeColumns}
+            data={activeSessions}
+            loading={loadingActive}
+            searchPlaceholder="Buscar por placa, cliente..."
+            actions={(row) => (
+              <Button size="sm" variant="outline" onClick={() => setExitSession(row)}>
+                <ExitIcon className="h-3 w-3 mr-1" /> Salida
+              </Button>
+            )}
+          />
+        </TabsContent>
+        <TabsContent value="history" className="mt-4">
+          <DataTable columns={historyColumns} data={historySessions} loading={loadingHistory} searchPlaceholder="Buscar historial..." />
+        </TabsContent>
+      </Tabs>
+
+      {/* Entry Modal */}
+      <Dialog open={entryOpen} onOpenChange={setEntryOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Entrada</DialogTitle>
+            <DialogDescription>Ingresa los datos del vehículo</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Placa *</Label>
+              <Input placeholder="ABC123" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} className="uppercase" />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de vehículo *</Label>
+              <Select value={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre del cliente *</Label>
+              <Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Teléfono del cliente *</Label>
+              <Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Espacio (opcional)</Label>
+              <Input placeholder="A-12" value={spaceNumber} onChange={(e) => setSpaceNumber(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notas (opcional)</Label>
+              <Textarea placeholder="Observaciones..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </div>
+            {previewRate && (
+              <div className="rounded-lg border bg-muted p-3 text-sm">
+                <span className="font-medium">Tarifa:</span> {formatCurrency(previewRate.rate_per_hour)}/hora · Fracción de {previewRate.fraction_minutes} min
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEntryOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => entryMutation.mutate()}
+              disabled={!plate || !customerName || !customerPhone || entryMutation.isPending}
+            >
+              {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Exit Confirmation Modal */}
+      <Dialog open={!!exitSession} onOpenChange={() => setExitSession(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Salida</DialogTitle>
+            <DialogDescription>Confirma la salida del vehículo</DialogDescription>
+          </DialogHeader>
+          {exitSession && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground">Placa:</span> <strong>{exitSession.plate}</strong></div>
+                <div><span className="text-muted-foreground">Tipo:</span> <strong>{VEHICLE_TYPE_LABELS[exitSession.vehicle_type]}</strong></div>
+                <div><span className="text-muted-foreground">Cliente:</span> <strong>{exitSession.customer_name}</strong></div>
+                <div><span className="text-muted-foreground">Teléfono:</span> <strong>{exitSession.customer_phone}</strong></div>
+                <div><span className="text-muted-foreground">Entrada:</span> <strong>{formatDateTime(exitSession.entry_time)}</strong></div>
+                <div><span className="text-muted-foreground">Duración:</span> <strong>{formatDuration(exitSession.entry_time)}</strong></div>
+              </div>
+              {exitFee && (
+                <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
+                  <p className="text-sm text-muted-foreground">Total a cobrar</p>
+                  <p className="text-3xl font-bold text-primary">{formatCurrency(exitFee.total)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {exitFee.fractions} fracciones × {formatCurrency(exitFee.costPerFraction)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExitSession(null)}>Cancelar</Button>
+            <Button
+              onClick={() => exitSession && exitMutation.mutate(exitSession)}
+              disabled={exitMutation.isPending}
+            >
+              {exitMutation.isPending ? 'Procesando...' : 'Confirmar Salida'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
