@@ -190,6 +190,7 @@ export default function MapPage() {
       <div className="flex-1 overflow-auto space-y-2">
         {filteredTenants.map((tenant) => {
           const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+          const rates = ratesMap[tenant.id] || [];
           return (
             <Card key={tenant.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => focusTenant(tenant)}>
               <CardContent className="p-3">
@@ -210,6 +211,22 @@ export default function MapPage() {
                     <p className="text-[10px] text-muted-foreground">de {tenant.total_spaces}</p>
                   </div>
                 </div>
+                {rates.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-1 mb-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Tarifas</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                      {rates.map((r) => (
+                        <div key={r.id} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground truncate">{r.name}</span>
+                          <span className="font-medium">${Number(r.rate_per_hour).toLocaleString()}/h</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
