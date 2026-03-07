@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate } from 'lucide-react';
+import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car } from 'lucide-react';
 import type { Tenant, VehicleCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -432,13 +432,24 @@ export default function MapPage() {
     </>
   );
 
+  const isPublic = !user;
+
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)] gap-4">
+    <div className={`flex flex-col ${isPublic ? 'h-screen p-4 sm:p-6' : 'h-[calc(100vh-5rem)]'} gap-4`}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Mapa de Parqueaderos</h1>
-          <p className="text-sm text-muted-foreground">Disponibilidad en tiempo real · {filteredTenants.length} parqueaderos</p>
+        <div className="flex items-center gap-3">
+          {isPublic && (
+            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary">
+              <Car className="h-5 w-5 text-primary-foreground" />
+            </div>
+          )}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              {isPublic ? 'ParkingPro' : 'Mapa de Parqueaderos'}
+            </h1>
+            <p className="text-sm text-muted-foreground">Disponibilidad en tiempo real · {filteredTenants.length} parqueaderos</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="md:hidden" onClick={() => setShowList(!showList)}>
