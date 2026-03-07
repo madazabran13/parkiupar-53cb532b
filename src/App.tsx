@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Map is also accessible without auth */}
             <Route path="/map" element={<MapPage />} />
 
             {/* Protected dashboard routes */}

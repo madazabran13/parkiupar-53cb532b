@@ -6,21 +6,28 @@ import { useTenant } from '@/hooks/useTenant';
 import { useRealtime } from '@/hooks/useRealtime';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Car, ParkingCircle, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer } from 'lucide-react';
 import { formatCurrency, formatDuration, formatTime } from '@/lib/utils/formatters';
 import { calculateLiveFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+const VEHICLE_ICONS: Record<string, React.ElementType> = {
+  car: Car,
+  motorcycle: Bike,
+  truck: Truck,
+  bicycle: Bike,
+};
+
 export default function Dashboard() {
   const { profile, tenantId } = useAuth();
   const { tenant } = useTenant();
   const [now, setNow] = useState(Date.now());
 
-  // Refresh live fees every 60s
+  // Refresh live fees every 30s
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 60000);
+    const interval = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -30,7 +37,6 @@ export default function Dashboard() {
     queryKeys: [['active-sessions', tenantId || ''], ['today-completed', tenantId || '']],
   });
 
-  // Active sessions
   const { data: activeSessions = [] } = useQuery({
     queryKey: ['active-sessions', tenantId],
     enabled: !!tenantId,
@@ -45,7 +51,6 @@ export default function Dashboard() {
     },
   });
 
-  // Today's completed sessions for revenue
   const { data: todayCompleted = [] } = useQuery({
     queryKey: ['today-completed', tenantId],
     enabled: !!tenantId,
@@ -62,7 +67,6 @@ export default function Dashboard() {
     },
   });
 
-  // Rates for live fee calculation
   const { data: rates = [] } = useQuery({
     queryKey: ['rates', tenantId],
     enabled: !!tenantId,
@@ -82,7 +86,6 @@ export default function Dashboard() {
     ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100)
     : 0;
 
-  // Chart data: revenue by vehicle type
   const chartData = (['car', 'motorcycle', 'truck', 'bicycle'] as const).map((type) => ({
     name: VEHICLE_TYPE_LABELS[type],
     ingresos: todayCompleted
@@ -144,67 +147,107 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Revenue chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ingresos por Tipo de Vehículo (Hoy)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                  <Bar dataKey="ingresos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-sm text-muted-foreground py-12 text-center">Sin datos de hoy</p>
-            )}
-          </CardContent>
-        </Card>
+      {/* Active Sessions - Visual Cards */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">Sesiones Activas</h2>
+          <Badge variant="secondary" className="ml-1">{activeSessions.length}</Badge>
+        </div>
 
-        {/* Active vehicles */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Vehículos Activos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {activeSessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No hay vehículos activos</p>
-            ) : (
-              <div className="space-y-2 max-h-[300px] overflow-auto">
-                {activeSessions.slice(0, 10).map((session) => {
-                  const rate = rateMap[session.vehicle_type];
-                  const liveFee = rate
-                    ? calculateLiveFee(session.entry_time, rate.rate_per_hour, rate.fraction_minutes)
-                    : 0;
-                  return (
-                    <div key={session.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">{session.plate}</Badge>
+        {activeSessions.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <ParkingCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground">No hay vehículos estacionados en este momento</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {activeSessions.map((session) => {
+              const rate = rateMap[session.vehicle_type];
+              const liveFee = rate
+                ? calculateLiveFee(session.entry_time, rate.rate_per_hour, rate.fraction_minutes)
+                : 0;
+              const VehicleIcon = VEHICLE_ICONS[session.vehicle_type] || Car;
+              const entryDate = new Date(session.entry_time);
+              const minutesParked = Math.floor((Date.now() - entryDate.getTime()) / 60000);
+              const hours = Math.floor(minutesParked / 60);
+              const mins = minutesParked % 60;
+
+              return (
+                <Card key={session.id} className="relative overflow-hidden hover:shadow-md transition-shadow border-l-4 border-l-primary">
+                  <CardContent className="p-4">
+                    {/* Header: Plate + Vehicle Icon */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                          <VehicleIcon className="h-4 w-4 text-primary" />
+                        </div>
                         <div>
-                          <p className="text-sm font-medium">{session.customer_name || '—'}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {VEHICLE_TYPE_LABELS[session.vehicle_type]} · {formatTime(session.entry_time)} · {formatDuration(session.entry_time)}
+                          <span className="font-mono font-bold text-base tracking-wider text-foreground">
+                            {session.plate}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground uppercase">
+                            {VEHICLE_TYPE_LABELS[session.vehicle_type]}
                           </p>
                         </div>
                       </div>
-                      <span className="font-semibold text-sm">{formatCurrency(liveFee)}</span>
+                      {session.space_number && (
+                        <Badge variant="outline" className="text-xs font-mono">
+                          #{session.space_number}
+                        </Badge>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                    {/* Customer */}
+                    {session.customer_name && (
+                      <p className="text-sm text-muted-foreground mb-2 truncate">
+                        👤 {session.customer_name}
+                      </p>
+                    )}
+
+                    {/* Time + Fee */}
+                    <div className="flex items-end justify-between mt-2 pt-2 border-t border-border">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Timer className="h-3.5 w-3.5" />
+                        <span className="text-xs">
+                          {formatTime(session.entry_time)} · <span className="font-medium text-foreground">{hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}</span>
+                        </span>
+                      </div>
+                      <span className="text-base font-bold text-primary">
+                        {formatCurrency(liveFee)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ingresos por Tipo de Vehículo (Hoy)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="name" className="text-xs" />
+                <YAxis className="text-xs" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Bar dataKey="ingresos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground py-12 text-center">Sin datos de hoy</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
