@@ -18,8 +18,12 @@ import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
 
 export default function SuperAdmin() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
+
+  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
+
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
