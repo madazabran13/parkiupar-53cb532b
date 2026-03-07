@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { Customer, ParkingSession } from '@/types';
+import { TableSkeleton } from '@/components/ui/PageSkeletons';
 
 export default function Customers() {
   const { tenantId } = useAuth();
