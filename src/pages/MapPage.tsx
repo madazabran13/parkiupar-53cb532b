@@ -58,12 +58,14 @@ export default function MapPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const userMarkerRef = useRef<L.Marker | null>(null);
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState<number>(50000);
+  const [locating, setLocating] = useState(false);
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
