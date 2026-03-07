@@ -154,10 +154,12 @@ export default function MapPage() {
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {})
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
