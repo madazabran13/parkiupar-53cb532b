@@ -237,7 +237,7 @@ export default function SuperAdmin() {
         </Card>
       </div>
 
-      <Tabs defaultValue="tenants">
+      <Tabs value={currentTab} onValueChange={(v) => navigate(v === 'tenants' ? '/superadmin' : `/superadmin/${v}`)}>
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
