@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
-  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw,
+  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +24,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/capacity': 'capacity',
   '/map': 'map',
   '/team': 'team',
+  '/audit': 'audit',
   '/my-plan': '_always_',
   '/settings': 'settings',
 };
@@ -37,6 +38,7 @@ const MENU_ITEMS = {
   capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'operator'] },
   map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
+  audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
 } as const;
