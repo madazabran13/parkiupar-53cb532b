@@ -51,6 +51,14 @@ export function AppSidebar() {
   const { tenant, planModules } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => setRefreshing(false), 600);
+  };
 
   const isSuperadmin = role === 'superadmin';
   const menuItems = isSuperadmin
