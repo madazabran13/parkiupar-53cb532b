@@ -280,7 +280,7 @@ export default function SuperAdmin() {
             <DialogDescription>Completa la información del parqueadero</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Nombre *</Label>
                 <Input value={tName} onChange={(e) => { setTName(e.target.value); if (!editingTenant) setTSlug(slugify(e.target.value)); }} />
