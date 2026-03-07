@@ -82,8 +82,7 @@ export default function SuperAdmin() {
   const openEditTenant = (t: Tenant) => {
     setEditingTenant(t);
     setTName(t.name); setTSlug(t.slug); setTAddress(t.address || ''); setTPhone(t.phone || '');
-    setTEmail(t.email || ''); setTSpaces(String(t.total_spaces)); setTPrimaryColor(t.primary_color);
-    setTSecondaryColor(t.secondary_color); setTLat(String(t.latitude || '')); setTLng(String(t.longitude || ''));
+    setTEmail(t.email || ''); setTSpaces(String(t.total_spaces)); setTLat(String(t.latitude || '')); setTLng(String(t.longitude || ''));
     setTPlanId(t.plan_id || '');
     setTenantDialogOpen(true);
   };
