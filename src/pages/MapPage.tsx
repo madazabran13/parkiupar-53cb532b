@@ -117,6 +117,12 @@ export default function MapPage() {
         icon: createColoredIcon(color, tenant.available_spaces, tenant.total_spaces),
       }).addTo(mapInstance.current!);
 
+      marker.on('click', () => {
+        mapInstance.current?.flyTo([Number(tenant.latitude), Number(tenant.longitude)], 18, {
+          duration: 1,
+        });
+      });
+
       marker.bindPopup(`
         <div style="min-width:240px;font-family:system-ui,-apple-system,sans-serif;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
