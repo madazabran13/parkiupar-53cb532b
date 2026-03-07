@@ -99,8 +99,6 @@ export default function SuperAdmin() {
         email: tEmail || null,
         total_spaces: parseInt(tSpaces),
         available_spaces: editingTenant ? editingTenant.available_spaces : parseInt(tSpaces),
-        primary_color: tPrimaryColor,
-        secondary_color: tSecondaryColor,
         latitude: tLat ? parseFloat(tLat) : null,
         longitude: tLng ? parseFloat(tLng) : null,
         plan_id: tPlanId || null,
