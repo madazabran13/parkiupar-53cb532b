@@ -218,7 +218,7 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">
             Página {safeCurrentPage} de {totalPages}
           </span>
@@ -229,12 +229,12 @@ export function DataTable<T extends Record<string, any>>({
             <Button variant="outline" size="icon" className="h-8 w-8" disabled={safeCurrentPage === 1} onClick={() => setPage(safeCurrentPage - 1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
               let pageNum: number;
-              if (totalPages <= 5) pageNum = i + 1;
-              else if (safeCurrentPage <= 3) pageNum = i + 1;
-              else if (safeCurrentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-              else pageNum = safeCurrentPage - 2 + i;
+              if (totalPages <= 3) pageNum = i + 1;
+              else if (safeCurrentPage <= 2) pageNum = i + 1;
+              else if (safeCurrentPage >= totalPages - 1) pageNum = totalPages - 2 + i;
+              else pageNum = safeCurrentPage - 1 + i;
               return (
                 <Button
                   key={pageNum}
