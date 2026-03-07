@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter } from 'lucide-react';
+import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate } from 'lucide-react';
 import type { Tenant, VehicleCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -58,12 +58,14 @@ export default function MapPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const userMarkerRef = useRef<L.Marker | null>(null);
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState<number>(50000);
+  const [locating, setLocating] = useState(false);
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
@@ -157,8 +159,49 @@ export default function MapPage() {
       maxZoom: 19,
     }).addTo(mapInstance.current);
     L.control.zoom({ position: 'bottomright' }).addTo(mapInstance.current);
+
+    // Try geolocation on load
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          mapInstance.current?.flyTo([latitude, longitude], 15, { duration: 1.5 });
+          addUserMarker(latitude, longitude);
+        },
+        () => {} // silently fail
+      );
+    }
+
     return () => { mapInstance.current?.remove(); mapInstance.current = null; };
   }, []);
+
+  const addUserMarker = (lat: number, lng: number) => {
+    if (!mapInstance.current) return;
+    userMarkerRef.current?.remove();
+    userMarkerRef.current = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: 'user-location-marker',
+        html: `<div style="width:18px;height:18px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 4px rgba(59,130,246,0.3),0 2px 8px rgba(0,0,0,0.2);"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      }),
+    }).addTo(mapInstance.current).bindPopup('Tu ubicación');
+  };
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        mapInstance.current?.flyTo([latitude, longitude], 16, { duration: 1 });
+        addUserMarker(latitude, longitude);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true }
+    );
+  };
 
   useEffect(() => {
     if (!mapInstance.current) return;
@@ -429,7 +472,19 @@ export default function MapPage() {
         )}
 
         {/* Map */}
-        <div ref={mapRef} className="flex-1 rounded-lg border overflow-hidden min-h-[300px]" />
+        <div className="flex-1 relative">
+          <div ref={mapRef} className="absolute inset-0 rounded-lg border overflow-hidden" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute top-3 right-3 z-[1000] h-9 w-9 bg-background/90 backdrop-blur-sm shadow-md"
+            onClick={handleLocate}
+            disabled={locating}
+            title="Mi ubicación"
+          >
+            <Locate className={`h-4 w-4 ${locating ? 'animate-pulse text-primary' : ''}`} />
+          </Button>
+        </div>
       </div>
     </div>
   );
