@@ -151,9 +151,11 @@ export default function Reports() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Reportes</h1>
           <p className="text-sm text-muted-foreground">Genera reportes de ingresos y actividad</p>
         </div>
-        <Button onClick={exportPDF} disabled={filtered.length === 0} className="w-full sm:w-auto">
-          <Download className="h-4 w-4 mr-1" /> Exportar PDF
-        </Button>
+        {canDownload && (
+          <Button onClick={exportPDF} disabled={filtered.length === 0} className="w-full sm:w-auto">
+            <Download className="h-4 w-4 mr-1" /> Exportar PDF
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
