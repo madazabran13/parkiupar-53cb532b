@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter } from 'lucide-react';
+import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate } from 'lucide-react';
 import type { Tenant, VehicleCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
