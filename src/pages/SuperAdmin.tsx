@@ -302,14 +302,7 @@ export default function SuperAdmin() {
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración General</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Configuración de la plataforma (próximamente).</p>
-            </CardContent>
-          </Card>
+          <ProfileSettings />
         </TabsContent>
       </Tabs>
 
