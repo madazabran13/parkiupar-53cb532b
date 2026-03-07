@@ -300,6 +300,41 @@ export default function SuperAdmin() {
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
+          {/* Pending Plan Requests */}
+          {pendingRequests.length > 0 && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-amber-500" />
+                  Solicitudes de Cambio de Plan ({pendingRequests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {pendingRequests.map((req: any) => (
+                  <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        <span className="font-semibold">{req.tenant?.name}</span> solicita cambiar a <Badge variant="outline">{req.requested_plan?.name}</Badge>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Desde: {req.current_plan?.name || 'Sin plan'} · {new Date(req.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                        {req.message && ` · "${req.message}"`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Button size="sm" variant="default" className="h-7 gap-1 text-xs" onClick={() => handleRequestAction(req.id, 'approved', req.tenant_id, req.requested_plan_id)}>
+                        <CheckCircle2 className="h-3 w-3" /> Aprobar
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-destructive" onClick={() => handleRequestAction(req.id, 'rejected')}>
+                        <XCircle className="h-3 w-3" /> Rechazar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex justify-end">
             <Button onClick={() => { resetTenantForm(); setTenantDialogOpen(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo Parqueadero
