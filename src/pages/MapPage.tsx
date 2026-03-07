@@ -63,6 +63,26 @@ export default function MapPage() {
     },
   });
 
+  const { data: ratesMap = {} } = useQuery({
+    queryKey: ['map-rates', tenants.map(t => t.id)],
+    enabled: tenants.length > 0,
+    queryFn: async () => {
+      const ids = tenants.map(t => t.id);
+      const { data } = await supabase
+        .from('vehicle_categories')
+        .select('*')
+        .in('tenant_id', ids)
+        .eq('is_active', true)
+        .order('rate_per_hour', { ascending: true });
+      const map: Record<string, VehicleCategory[]> = {};
+      (data || []).forEach((r: any) => {
+        if (!map[r.tenant_id]) map[r.tenant_id] = [];
+        map[r.tenant_id].push(r as unknown as VehicleCategory);
+      });
+      return map;
+    },
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
