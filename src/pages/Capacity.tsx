@@ -288,6 +288,7 @@ export default function Capacity() {
   };
 
   const selectedCategory = categoryMap[selectedCategoryId];
+  const availableSpacesList = finalSpaces.filter((s) => !s.occupied).map((s) => s.num);
   const exitCategory = exitSession ? findRateForSession(exitSession) : null;
   const exitRatePerHour = exitCategory?.rate_per_hour || exitSession?.rate_per_hour || 0;
   const exitFractionMin = exitCategory?.fraction_minutes || 15;
@@ -370,13 +371,11 @@ export default function Capacity() {
       <Dialog open={entryOpen} onOpenChange={(open) => { if (!open) closeEntryDialog(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              Registrar Entrada
-              <Badge variant="secondary" className="font-mono">Espacio #{selectedSpace}</Badge>
-            </DialogTitle>
+            <DialogTitle>Registrar Entrada</DialogTitle>
             <DialogDescription>Busca por placa si el vehículo ya está registrado</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Plate search */}
             <div className="space-y-2">
               <Label>Placa *</Label>
               <div className="relative">
@@ -386,12 +385,13 @@ export default function Capacity() {
                   value={plate}
                   onChange={(e) => setPlate(e.target.value.toUpperCase())}
                   className="pl-9 uppercase font-mono text-base"
+                  autoFocus
                 />
               </div>
-              {searchingPlate && <p className="text-xs text-muted-foreground">Buscando...</p>}
+              {searchingPlate && <p className="text-xs text-muted-foreground animate-pulse">Buscando vehículo...</p>}
               {foundVehicle && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm space-y-1">
-                  <p className="font-medium text-primary">✓ Vehículo encontrado</p>
+                  <p className="font-medium text-primary">✓ Vehículo encontrado — datos completados</p>
                   <p className="text-muted-foreground">
                     {getCategoryLabel(foundVehicle.vehicle_type)}
                     {foundVehicle.brand && ` · ${foundVehicle.brand}`}
@@ -399,6 +399,29 @@ export default function Capacity() {
                   </p>
                 </div>
               )}
+              {plate.length >= 3 && !searchingPlate && !foundVehicle && (
+                <p className="text-xs text-muted-foreground">Vehículo nuevo — completa los datos abajo</p>
+              )}
+            </div>
+
+            {/* Space selector */}
+            <div className="space-y-2">
+              <Label>Espacio *</Label>
+              <Select value={selectedSpace ? String(selectedSpace) : ''} onValueChange={(v) => setSelectedSpace(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar espacio disponible" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSpacesList.map((num) => (
+                    <SelectItem key={num} value={String(num)}>
+                      Espacio #{num}
+                    </SelectItem>
+                  ))}
+                  {availableSpacesList.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">No hay espacios disponibles</div>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -450,7 +473,7 @@ export default function Capacity() {
             <Button variant="outline" onClick={closeEntryDialog}>Cancelar</Button>
             <Button
               onClick={() => entryMutation.mutate()}
-              disabled={!plate || !customerName || !customerPhone || !selectedCategoryId || entryMutation.isPending}
+              disabled={!plate || !customerName || !customerPhone || !selectedCategoryId || !selectedSpace || entryMutation.isPending}
             >
               {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
             </Button>
