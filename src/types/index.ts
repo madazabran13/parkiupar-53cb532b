@@ -61,6 +61,19 @@ export interface VehicleRate {
   updated_at: string;
 }
 
+export interface VehicleCategory {
+  id: string;
+  tenant_id: string;
+  name: string;
+  icon: string;
+  rate_per_hour: number;
+  fraction_minutes: number;
+  minimum_minutes: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Customer {
   id: string;
   tenant_id: string;
