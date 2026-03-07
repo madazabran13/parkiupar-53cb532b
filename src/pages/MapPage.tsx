@@ -79,10 +79,19 @@ export default function MapPage() {
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
-    mapInstance.current = L.map(mapRef.current).setView([10.4735, -73.2503], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+    mapInstance.current = L.map(mapRef.current, {
+      zoomControl: false,
+    }).setView([10.4735, -73.2503], 15);
+
+    // Clean CartoDB Positron tiles - minimal, street names only
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
     }).addTo(mapInstance.current);
+
+    // Position zoom control on the right
+    L.control.zoom({ position: 'bottomright' }).addTo(mapInstance.current);
 
     return () => {
       mapInstance.current?.remove();
