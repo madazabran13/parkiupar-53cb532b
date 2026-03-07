@@ -322,7 +322,11 @@ export default function SuperAdmin() {
             {plans.length > 0 && (
               <div className="space-y-2">
                 <Label>Plan</Label>
-                <Select value={tPlanId} onValueChange={setTPlanId}>
+                <Select value={tPlanId} onValueChange={(v) => {
+                  setTPlanId(v);
+                  const selectedPlan = plans.find((p) => p.id === v);
+                  if (selectedPlan) setTSpaces(String(selectedPlan.max_spaces));
+                }}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar plan" /></SelectTrigger>
                   <SelectContent>
                     {plans.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} - {formatCurrency(p.price_monthly)}/mes</SelectItem>)}
