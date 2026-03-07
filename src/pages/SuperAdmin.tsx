@@ -24,7 +24,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
+  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/users') ? 'users' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
 
   const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
@@ -258,6 +258,7 @@ export default function SuperAdmin() {
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
+          <TabsTrigger value="users" className="flex-1 sm:flex-none">Usuarios</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
         </TabsList>
 
@@ -293,6 +294,10 @@ export default function SuperAdmin() {
               <Button size="sm" variant="ghost" onClick={() => openEditPlan(row)}><Edit className="h-3 w-3" /></Button>
             )}
           />
+        </TabsContent>
+
+        <TabsContent value="users" className="mt-4 space-y-4">
+          <SuperAdminUsers tenants={tenants} />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4 space-y-4">
@@ -431,5 +436,175 @@ export default function SuperAdmin() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ---- SuperAdmin Users sub-component ----
+function SuperAdminUsers({ tenants }: { tenants: Tenant[] }) {
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState<string>('admin');
+  const [newTenantId, setNewTenantId] = useState('');
+
+  const ALL_ROLES = [
+    { value: 'superadmin', label: 'Super Admin' },
+    { value: 'admin', label: 'Administrador' },
+    { value: 'operator', label: 'Operador' },
+    { value: 'viewer', label: 'Visor' },
+    { value: 'enduser', label: 'Usuario Final' },
+  ];
+
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['superadmin-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'list' },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data.users || [];
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'create', email: newEmail, password: newPassword, full_name: newName, role: newRole, tenant_id: newTenantId || null },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      toast.success('Usuario creado');
+      setDialogOpen(false);
+      setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('admin'); setNewTenantId('');
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users'] });
+    },
+    onError: (e) => toast.error(`Error: ${e.message}`),
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ user_id, role }: { user_id: string; role: string }) => {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'update_role', user_id, role },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      toast.success('Rol actualizado');
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users'] });
+    },
+    onError: (e) => toast.error(`Error: ${e.message}`),
+  });
+
+  const updateTenantMutation = useMutation({
+    mutationFn: async ({ user_id, tenant_id }: { user_id: string; tenant_id: string }) => {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'update_tenant', user_id, tenant_id: tenant_id || null },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      toast.success('Parqueadero actualizado');
+      queryClient.invalidateQueries({ queryKey: ['superadmin-users'] });
+    },
+    onError: (e) => toast.error(`Error: ${e.message}`),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ user_id, is_active }: { user_id: string; is_active: boolean }) => {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'toggle_active', user_id, is_active },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['superadmin-users'] }),
+  });
+
+  const columns: Column<any>[] = [
+    { key: 'full_name', label: 'Nombre', render: (r) => r.full_name || '—' },
+    { key: 'email', label: 'Email', render: (r) => r.email || '—' },
+    {
+      key: 'role', label: 'Rol', render: (r) => (
+        <Select value={r.role} onValueChange={(v) => updateRoleMutation.mutate({ user_id: r.id, role: v })}>
+          <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ALL_ROLES.map((ar) => <SelectItem key={ar.value} value={ar.value}>{ar.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      key: 'tenant_id', label: 'Parqueadero', render: (r) => (
+        <Select value={r.tenant_id || 'none'} onValueChange={(v) => updateTenantMutation.mutate({ user_id: r.id, tenant_id: v === 'none' ? '' : v })}>
+          <SelectTrigger className="h-7 w-36 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Sin asignar</SelectItem>
+            {tenants.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      key: 'is_active', label: 'Activo', render: (r) => (
+        <Switch checked={r.is_active} onCheckedChange={(checked) => toggleActiveMutation.mutate({ user_id: r.id, is_active: checked })} />
+      ),
+    },
+  ];
+
+  if (isLoading) return <TableSkeleton columns={5} rows={5} />;
+
+  return (
+    <>
+      <div className="flex justify-end">
+        <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-1" /> Nuevo Usuario</Button>
+      </div>
+      <DataTable columns={columns} data={users} searchPlaceholder="Buscar usuarios..." />
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuevo Usuario</DialogTitle>
+            <DialogDescription>Crea un usuario en la plataforma</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Nombre</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Email</Label><Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Contraseña</Label><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></div>
+            <div className="space-y-2">
+              <Label>Rol</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ALL_ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Parqueadero</Label>
+              <Select value={newTenantId} onValueChange={setNewTenantId}>
+                <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin asignar</SelectItem>
+                  {tenants.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={() => createMutation.mutate()} disabled={!newName || !newEmail || !newPassword || createMutation.isPending}>
+              {createMutation.isPending ? 'Creando...' : 'Crear'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import Parking from "@/pages/Parking";
 import Customers from "@/pages/Customers";
 import Rates from "@/pages/Rates";
+import TeamUsers from "@/pages/TeamUsers";
 import Reports from "@/pages/Reports";
 import Capacity from "@/pages/Capacity";
 import SuperAdmin from "@/pages/SuperAdmin";
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/rates" element={<Rates />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/capacity" element={<Capacity />} />
+              <Route path="/team" element={<TeamUsers />} />
               <Route path="/map" element={<MapPage />} />
             </Route>
 
@@ -65,6 +67,7 @@ const App = () => (
             >
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/superadmin/plans" element={<SuperAdmin />} />
+              <Route path="/superadmin/users" element={<SuperAdmin />} />
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
             </Route>
 
