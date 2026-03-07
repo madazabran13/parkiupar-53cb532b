@@ -50,6 +50,8 @@ export default function Customers() {
     { key: 'status', label: 'Estado', render: (r) => <Badge variant={r.status === 'completed' ? 'default' : 'secondary'}>{SESSION_STATUS_LABELS[r.status]}</Badge> },
   ];
 
+  if (isLoading) return <TableSkeleton columns={5} rows={6} />;
+
   return (
     <div className="space-y-6">
       <div>
