@@ -517,6 +517,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hash_sensitive: { Args: { value: string }; Returns: string }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
