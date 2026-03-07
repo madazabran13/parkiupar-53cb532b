@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Car, Bike, Truck } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import type { VehicleCategory } from '@/types';
+import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 
 const ICON_OPTIONS = [
   { value: 'car', label: 'Carro', icon: Car },
@@ -143,9 +144,7 @@ export default function Rates() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+        <CardGridSkeleton cards={4} />
       ) : categories.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">

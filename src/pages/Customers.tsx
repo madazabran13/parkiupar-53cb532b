@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { Customer, ParkingSession } from '@/types';
+import { TableSkeleton } from '@/components/ui/PageSkeletons';
 
 export default function Customers() {
   const { tenantId } = useAuth();
@@ -48,6 +49,8 @@ export default function Customers() {
     { key: 'total_amount', label: 'Total', render: (r) => r.total_amount != null ? formatCurrency(r.total_amount) : '—' },
     { key: 'status', label: 'Estado', render: (r) => <Badge variant={r.status === 'completed' ? 'default' : 'secondary'}>{SESSION_STATUS_LABELS[r.status]}</Badge> },
   ];
+
+  if (isLoading) return <TableSkeleton columns={5} rows={6} />;
 
   return (
     <div className="space-y-6">

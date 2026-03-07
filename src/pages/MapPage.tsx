@@ -9,6 +9,7 @@ import { MapPin, Phone, Search, List, X } from 'lucide-react';
 import type { Tenant } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { MapSkeleton } from '@/components/ui/PageSkeletons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -50,7 +51,7 @@ export default function MapPage() {
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
 
-  const { data: tenants = [] } = useQuery({
+  const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
     queryFn: async () => {
       const { data } = await supabase

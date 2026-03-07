@@ -12,6 +12,7 @@ import { calculateLiveFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
   car: Car,
@@ -37,7 +38,7 @@ export default function Dashboard() {
     queryKeys: [['active-sessions', tenantId || ''], ['today-completed', tenantId || '']],
   });
 
-  const { data: activeSessions = [] } = useQuery({
+  const { data: activeSessions = [], isLoading: loadingSessions } = useQuery({
     queryKey: ['active-sessions', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -93,6 +94,10 @@ export default function Dashboard() {
       .reduce((sum, s) => sum + (s.total_amount || 0), 0),
     cantidad: todayCompleted.filter((s) => s.vehicle_type === type).length,
   })).filter((d) => d.cantidad > 0);
+
+  if (loadingSessions) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

@@ -17,6 +17,7 @@ import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon }
 import { formatCurrency, formatDuration, formatTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
 import type { ParkingSession, VehicleCategory, Vehicle } from '@/types';
+import { CapacitySkeleton } from '@/components/ui/PageSkeletons';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   car: Car,
@@ -61,7 +62,7 @@ export default function Capacity() {
     queryKeys: [['capacity-sessions', tenantId || '']],
   });
 
-  const { data: activeSessions = [] } = useQuery({
+  const { data: activeSessions = [], isLoading: loadingCapacity } = useQuery({
     queryKey: ['capacity-sessions', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -293,6 +294,8 @@ export default function Capacity() {
   const exitFee = exitSession
     ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRatePerHour, exitFractionMin)
     : null;
+
+  if (loadingCapacity) return <CapacitySkeleton />;
 
   return (
     <div className="space-y-6">

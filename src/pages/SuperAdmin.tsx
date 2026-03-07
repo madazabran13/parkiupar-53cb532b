@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Plus, Edit, Building2, CreditCard, Users, Car } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
+import { TableSkeleton } from '@/components/ui/PageSkeletons';
 
 export default function SuperAdmin() {
   const location = useLocation();
@@ -201,6 +202,8 @@ export default function SuperAdmin() {
     { key: 'max_spaces', label: 'Max Espacios' },
     { key: 'is_active', label: 'Activo', render: (r) => <Badge variant={r.is_active ? 'default' : 'secondary'}>{r.is_active ? 'Sí' : 'No'}</Badge> },
   ];
+
+  if (loadingTenants && loadingPlans) return <TableSkeleton columns={6} rows={5} />;
 
   return (
     <div className="space-y-6">
