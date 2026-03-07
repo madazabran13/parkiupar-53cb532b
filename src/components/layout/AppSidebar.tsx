@@ -25,7 +25,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
 };
 
 const MENU_ITEMS = {
-  dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'operator', 'viewer'] },
+  dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'operator'] },
   parking: { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'operator'] },
   customers: { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'operator'] },
   rates: { label: 'Tarifas', icon: DollarSign, path: '/rates', roles: ['admin'] },
