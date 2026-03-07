@@ -24,7 +24,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
+  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/users') ? 'users' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
 
   const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
