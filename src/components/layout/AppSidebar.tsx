@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
-  Building2, CreditCard, Settings, Map,
+  Building2, CreditCard, Settings, Map, LogOut,
 } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel,
@@ -10,6 +10,7 @@ import {
   SidebarHeader, SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
 
 const MENU_ITEMS = {
@@ -29,14 +30,20 @@ const SUPERADMIN_ITEMS = [
 ];
 
 export function AppSidebar() {
-  const { role, profile } = useAuth();
+  const { role, profile, signOut } = useAuth();
   const { tenant } = useTenant();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isSuperadmin = role === 'superadmin';
   const menuItems = isSuperadmin
     ? SUPERADMIN_ITEMS
     : Object.values(MENU_ITEMS).filter((item) => role && (item.roles as readonly string[]).includes(role));
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -77,19 +84,28 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground flex-shrink-0">
             {profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
           </div>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-xs font-medium text-sidebar-foreground truncate max-w-[140px]">
+          <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+            <span className="text-xs font-medium text-sidebar-foreground truncate">
               {profile?.full_name || 'Usuario'}
             </span>
-            <Badge variant="secondary" className="w-fit text-[10px]">
-              {role || 'usuario'}
-            </Badge>
+            <span className="text-[10px] text-muted-foreground truncate">
+              {tenant?.name || (role === 'superadmin' ? 'Super Admin' : 'Sin asignar')}
+            </span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive group-data-[collapsible=icon]:hidden"
+            onClick={handleSignOut}
+            title="Cerrar sesión"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>

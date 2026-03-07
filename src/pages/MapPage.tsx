@@ -166,8 +166,8 @@ export default function MapPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] gap-4">
-      {/* Header */}
+    <div className="flex flex-col h-[calc(100vh-5rem)] gap-4">
+      {/* Header - only show login button on public route */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Mapa de Parqueaderos</h1>
