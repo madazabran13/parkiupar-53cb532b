@@ -232,9 +232,9 @@ export default function SuperAdmin() {
       </div>
 
       <Tabs defaultValue="tenants">
-        <TabsList>
-          <TabsTrigger value="tenants">Parqueaderos</TabsTrigger>
-          <TabsTrigger value="plans">Planes</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
+          <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
