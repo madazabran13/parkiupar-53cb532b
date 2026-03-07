@@ -20,6 +20,7 @@ import Reports from "@/pages/Reports";
 import Capacity from "@/pages/Capacity";
 import SuperAdmin from "@/pages/SuperAdmin";
 import MapPage from "@/pages/MapPage";
+import AccessDenied from "@/pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const App = () => (
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
             </Route>
 
+            <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
