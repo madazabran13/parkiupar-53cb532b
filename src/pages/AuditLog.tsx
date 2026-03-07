@@ -39,6 +39,7 @@ export default function AuditLog() {
   const [tableFilter, setTableFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
   const [page, setPage] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs', tableFilter, actionFilter, search, page],
@@ -59,18 +60,126 @@ export default function AuditLog() {
     },
   });
 
+  const fetchAllForExport = useCallback(async () => {
+    let query = supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5000);
+
+    if (tableFilter !== 'all') query = query.eq('table_name', tableFilter);
+    if (actionFilter !== 'all') query = query.eq('action', actionFilter);
+    if (search) query = query.or(`user_name.ilike.%${search}%,record_id.ilike.%${search}%`);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }, [tableFilter, actionFilter, search]);
+
+  const exportCSV = useCallback(async () => {
+    setExporting(true);
+    try {
+      const allLogs = await fetchAllForExport();
+      const headers = ['Fecha', 'Usuario', 'Tabla', 'Acción', 'ID Registro', 'Campos modificados'];
+      const rows = allLogs.map((log: any) => [
+        format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss"),
+        log.user_name || 'Sistema',
+        TABLE_LABELS[log.table_name] || log.table_name,
+        ACTION_CONFIG[log.action]?.label || log.action,
+        log.record_id || '',
+        log.changed_fields?.join(', ') || '',
+      ]);
+
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `auditoria_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${allLogs.length} registros exportados a CSV`);
+    } catch {
+      toast.error('Error al exportar CSV');
+    } finally {
+      setExporting(false);
+    }
+  }, [fetchAllForExport]);
+
+  const exportPDF = useCallback(async () => {
+    setExporting(true);
+    try {
+      const allLogs = await fetchAllForExport();
+      const doc = new jsPDF({ orientation: 'landscape' });
+
+      doc.setFontSize(16);
+      doc.text('Registro de Auditoría', 14, 15);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`Generado: ${format(new Date(), "dd/MM/yyyy HH:mm")} — ${allLogs.length} registros`, 14, 22);
+
+      const tableData = allLogs.map((log: any) => [
+        format(new Date(log.created_at), "dd/MM/yy HH:mm"),
+        log.user_name || 'Sistema',
+        TABLE_LABELS[log.table_name] || log.table_name,
+        ACTION_CONFIG[log.action]?.label || log.action,
+        log.record_id?.substring(0, 8) || '',
+        (log.changed_fields?.join(', ') || '').substring(0, 40),
+      ]);
+
+      autoTable(doc, {
+        head: [['Fecha', 'Usuario', 'Tabla', 'Acción', 'ID', 'Campos']],
+        body: tableData,
+        startY: 28,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [59, 130, 246] },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+      });
+
+      doc.save(`auditoria_${format(new Date(), 'yyyy-MM-dd_HHmm')}.pdf`);
+      toast.success(`${allLogs.length} registros exportados a PDF`);
+    } catch {
+      toast.error('Error al exportar PDF');
+    } finally {
+      setExporting(false);
+    }
+  }, [fetchAllForExport]);
+
   const logs = data?.logs || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Shield className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Auditoría</h1>
-          <p className="text-sm text-muted-foreground">Historial de cambios en el sistema</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Shield className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Auditoría</h1>
+            <p className="text-sm text-muted-foreground">Historial de cambios en el sistema</p>
+          </div>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={exporting || isLoading}>
+              <Download className="h-4 w-4 mr-2" />
+              {exporting ? 'Exportando...' : 'Exportar'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportCSV}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Card>
