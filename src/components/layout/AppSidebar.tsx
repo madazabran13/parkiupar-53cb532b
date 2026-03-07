@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
-  Building2, CreditCard, Settings, Map, LogOut, UserCog,
+  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -49,6 +51,14 @@ export function AppSidebar() {
   const { tenant, planModules } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => setRefreshing(false), 600);
+  };
 
   const isSuperadmin = role === 'superadmin';
   const menuItems = isSuperadmin
@@ -70,18 +80,29 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <Link to={isSuperadmin ? '/superadmin' : '/dashboard'} className="flex items-center gap-2">
-          {tenant?.logo_url ? (
-            <img src={tenant.logo_url} alt={tenant.name} className="h-8 w-8 rounded object-cover" />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-              <Car className="h-4 w-4 text-primary-foreground" />
-            </div>
-          )}
-          <span className="font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-            {tenant?.name || 'ParkingPro'}
-          </span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to={isSuperadmin ? '/superadmin' : '/dashboard'} className="flex items-center gap-2 flex-1 min-w-0">
+            {tenant?.logo_url ? (
+              <img src={tenant.logo_url} alt={tenant.name} className="h-8 w-8 rounded object-cover flex-shrink-0" />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-primary flex-shrink-0">
+                <Car className="h-4 w-4 text-primary-foreground" />
+              </div>
+            )}
+            <span className="font-bold text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
+              {tenant?.name || 'ParkingPro'}
+            </span>
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:hidden"
+            onClick={handleRefresh}
+            title="Actualizar datos"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
