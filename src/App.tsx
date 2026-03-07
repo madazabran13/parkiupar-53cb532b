@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import ProfileSettings from "@/components/ProfileSettings";
+import SettingsPage from "@/pages/SettingsPage";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -60,7 +60,7 @@ const App = () => (
               <Route path="/team" element={<TeamUsers />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/my-plan" element={<MyPlan />} />
-              <Route path="/settings" element={<ProfileSettings />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
             {/* Superadmin routes */}
