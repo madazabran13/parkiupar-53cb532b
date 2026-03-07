@@ -5,8 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MapPin, Phone, Search, List, X } from 'lucide-react';
-import type { Tenant } from '@/types';
+import { MapPin, Phone, Search, List, X, DollarSign } from 'lucide-react';
+import type { Tenant, VehicleCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
@@ -63,6 +63,26 @@ export default function MapPage() {
     },
   });
 
+  const { data: ratesMap = {} } = useQuery({
+    queryKey: ['map-rates', tenants.map(t => t.id)],
+    enabled: tenants.length > 0,
+    queryFn: async () => {
+      const ids = tenants.map(t => t.id);
+      const { data } = await supabase
+        .from('vehicle_categories')
+        .select('*')
+        .in('tenant_id', ids)
+        .eq('is_active', true)
+        .order('rate_per_hour', { ascending: true });
+      const map: Record<string, VehicleCategory[]> = {};
+      (data || []).forEach((r: any) => {
+        if (!map[r.tenant_id]) map[r.tenant_id] = [];
+        map[r.tenant_id].push(r as unknown as VehicleCategory);
+      });
+      return map;
+    },
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
@@ -93,6 +113,16 @@ export default function MapPage() {
       const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
       const pct = tenant.total_spaces > 0 ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100) : 0;
       const statusLabel = tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
+      const rates = ratesMap[tenant.id] || [];
+      const ratesHtml = rates.length > 0
+        ? `<div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:8px;">
+            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Tarifas</div>
+            ${rates.map(r => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">
+              <span style="color:#475569;">${r.name}</span>
+              <span style="font-weight:600;color:#1a1a1a;">$${Number(r.rate_per_hour).toLocaleString()}/h</span>
+            </div>`).join('')}
+          </div>`
+        : '';
 
       const marker = L.marker([Number(tenant.latitude), Number(tenant.longitude)], {
         icon: createColoredIcon(color, tenant.available_spaces),
@@ -103,7 +133,7 @@ export default function MapPage() {
       });
 
       marker.bindPopup(`
-        <div style="min-width:200px;font-family:system-ui,-apple-system,sans-serif;">
+        <div style="min-width:220px;font-family:system-ui,-apple-system,sans-serif;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
             <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
             <h3 style="font-weight:700;font-size:14px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
@@ -121,13 +151,14 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-          ${tenant.phone ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;">📞 <a href="tel:${tenant.phone}" style="color:#3b82f6;text-decoration:none;">${tenant.phone}</a></div>` : ''}
+          ${ratesHtml}
+          ${tenant.phone ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;margin-top:8px;">📞 <a href="tel:${tenant.phone}" style="color:#3b82f6;text-decoration:none;">${tenant.phone}</a></div>` : ''}
         </div>
-      `, { className: 'parking-popup', maxWidth: 280 });
+      `, { className: 'parking-popup', maxWidth: 300 });
 
       markersRef.current.push(marker);
     });
-  }, [tenants]);
+  }, [tenants, ratesMap]);
 
   const filteredTenants = search
     ? tenants.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()) || (t.address || '').toLowerCase().includes(search.toLowerCase()))
@@ -159,6 +190,7 @@ export default function MapPage() {
       <div className="flex-1 overflow-auto space-y-2">
         {filteredTenants.map((tenant) => {
           const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+          const rates = ratesMap[tenant.id] || [];
           return (
             <Card key={tenant.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => focusTenant(tenant)}>
               <CardContent className="p-3">
@@ -179,6 +211,22 @@ export default function MapPage() {
                     <p className="text-[10px] text-muted-foreground">de {tenant.total_spaces}</p>
                   </div>
                 </div>
+                {rates.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-1 mb-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Tarifas</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                      {rates.map((r) => (
+                        <div key={r.id} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground truncate">{r.name}</span>
+                          <span className="font-medium">${Number(r.rate_per_hour).toLocaleString()}/h</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
