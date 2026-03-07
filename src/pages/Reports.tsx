@@ -13,6 +13,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { Download, DollarSign, Car, BarChart3, Hash } from 'lucide-react';
 import { formatCurrency, formatDateTime, formatDuration, formatDate } from '@/lib/utils/formatters';
 import { VEHICLE_TYPE_LABELS } from '@/types';
+import { ReportsSkeleton } from '@/components/ui/PageSkeletons';
 import type { ParkingSession, VehicleType } from '@/types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
