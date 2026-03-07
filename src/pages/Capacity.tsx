@@ -17,6 +17,7 @@ import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon }
 import { formatCurrency, formatDuration, formatTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
 import type { ParkingSession, VehicleCategory, Vehicle } from '@/types';
+import { CapacitySkeleton } from '@/components/ui/PageSkeletons';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   car: Car,
