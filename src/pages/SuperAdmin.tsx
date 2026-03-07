@@ -203,6 +203,8 @@ export default function SuperAdmin() {
     { key: 'is_active', label: 'Activo', render: (r) => <Badge variant={r.is_active ? 'default' : 'secondary'}>{r.is_active ? 'Sí' : 'No'}</Badge> },
   ];
 
+  if (loadingTenants && loadingPlans) return <TableSkeleton columns={6} rows={5} />;
+
   return (
     <div className="space-y-6">
       <div>
