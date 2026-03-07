@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Car } from 'lucide-react';
+import { Car, MapPin } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
