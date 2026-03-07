@@ -65,6 +65,7 @@ export default function SuperAdmin() {
     { key: 'map', label: 'Mapa' },
     { key: 'team', label: 'Gestión de Usuarios' },
     { key: 'settings', label: 'Configuración' },
+    { key: 'audit', label: 'Auditoría' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
