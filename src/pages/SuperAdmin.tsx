@@ -286,7 +286,14 @@ export default function SuperAdmin() {
 
       <Tabs value={currentTab} onValueChange={(v) => navigate(v === 'tenants' ? '/superadmin' : `/superadmin/${v}`)}>
         <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
+          <TabsTrigger value="tenants" className="flex-1 sm:flex-none relative">
+            Parqueaderos
+            {pendingRequests.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                {pendingRequests.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
           <TabsTrigger value="users" className="flex-1 sm:flex-none">Usuarios</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
