@@ -319,22 +319,6 @@ export default function SuperAdmin() {
               <div className="space-y-2"><Label>Latitud</Label><Input value={tLat} onChange={(e) => setTLat(e.target.value)} /></div>
               <div className="space-y-2"><Label>Longitud</Label><Input value={tLng} onChange={(e) => setTLng(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Color primario</Label>
-                <div className="flex gap-2">
-                  <input type="color" value={tPrimaryColor} onChange={(e) => setTPrimaryColor(e.target.value)} className="h-10 w-10 rounded border cursor-pointer" />
-                  <Input value={tPrimaryColor} onChange={(e) => setTPrimaryColor(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Color secundario</Label>
-                <div className="flex gap-2">
-                  <input type="color" value={tSecondaryColor} onChange={(e) => setTSecondaryColor(e.target.value)} className="h-10 w-10 rounded border cursor-pointer" />
-                  <Input value={tSecondaryColor} onChange={(e) => setTSecondaryColor(e.target.value)} />
-                </div>
-              </div>
-            </div>
             {plans.length > 0 && (
               <div className="space-y-2">
                 <Label>Plan</Label>
