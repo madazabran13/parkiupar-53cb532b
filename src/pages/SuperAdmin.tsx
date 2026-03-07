@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +18,12 @@ import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
 
 export default function SuperAdmin() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
+
   const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
@@ -231,10 +237,11 @@ export default function SuperAdmin() {
         </Card>
       </div>
 
-      <Tabs defaultValue="tenants">
+      <Tabs value={currentTab} onValueChange={(v) => navigate(v === 'tenants' ? '/superadmin' : `/superadmin/${v}`)}>
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
@@ -269,6 +276,17 @@ export default function SuperAdmin() {
               <Button size="sm" variant="ghost" onClick={() => openEditPlan(row)}><Edit className="h-3 w-3" /></Button>
             )}
           />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuración General</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Configuración de la plataforma (próximamente).</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
