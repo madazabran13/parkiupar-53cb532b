@@ -60,7 +60,7 @@ const App = () => (
               <Route path="/team" element={<TeamUsers />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/my-plan" element={<MyPlan />} />
-              <Route path="/settings" element={<ProfileSettings />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
             {/* Superadmin routes */}
