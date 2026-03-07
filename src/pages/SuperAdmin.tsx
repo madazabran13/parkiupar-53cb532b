@@ -258,6 +258,7 @@ export default function SuperAdmin() {
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
+          <TabsTrigger value="users" className="flex-1 sm:flex-none">Usuarios</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
         </TabsList>
 
