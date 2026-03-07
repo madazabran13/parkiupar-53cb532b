@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
-  Building2, CreditCard, Settings, Map, LogOut, UserCog,
+  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
