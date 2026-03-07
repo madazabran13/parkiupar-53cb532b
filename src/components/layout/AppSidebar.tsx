@@ -13,6 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
 
+const MODULE_KEY_MAP: Record<string, string> = {
+  '/dashboard': 'dashboard',
+  '/parking': 'parking',
+  '/customers': 'customers',
+  '/rates': 'rates',
+  '/reports': 'reports',
+  '/capacity': 'capacity',
+  '/map': 'map',
+};
+
 const MENU_ITEMS = {
   dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'operator', 'viewer'] },
   parking: { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'operator'] },
@@ -31,14 +41,22 @@ const SUPERADMIN_ITEMS = [
 
 export function AppSidebar() {
   const { role, profile, signOut } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isSuperadmin = role === 'superadmin';
   const menuItems = isSuperadmin
     ? SUPERADMIN_ITEMS
-    : Object.values(MENU_ITEMS).filter((item) => role && (item.roles as readonly string[]).includes(role));
+    : Object.values(MENU_ITEMS).filter((item) => {
+        if (!role || !(item.roles as readonly string[]).includes(role)) return false;
+        // Filter by plan modules if tenant has a plan
+        if (planModules.length > 0) {
+          const moduleKey = MODULE_KEY_MAP[item.path];
+          if (moduleKey && !planModules.includes(moduleKey)) return false;
+        }
+        return true;
+      });
 
   const handleSignOut = async () => {
     await signOut();

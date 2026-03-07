@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Edit, Building2, CreditCard, Users, Car } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
@@ -49,6 +50,18 @@ export default function SuperAdmin() {
   const [pDesc, setPDesc] = useState('');
   const [pPrice, setPPrice] = useState('');
   const [pMaxSpaces, setPMaxSpaces] = useState('50');
+  const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
+
+  const ALL_MODULES = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'parking', label: 'Vehículos' },
+    { key: 'customers', label: 'Clientes' },
+    { key: 'rates', label: 'Tarifas' },
+    { key: 'capacity', label: 'Aforo' },
+    { key: 'reports', label: 'Reportes (solo ver)' },
+    { key: 'reports_download', label: 'Reportes (descargar PDF)' },
+    { key: 'map', label: 'Mapa' },
+  ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
     queryKey: ['admin-tenants'],
@@ -150,15 +163,18 @@ export default function SuperAdmin() {
   });
 
   // Plans CRUD
-  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setEditingPlan(null); };
+  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
   const openEditPlan = (p: Plan) => {
     setEditingPlan(p); setPName(p.name); setPDesc(p.description || ''); setPPrice(String(p.price_monthly)); setPMaxSpaces(String(p.max_spaces));
+    setPModules(Array.isArray(p.modules) ? p.modules : ['dashboard', 'parking', 'customers', 'rates', 'capacity']);
     setPlanDialogOpen(true);
   };
 
   const savePlanMutation = useMutation({
     mutationFn: async () => {
-      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces) };
+      const finalModules = pModules.includes('reports_download') && !pModules.includes('reports')
+        ? [...pModules, 'reports'] : pModules;
+      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces), modules: finalModules };
       if (editingPlan) {
         const { error } = await supabase.from('plans').update(planData).eq('id', editingPlan.id);
         if (error) throw error;
@@ -195,6 +211,9 @@ export default function SuperAdmin() {
     { key: 'description', label: 'Descripción' },
     { key: 'price_monthly', label: 'Precio Mensual', render: (r) => formatCurrency(r.price_monthly) },
     { key: 'max_spaces', label: 'Max Espacios' },
+    { key: 'modules', label: 'Módulos', render: (r) => (
+      <div className="flex flex-wrap gap-1">{(Array.isArray(r.modules) ? r.modules : []).map((m: string) => <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>)}</div>
+    )},
     { key: 'is_active', label: 'Activo', render: (r) => <Badge variant={r.is_active ? 'default' : 'secondary'}>{r.is_active ? 'Sí' : 'No'}</Badge> },
   ];
 
@@ -375,6 +394,32 @@ export default function SuperAdmin() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
               <div className="space-y-2"><Label>Max espacios</Label><Input type="number" value={pMaxSpaces} onChange={(e) => setPMaxSpaces(e.target.value)} /></div>
+            </div>
+            <div className="space-y-2">
+              <Label>Módulos incluidos</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {ALL_MODULES.map((mod) => (
+                  <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={pModules.includes(mod.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          const next = [...pModules, mod.key];
+                          // If adding reports_download, auto-add reports
+                          if (mod.key === 'reports_download' && !next.includes('reports')) next.push('reports');
+                          setPModules(next);
+                        } else {
+                          let next = pModules.filter((m) => m !== mod.key);
+                          // If removing reports, also remove reports_download
+                          if (mod.key === 'reports') next = next.filter((m) => m !== 'reports_download');
+                          setPModules(next);
+                        }
+                      }}
+                    />
+                    {mod.label}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -23,7 +23,8 @@ type Period = 'today' | 'week' | 'month' | 'custom';
 
 export default function Reports() {
   const { tenantId } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
+  const canDownload = planModules.length === 0 || planModules.includes('reports_download');
   const [period, setPeriod] = useState<Period>('today');
   const [vehicleFilter, setVehicleFilter] = useState<string>('all');
   const [customFrom, setCustomFrom] = useState('');
@@ -150,9 +151,11 @@ export default function Reports() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Reportes</h1>
           <p className="text-sm text-muted-foreground">Genera reportes de ingresos y actividad</p>
         </div>
-        <Button onClick={exportPDF} disabled={filtered.length === 0} className="w-full sm:w-auto">
-          <Download className="h-4 w-4 mr-1" /> Exportar PDF
-        </Button>
+        {canDownload && (
+          <Button onClick={exportPDF} disabled={filtered.length === 0} className="w-full sm:w-auto">
+            <Download className="h-4 w-4 mr-1" /> Exportar PDF
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
