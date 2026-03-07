@@ -50,6 +50,18 @@ export default function SuperAdmin() {
   const [pDesc, setPDesc] = useState('');
   const [pPrice, setPPrice] = useState('');
   const [pMaxSpaces, setPMaxSpaces] = useState('50');
+  const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
+
+  const ALL_MODULES = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'parking', label: 'Vehículos' },
+    { key: 'customers', label: 'Clientes' },
+    { key: 'rates', label: 'Tarifas' },
+    { key: 'capacity', label: 'Aforo' },
+    { key: 'reports', label: 'Reportes (solo ver)' },
+    { key: 'reports_download', label: 'Reportes (descargar PDF)' },
+    { key: 'map', label: 'Mapa' },
+  ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
     queryKey: ['admin-tenants'],
