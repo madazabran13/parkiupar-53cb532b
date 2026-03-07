@@ -140,6 +140,8 @@ export default function Reports() {
     doc.save(`reporte-${tenant?.slug || 'parking'}-${formatDate(new Date())}.pdf`);
   };
 
+  if (isLoading) return <ReportsSkeleton />;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
