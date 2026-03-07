@@ -297,6 +297,53 @@ export type Database = {
           },
         ]
       }
+      vehicle_categories: {
+        Row: {
+          created_at: string
+          fraction_minutes: number
+          icon: string
+          id: string
+          is_active: boolean
+          minimum_minutes: number
+          name: string
+          rate_per_hour: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fraction_minutes?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          minimum_minutes?: number
+          name: string
+          rate_per_hour?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fraction_minutes?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          minimum_minutes?: number
+          name?: string
+          rate_per_hour?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_rates: {
         Row: {
           created_at: string
