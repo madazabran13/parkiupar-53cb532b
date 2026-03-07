@@ -24,6 +24,7 @@ export default function SuperAdmin() {
 
   const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
 
+  const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
