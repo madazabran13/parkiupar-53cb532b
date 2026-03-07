@@ -61,6 +61,7 @@ const App = () => (
               <Route path="/team" element={<TeamUsers />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/my-plan" element={<MyPlan />} />
+              <Route path="/audit" element={<AuditLog />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
 

@@ -37,6 +37,7 @@ const MENU_ITEMS = {
   capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'operator'] },
   map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
+  audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
 } as const;
