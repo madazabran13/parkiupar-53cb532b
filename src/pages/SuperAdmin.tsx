@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Plus, Edit, Building2, CreditCard, Users, Car } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
+import { TableSkeleton } from '@/components/ui/PageSkeletons';
 
 export default function SuperAdmin() {
   const location = useLocation();
