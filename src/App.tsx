@@ -73,6 +73,7 @@ const App = () => (
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
             </Route>
 
+            <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
