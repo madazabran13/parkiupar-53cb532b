@@ -463,6 +463,15 @@ export default function MapPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleRefresh}
+            title="Actualizar datos"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
           <Button variant="outline" size="icon" className="md:hidden" onClick={() => setShowList(!showList)}>
             {showList ? <X className="h-4 w-4" /> : <List className="h-4 w-4" />}
           </Button>
