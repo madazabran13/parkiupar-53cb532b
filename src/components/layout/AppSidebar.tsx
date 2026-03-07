@@ -12,6 +12,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
