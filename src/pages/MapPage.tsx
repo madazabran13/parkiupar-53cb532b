@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car } from 'lucide-react';
+import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw } from 'lucide-react';
 import type { Tenant, VehicleCategory } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -60,12 +60,21 @@ export default function MapPage() {
   const markersRef = useRef<L.Marker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState<number>(50000);
   const [locating, setLocating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+    await queryClient.invalidateQueries({ queryKey: ['map-rates'] });
+    setTimeout(() => setRefreshing(false), 600);
+  }, [queryClient]);
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
@@ -145,10 +154,12 @@ export default function MapPage() {
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {})
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -452,6 +463,15 @@ export default function MapPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleRefresh}
+            title="Actualizar datos"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
           <Button variant="outline" size="icon" className="md:hidden" onClick={() => setShowList(!showList)}>
             {showList ? <X className="h-4 w-4" /> : <List className="h-4 w-4" />}
           </Button>
