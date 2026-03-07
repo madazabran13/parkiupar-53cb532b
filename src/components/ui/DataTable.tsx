@@ -123,8 +123,8 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={searchPlaceholder}
@@ -133,17 +133,19 @@ export function DataTable<T extends Record<string, any>>({
             className="pl-9"
           />
         </div>
-        <Button
-          variant={showColumnFilters ? 'secondary' : 'outline'}
-          size="sm"
-          onClick={() => setShowColumnFilters(!showColumnFilters)}
-        >
-          <Filter className="h-4 w-4 mr-1" />
-          Filtros
-        </Button>
-        <span className="text-xs text-muted-foreground ml-auto">
-          {filtered.length} de {data.length} registros
-        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showColumnFilters ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => setShowColumnFilters(!showColumnFilters)}
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            Filtros
+          </Button>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {filtered.length} de {data.length}
+          </span>
+        </div>
       </div>
 
       {/* Table */}
