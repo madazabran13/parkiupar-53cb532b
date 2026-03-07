@@ -449,7 +449,6 @@ function SuperAdminUsers({ tenants }: { tenants: Tenant[] }) {
     { value: 'admin', label: 'Administrador' },
     { value: 'operator', label: 'Operador' },
     { value: 'viewer', label: 'Visor' },
-    { value: 'enduser', label: 'Usuario Final' },
   ];
 
   const { data: users = [], isLoading } = useQuery({
