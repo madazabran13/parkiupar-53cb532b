@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Edit, Building2, CreditCard, Users, Car } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
 import type { Tenant, Plan } from '@/types';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
