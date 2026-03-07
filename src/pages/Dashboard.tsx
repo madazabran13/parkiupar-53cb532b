@@ -94,6 +94,10 @@ export default function Dashboard() {
     cantidad: todayCompleted.filter((s) => s.vehicle_type === type).length,
   })).filter((d) => d.cantidad > 0);
 
+  if (loadingSessions) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       <div>
