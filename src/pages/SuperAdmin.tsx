@@ -82,6 +82,33 @@ export default function SuperAdmin() {
     },
   });
 
+  const { data: planRequests = [] } = useQuery({
+    queryKey: ['plan-requests'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('plan_requests')
+        .select('*, tenant:tenants(name), current_plan:plans!plan_requests_current_plan_id_fkey(name), requested_plan:plans!plan_requests_requested_plan_id_fkey(name, price_monthly)')
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const pendingRequests = planRequests.filter((r: any) => r.status === 'pending');
+
+  const handleRequestAction = async (requestId: string, status: 'approved' | 'rejected', tenantId?: string, planId?: string, notes?: string) => {
+    const { error } = await supabase.from('plan_requests').update({ status, admin_notes: notes || null }).eq('id', requestId);
+    if (error) { toast.error(`Error: ${error.message}`); return; }
+    if (status === 'approved' && tenantId && planId) {
+      const plan = plans.find(p => p.id === planId);
+      if (plan) {
+        await supabase.from('tenants').update({ plan_id: planId, total_spaces: plan.max_spaces }).eq('id', tenantId);
+      }
+    }
+    toast.success(status === 'approved' ? 'Solicitud aprobada y plan actualizado' : 'Solicitud rechazada');
+    queryClient.invalidateQueries({ queryKey: ['plan-requests'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+  };
+
   // Global metrics
   const totalTenants = tenants.length;
   const activeTenants = tenants.filter((t) => t.is_active).length;
