@@ -67,6 +67,7 @@ const App = () => (
             >
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/superadmin/plans" element={<SuperAdmin />} />
+              <Route path="/superadmin/users" element={<SuperAdmin />} />
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
             </Route>
 
