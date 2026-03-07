@@ -18,6 +18,7 @@ import { formatCurrency, formatDateTime, formatDuration, formatTime } from '@/li
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate, VehicleType } from '@/types';
+import { TableSkeleton } from '@/components/ui/PageSkeletons';
 
 export default function Parking() {
   const { tenantId } = useAuth();
