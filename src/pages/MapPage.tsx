@@ -110,21 +110,35 @@ export default function MapPage() {
     tenants.forEach((tenant) => {
       if (!tenant.latitude || !tenant.longitude) return;
       const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+      const pct = tenant.total_spaces > 0 ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100) : 0;
+      const statusLabel = tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
+
       const marker = L.marker([Number(tenant.latitude), Number(tenant.longitude)], {
-        icon: createColoredIcon(color),
+        icon: createColoredIcon(color, tenant.available_spaces, tenant.total_spaces),
       }).addTo(mapInstance.current!);
 
       marker.bindPopup(`
-        <div style="min-width:200px">
-          <h3 style="font-weight:bold;font-size:14px;margin:0 0 4px">${tenant.name}</h3>
-          <p style="color:#666;font-size:12px;margin:0 0 8px">${tenant.address || 'Valledupar'}</p>
-          <div style="display:flex;justify-content:space-between;align-items:center;background:#f3f4f6;padding:8px;border-radius:6px">
-            <span style="font-size:12px;color:#666">Disponibles</span>
-            <span style="font-weight:bold;font-size:16px;color:${color}">${tenant.available_spaces}/${tenant.total_spaces}</span>
+        <div style="min-width:240px;font-family:system-ui,-apple-system,sans-serif;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+            <h3 style="font-weight:700;font-size:15px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
           </div>
-          ${tenant.phone ? `<p style="font-size:12px;margin:8px 0 0;color:#666">📞 ${tenant.phone}</p>` : ''}
+          <p style="color:#666;font-size:12px;margin:0 0 10px;padding-left:18px;">📍 ${tenant.address || 'Valledupar'}</p>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px 12px;border-radius:8px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Espacios libres</div>
+                <div style="font-size:24px;font-weight:800;color:${color};line-height:1.2;">${tenant.available_spaces}<span style="font-size:14px;font-weight:400;color:#94a3b8;">/${tenant.total_spaces}</span></div>
+              </div>
+              <div style="text-align:right;">
+                <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;color:white;background:${color};">${statusLabel}</span>
+                <div style="font-size:11px;color:#94a3b8;margin-top:4px;">${pct}% ocupado</div>
+              </div>
+            </div>
+          </div>
+          ${tenant.phone ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;">📞 <a href="tel:${tenant.phone}" style="color:#3b82f6;text-decoration:none;">${tenant.phone}</a></div>` : ''}
         </div>
-      `);
+      `, { className: 'parking-popup', maxWidth: 280 });
 
       markersRef.current.push(marker);
     });
