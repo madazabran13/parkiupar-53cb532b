@@ -298,7 +298,7 @@ export default function SuperAdmin() {
               <div className="space-y-2"><Label>Teléfono</Label><Input value={tPhone} onChange={(e) => setTPhone(e.target.value)} /></div>
               <div className="space-y-2"><Label>Email</Label><Input type="email" value={tEmail} onChange={(e) => setTEmail(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Espacios</Label><Input type="number" value={tSpaces} onChange={(e) => setTSpaces(e.target.value)} /></div>
               <div className="space-y-2"><Label>Latitud</Label><Input value={tLat} onChange={(e) => setTLat(e.target.value)} /></div>
               <div className="space-y-2"><Label>Longitud</Label><Input value={tLng} onChange={(e) => setTLng(e.target.value)} /></div>
