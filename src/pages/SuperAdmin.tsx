@@ -172,7 +172,9 @@ export default function SuperAdmin() {
 
   const savePlanMutation = useMutation({
     mutationFn: async () => {
-      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces) };
+      const finalModules = pModules.includes('reports_download') && !pModules.includes('reports')
+        ? [...pModules, 'reports'] : pModules;
+      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces), modules: finalModules };
       if (editingPlan) {
         const { error } = await supabase.from('plans').update(planData).eq('id', editingPlan.id);
         if (error) throw error;
