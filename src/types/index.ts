@@ -20,8 +20,6 @@ export interface Tenant {
   name: string;
   slug: string;
   logo_url: string | null;
-  primary_color: string;
-  secondary_color: string;
   plan_id: string | null;
   address: string | null;
   city: string;

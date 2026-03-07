@@ -37,8 +37,6 @@ export default function SuperAdmin() {
   const [tPhone, setTPhone] = useState('');
   const [tEmail, setTEmail] = useState('');
   const [tSpaces, setTSpaces] = useState('20');
-  const [tPrimaryColor, setTPrimaryColor] = useState('#1e40af');
-  const [tSecondaryColor, setTSecondaryColor] = useState('#3b82f6');
   const [tLat, setTLat] = useState('10.4735');
   const [tLng, setTLng] = useState('-73.2503');
   const [tPlanId, setTPlanId] = useState('');
@@ -75,7 +73,7 @@ export default function SuperAdmin() {
 
   const resetTenantForm = () => {
     setTName(''); setTSlug(''); setTAddress(''); setTPhone(''); setTEmail('');
-    setTSpaces('20'); setTPrimaryColor('#1e40af'); setTSecondaryColor('#3b82f6');
+    setTSpaces('20');
     setTLat('10.4735'); setTLng('-73.2503'); setTPlanId('');
     setAdminName(''); setAdminEmail(''); setAdminPassword('');
     setEditingTenant(null);
@@ -84,8 +82,7 @@ export default function SuperAdmin() {
   const openEditTenant = (t: Tenant) => {
     setEditingTenant(t);
     setTName(t.name); setTSlug(t.slug); setTAddress(t.address || ''); setTPhone(t.phone || '');
-    setTEmail(t.email || ''); setTSpaces(String(t.total_spaces)); setTPrimaryColor(t.primary_color);
-    setTSecondaryColor(t.secondary_color); setTLat(String(t.latitude || '')); setTLng(String(t.longitude || ''));
+    setTEmail(t.email || ''); setTSpaces(String(t.total_spaces)); setTLat(String(t.latitude || '')); setTLng(String(t.longitude || ''));
     setTPlanId(t.plan_id || '');
     setTenantDialogOpen(true);
   };
@@ -102,8 +99,6 @@ export default function SuperAdmin() {
         email: tEmail || null,
         total_spaces: parseInt(tSpaces),
         available_spaces: editingTenant ? editingTenant.available_spaces : parseInt(tSpaces),
-        primary_color: tPrimaryColor,
-        secondary_color: tSecondaryColor,
         latitude: tLat ? parseFloat(tLat) : null,
         longitude: tLng ? parseFloat(tLng) : null,
         plan_id: tPlanId || null,
@@ -323,22 +318,6 @@ export default function SuperAdmin() {
               <div className="space-y-2"><Label>Espacios</Label><Input type="number" value={tSpaces} onChange={(e) => setTSpaces(e.target.value)} /></div>
               <div className="space-y-2"><Label>Latitud</Label><Input value={tLat} onChange={(e) => setTLat(e.target.value)} /></div>
               <div className="space-y-2"><Label>Longitud</Label><Input value={tLng} onChange={(e) => setTLng(e.target.value)} /></div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Color primario</Label>
-                <div className="flex gap-2">
-                  <input type="color" value={tPrimaryColor} onChange={(e) => setTPrimaryColor(e.target.value)} className="h-10 w-10 rounded border cursor-pointer" />
-                  <Input value={tPrimaryColor} onChange={(e) => setTPrimaryColor(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Color secundario</Label>
-                <div className="flex gap-2">
-                  <input type="color" value={tSecondaryColor} onChange={(e) => setTSecondaryColor(e.target.value)} className="h-10 w-10 rounded border cursor-pointer" />
-                  <Input value={tSecondaryColor} onChange={(e) => setTSecondaryColor(e.target.value)} />
-                </div>
-              </div>
             </div>
             {plans.length > 0 && (
               <div className="space-y-2">

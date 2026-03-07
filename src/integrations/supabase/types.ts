@@ -194,8 +194,6 @@ export type Database = {
           name: string
           phone: string | null
           plan_id: string | null
-          primary_color: string
-          secondary_color: string
           settings: Json | null
           slug: string
           total_spaces: number
@@ -215,8 +213,6 @@ export type Database = {
           name: string
           phone?: string | null
           plan_id?: string | null
-          primary_color?: string
-          secondary_color?: string
           settings?: Json | null
           slug: string
           total_spaces?: number
@@ -236,8 +232,6 @@ export type Database = {
           name?: string
           phone?: string | null
           plan_id?: string | null
-          primary_color?: string
-          secondary_color?: string
           settings?: Json | null
           slug?: string
           total_spaces?: number
