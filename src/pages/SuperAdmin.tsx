@@ -395,6 +395,32 @@ export default function SuperAdmin() {
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
               <div className="space-y-2"><Label>Max espacios</Label><Input type="number" value={pMaxSpaces} onChange={(e) => setPMaxSpaces(e.target.value)} /></div>
             </div>
+            <div className="space-y-2">
+              <Label>Módulos incluidos</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {ALL_MODULES.map((mod) => (
+                  <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={pModules.includes(mod.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          const next = [...pModules, mod.key];
+                          // If adding reports_download, auto-add reports
+                          if (mod.key === 'reports_download' && !next.includes('reports')) next.push('reports');
+                          setPModules(next);
+                        } else {
+                          let next = pModules.filter((m) => m !== mod.key);
+                          // If removing reports, also remove reports_download
+                          if (mod.key === 'reports') next = next.filter((m) => m !== 'reports_download');
+                          setPModules(next);
+                        }
+                      }}
+                    />
+                    {mod.label}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setPlanDialogOpen(false); resetPlanForm(); }}>Cancelar</Button>
