@@ -140,10 +140,22 @@ export default function Capacity() {
     return () => clearTimeout(timeout);
   }, [plate, searchPlate]);
 
+  // Get max spaces from tenant's plan
+  const { data: tenantPlan } = useQuery({
+    queryKey: ['tenant-plan', tenant?.plan_id],
+    enabled: !!tenant?.plan_id,
+    queryFn: async () => {
+      const { data } = await supabase.from('plans').select('max_spaces').eq('id', tenant!.plan_id!).single();
+      return data;
+    },
+  });
+  const maxSpaces = tenantPlan?.max_spaces || 999;
+
   const updateCapacity = useMutation({
     mutationFn: async () => {
       const cap = parseInt(newCapacity);
       if (isNaN(cap) || cap < 1) throw new Error('Invalid');
+      if (cap > maxSpaces) throw new Error(`El máximo de espacios según tu plan es ${maxSpaces}`);
       const occupied = tenant ? tenant.total_spaces - tenant.available_spaces : 0;
       const { error } = await supabase.from('tenants').update({
         total_spaces: cap,
@@ -156,7 +168,7 @@ export default function Capacity() {
       setConfigOpen(false);
       queryClient.invalidateQueries({ queryKey: ['tenant'] });
     },
-    onError: () => toast.error('Error al actualizar'),
+    onError: (e) => toast.error(e.message || 'Error al actualizar'),
   });
 
   const entryMutation = useMutation({
