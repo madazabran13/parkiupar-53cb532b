@@ -123,8 +123,8 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={searchPlaceholder}
@@ -133,22 +133,24 @@ export function DataTable<T extends Record<string, any>>({
             className="pl-9"
           />
         </div>
-        <Button
-          variant={showColumnFilters ? 'secondary' : 'outline'}
-          size="sm"
-          onClick={() => setShowColumnFilters(!showColumnFilters)}
-        >
-          <Filter className="h-4 w-4 mr-1" />
-          Filtros
-        </Button>
-        <span className="text-xs text-muted-foreground ml-auto">
-          {filtered.length} de {data.length} registros
-        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showColumnFilters ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => setShowColumnFilters(!showColumnFilters)}
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            Filtros
+          </Button>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {filtered.length} de {data.length}
+          </span>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
               {columns.map((col) => (
@@ -216,7 +218,7 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">
             Página {safeCurrentPage} de {totalPages}
           </span>
@@ -227,12 +229,12 @@ export function DataTable<T extends Record<string, any>>({
             <Button variant="outline" size="icon" className="h-8 w-8" disabled={safeCurrentPage === 1} onClick={() => setPage(safeCurrentPage - 1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
               let pageNum: number;
-              if (totalPages <= 5) pageNum = i + 1;
-              else if (safeCurrentPage <= 3) pageNum = i + 1;
-              else if (safeCurrentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-              else pageNum = safeCurrentPage - 2 + i;
+              if (totalPages <= 3) pageNum = i + 1;
+              else if (safeCurrentPage <= 2) pageNum = i + 1;
+              else if (safeCurrentPage >= totalPages - 1) pageNum = totalPages - 2 + i;
+              else pageNum = safeCurrentPage - 1 + i;
               return (
                 <Button
                   key={pageNum}

@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MapPin, Phone, Search, Navigation } from 'lucide-react';
+import { MapPin, Phone, Search, List, X } from 'lucide-react';
 import type { Tenant } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix default icon issue with webpack/vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -21,13 +20,12 @@ L.Icon.Default.mergeOptions({
 });
 
 function getAvailabilityColor(available: number, total: number): string {
-  if (available === 0) return '#ef4444'; // red
-  if (available / total < 0.2) return '#f59e0b'; // yellow
-  return '#22c55e'; // green
+  if (available === 0) return '#ef4444';
+  if (available / total < 0.2) return '#f59e0b';
+  return '#22c55e';
 }
 
-function createColoredIcon(color: string, available: number, total: number) {
-  const pct = total > 0 ? Math.round((available / total) * 100) : 0;
+function createColoredIcon(color: string, available: number) {
   return L.divIcon({
     className: 'custom-marker',
     html: `
@@ -50,6 +48,7 @@ export default function MapPage() {
   const markersRef = useRef<L.Marker[]>([]);
   const { user } = useAuth();
   const [search, setSearch] = useState('');
+  const [showList, setShowList] = useState(false);
 
   const { data: tenants = [] } = useQuery({
     queryKey: ['map-tenants'],
@@ -63,47 +62,28 @@ export default function MapPage() {
     },
   });
 
-  // Realtime subscription for tenant updates
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {
-        // Will be handled by react-query refetch
-      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {})
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Initialize map
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
-
-    mapInstance.current = L.map(mapRef.current, {
-      zoomControl: false,
-    }).setView([10.4735, -73.2503], 15);
-
-    // Clean CartoDB Positron tiles - minimal, street names only
+    mapInstance.current = L.map(mapRef.current, { zoomControl: false }).setView([10.4735, -73.2503], 15);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
       subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(mapInstance.current);
-
-    // Position zoom control on the right
     L.control.zoom({ position: 'bottomright' }).addTo(mapInstance.current);
-
-    return () => {
-      mapInstance.current?.remove();
-      mapInstance.current = null;
-    };
+    return () => { mapInstance.current?.remove(); mapInstance.current = null; };
   }, []);
 
-  // Update markers when tenants change
   useEffect(() => {
     if (!mapInstance.current) return;
-
-    // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
@@ -114,27 +94,25 @@ export default function MapPage() {
       const statusLabel = tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
 
       const marker = L.marker([Number(tenant.latitude), Number(tenant.longitude)], {
-        icon: createColoredIcon(color, tenant.available_spaces, tenant.total_spaces),
+        icon: createColoredIcon(color, tenant.available_spaces),
       }).addTo(mapInstance.current!);
 
       marker.on('click', () => {
-        mapInstance.current?.flyTo([Number(tenant.latitude), Number(tenant.longitude)], 18, {
-          duration: 1,
-        });
+        mapInstance.current?.flyTo([Number(tenant.latitude), Number(tenant.longitude)], 18, { duration: 1 });
       });
 
       marker.bindPopup(`
-        <div style="min-width:240px;font-family:system-ui,-apple-system,sans-serif;">
+        <div style="min-width:200px;font-family:system-ui,-apple-system,sans-serif;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
             <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-            <h3 style="font-weight:700;font-size:15px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
+            <h3 style="font-weight:700;font-size:14px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
           </div>
           <p style="color:#666;font-size:12px;margin:0 0 10px;padding-left:18px;">📍 ${tenant.address || 'Valledupar'}</p>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px 12px;border-radius:8px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
                 <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Espacios libres</div>
-                <div style="font-size:24px;font-weight:800;color:${color};line-height:1.2;">${tenant.available_spaces}<span style="font-size:14px;font-weight:400;color:#94a3b8;">/${tenant.total_spaces}</span></div>
+                <div style="font-size:22px;font-weight:800;color:${color};line-height:1.2;">${tenant.available_spaces}<span style="font-size:13px;font-weight:400;color:#94a3b8;">/${tenant.total_spaces}</span></div>
               </div>
               <div style="text-align:right;">
                 <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;color:white;background:${color};">${statusLabel}</span>
@@ -163,77 +141,96 @@ export default function MapPage() {
       });
       marker?.openPopup();
     }
+    setShowList(false);
   };
+
+  const TenantList = () => (
+    <>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="Buscar parqueadero..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      </div>
+      <div className="flex flex-wrap gap-2 text-xs">
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#22c55e' }} /> Disponible</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} /> Casi lleno</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#ef4444' }} /> Lleno</Badge>
+      </div>
+      <div className="flex-1 overflow-auto space-y-2">
+        {filteredTenants.map((tenant) => {
+          const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+          return (
+            <Card key={tenant.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => focusTenant(tenant)}>
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm truncate">{tenant.name}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <MapPin className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{tenant.address || 'Valledupar'}</span>
+                    </p>
+                    {tenant.phone && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Phone className="h-3 w-3 flex-shrink-0" /> {tenant.phone}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <div className="text-lg font-bold" style={{ color }}>{tenant.available_spaces}</div>
+                    <p className="text-[10px] text-muted-foreground">de {tenant.total_spaces}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+        {filteredTenants.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">No se encontraron parqueaderos</p>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] gap-4">
-      {/* Header - only show login button on public route */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Mapa de Parqueaderos</h1>
-          <p className="text-muted-foreground">Disponibilidad en tiempo real en Valledupar</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Mapa de Parqueaderos</h1>
+          <p className="text-sm text-muted-foreground">Disponibilidad en tiempo real</p>
         </div>
-        {!user && (
-          <Link to="/login">
-            <Button variant="outline">Iniciar Sesión</Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Mobile toggle for list */}
+          <Button variant="outline" size="icon" className="md:hidden" onClick={() => setShowList(!showList)}>
+            {showList ? <X className="h-4 w-4" /> : <List className="h-4 w-4" />}
+          </Button>
+          {!user && (
+            <Link to="/login">
+              <Button variant="outline" size="sm">Iniciar Sesión</Button>
+            </Link>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-1 gap-4 min-h-0">
-        {/* Sidebar list */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar parqueadero..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-          </div>
-
-          {/* Legend */}
-          <div className="flex gap-2 text-xs">
-            <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#22c55e' }} /> Disponible</Badge>
-            <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} /> Casi lleno</Badge>
-            <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#ef4444' }} /> Lleno</Badge>
-          </div>
-
-          <div className="flex-1 overflow-auto space-y-2">
-            {filteredTenants.map((tenant) => {
-              const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
-              return (
-                <Card
-                  key={tenant.id}
-                  className="cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => focusTenant(tenant)}
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-sm">{tenant.name}</h3>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <MapPin className="h-3 w-3" /> {tenant.address || 'Valledupar'}
-                        </p>
-                        {tenant.phone && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Phone className="h-3 w-3" /> {tenant.phone}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold" style={{ color }}>{tenant.available_spaces}</div>
-                        <p className="text-[10px] text-muted-foreground">de {tenant.total_spaces}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            {filteredTenants.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">No se encontraron parqueaderos</p>
-            )}
-          </div>
+      <div className="flex flex-1 gap-4 min-h-0 relative">
+        {/* Desktop sidebar */}
+        <div className="hidden md:flex w-72 lg:w-80 flex-shrink-0 flex-col gap-3">
+          <TenantList />
         </div>
 
+        {/* Mobile slide-over list */}
+        {showList && (
+          <div className="absolute inset-0 z-20 bg-background/95 backdrop-blur-sm flex flex-col gap-3 p-2 md:hidden overflow-auto">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold text-sm">Parqueaderos</h3>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowList(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <TenantList />
+          </div>
+        )}
+
         {/* Map */}
-        <div ref={mapRef} className="flex-1 rounded-lg border overflow-hidden" />
+        <div ref={mapRef} className="flex-1 rounded-lg border overflow-hidden min-h-[300px]" />
       </div>
     </div>
   );

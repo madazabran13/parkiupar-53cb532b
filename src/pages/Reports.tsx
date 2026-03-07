@@ -142,22 +142,22 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Reportes</h1>
-          <p className="text-muted-foreground">Genera reportes de ingresos y actividad</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Reportes</h1>
+          <p className="text-sm text-muted-foreground">Genera reportes de ingresos y actividad</p>
         </div>
-        <Button onClick={exportPDF} disabled={filtered.length === 0}>
+        <Button onClick={exportPDF} disabled={filtered.length === 0} className="w-full sm:w-auto">
           <Download className="h-4 w-4 mr-1" /> Exportar PDF
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
+        <div className="space-y-1 col-span-2 sm:col-span-1">
           <Label className="text-xs">Período</Label>
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="today">Hoy</SelectItem>
               <SelectItem value="week">Esta semana</SelectItem>
@@ -170,18 +170,18 @@ export default function Reports() {
           <>
             <div className="space-y-1">
               <Label className="text-xs">Desde</Label>
-              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-40" />
+              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-full sm:w-40" />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Hasta</Label>
-              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-40" />
+              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-full sm:w-40" />
             </div>
           </>
         )}
-        <div className="space-y-1">
+        <div className="space-y-1 col-span-2 sm:col-span-1">
           <Label className="text-xs">Tipo de vehículo</Label>
           <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
@@ -193,7 +193,7 @@ export default function Reports() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos Totales</CardTitle>

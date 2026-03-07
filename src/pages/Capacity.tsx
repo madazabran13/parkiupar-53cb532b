@@ -120,12 +120,12 @@ export default function Capacity() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Aforo</h1>
-          <p className="text-muted-foreground">Visualización de la capacidad del parqueadero</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Aforo</h1>
+          <p className="text-sm text-muted-foreground">Visualización de la capacidad del parqueadero</p>
         </div>
-        <Button variant="outline" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }}>
+        <Button variant="outline" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }} className="w-full sm:w-auto">
           <Settings className="h-4 w-4 mr-1" /> Configurar
         </Button>
       </div>
@@ -165,7 +165,7 @@ export default function Capacity() {
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><ParkingCircle className="h-5 w-5" /> Mapa de Espacios</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
             {finalSpaces.map((space) => (
               <div
                 key={space.num}

@@ -204,7 +204,7 @@ export default function SuperAdmin() {
       </div>
 
       {/* Global metrics */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Parqueaderos</CardTitle>
@@ -232,9 +232,9 @@ export default function SuperAdmin() {
       </div>
 
       <Tabs defaultValue="tenants">
-        <TabsList>
-          <TabsTrigger value="tenants">Parqueaderos</TabsTrigger>
-          <TabsTrigger value="plans">Planes</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="tenants" className="flex-1 sm:flex-none">Parqueaderos</TabsTrigger>
+          <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
@@ -280,7 +280,7 @@ export default function SuperAdmin() {
             <DialogDescription>Completa la información del parqueadero</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Nombre *</Label>
                 <Input value={tName} onChange={(e) => { setTName(e.target.value); if (!editingTenant) setTSlug(slugify(e.target.value)); }} />
@@ -294,16 +294,16 @@ export default function SuperAdmin() {
               <Label>Dirección</Label>
               <Input value={tAddress} onChange={(e) => setTAddress(e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Teléfono</Label><Input value={tPhone} onChange={(e) => setTPhone(e.target.value)} /></div>
               <div className="space-y-2"><Label>Email</Label><Input type="email" value={tEmail} onChange={(e) => setTEmail(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Espacios</Label><Input type="number" value={tSpaces} onChange={(e) => setTSpaces(e.target.value)} /></div>
               <div className="space-y-2"><Label>Latitud</Label><Input value={tLat} onChange={(e) => setTLat(e.target.value)} /></div>
               <div className="space-y-2"><Label>Longitud</Label><Input value={tLng} onChange={(e) => setTLng(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Color primario</Label>
                 <div className="flex gap-2">
@@ -362,7 +362,7 @@ export default function SuperAdmin() {
           <div className="space-y-4">
             <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
             <div className="space-y-2"><Label>Descripción</Label><Input value={pDesc} onChange={(e) => setPDesc(e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
               <div className="space-y-2"><Label>Max espacios</Label><Input type="number" value={pMaxSpaces} onChange={(e) => setPMaxSpaces(e.target.value)} /></div>
             </div>
