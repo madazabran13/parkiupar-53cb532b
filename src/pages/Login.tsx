@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Car } from 'lucide-react';
+import { Car, MapPin } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -82,6 +82,14 @@ export default function Login() {
           <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate('/map-public')}
+            >
+              <MapPin className="h-4 w-4 mr-1" /> Ingresar como Invitado
             </Button>
             <p className="text-sm text-muted-foreground">
               ¿No tienes cuenta?{' '}

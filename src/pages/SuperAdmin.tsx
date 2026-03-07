@@ -61,6 +61,7 @@ export default function SuperAdmin() {
     { key: 'reports', label: 'Reportes (solo ver)' },
     { key: 'reports_download', label: 'Reportes (descargar PDF)' },
     { key: 'map', label: 'Mapa' },
+    { key: 'team', label: 'Gestión de Usuarios' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
