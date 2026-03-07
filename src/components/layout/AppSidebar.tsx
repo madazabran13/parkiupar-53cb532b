@@ -36,7 +36,7 @@ export function AppSidebar() {
   const isSuperadmin = role === 'superadmin';
   const menuItems = isSuperadmin
     ? SUPERADMIN_ITEMS
-    : Object.values(MENU_ITEMS).filter((item) => role && item.roles.includes(role));
+    : Object.values(MENU_ITEMS).filter((item) => role && (item.roles as readonly string[]).includes(role));
 
   return (
     <Sidebar collapsible="icon">
