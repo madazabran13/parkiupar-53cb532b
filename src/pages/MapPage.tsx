@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw } from 'lucide-react';
 import type { Tenant, VehicleCategory } from '@/types';
+import { VEHICLE_TYPE_LABELS } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
@@ -104,6 +105,9 @@ export default function MapPage() {
   // Get all unique category names for filter
   const allCategoryNames = useMemo(() => {
     const names = new Set<string>();
+    // Always include standard vehicle types
+    Object.values(VEHICLE_TYPE_LABELS).forEach(label => names.add(label));
+    // Also include any custom category names from the database
     Object.values(ratesMap).forEach(rates => rates.forEach(r => names.add(r.name)));
     return Array.from(names).sort();
   }, [ratesMap]);
