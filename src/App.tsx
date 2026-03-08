@@ -41,8 +41,14 @@ const App = () => (
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-            {/* Map without auth - will redirect to dashboard map if logged in */}
+            {/* Map without auth */}
             <Route path="/map-public" element={<MapPage />} />
+            {/* Viewer map - same fullscreen experience, but authenticated */}
+            <Route path="/map" element={
+              <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer']}>
+                <MapPage />
+              </ProtectedRoute>
+            } />
 
             {/* Protected dashboard routes */}
             <Route
