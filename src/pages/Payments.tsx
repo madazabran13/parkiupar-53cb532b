@@ -375,7 +375,47 @@ export default function Payments() {
         </CardContent>
       </Card>
 
-      {/* Renewal Dialog */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">
+            {filtered.length} registros — Pág. {safePage} de {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === 1} onClick={() => setPage(1)}>
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+              let pageNum: number;
+              if (totalPages <= 3) pageNum = i + 1;
+              else if (safePage <= 2) pageNum = i + 1;
+              else if (safePage >= totalPages - 1) pageNum = totalPages - 2 + i;
+              else pageNum = safePage - 1 + i;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={pageNum === safePage ? 'default' : 'outline'}
+                  size="icon"
+                  className="h-8 w-8 text-xs"
+                  onClick={() => setPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === totalPages} onClick={() => setPage(totalPages)}>
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={!!renewTenant} onOpenChange={(open) => !open && setRenewTenant(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
