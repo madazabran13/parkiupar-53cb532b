@@ -155,7 +155,7 @@ export default function SuperAdmin() {
 
   const openEditTenant = (t: Tenant) => {
     setEditingTenant(t);
-    setTName(t.name); setTSlug(t.slug); setTAddress(t.address || ''); setTPhone(t.phone || '');
+    setTName(t.name); setTAddress(t.address || ''); setTPhone(t.phone || '');
     setTEmail(t.email || ''); setTSpaces(String(t.total_spaces)); setTLat(String(t.latitude || '')); setTLng(String(t.longitude || ''));
     setTPlanId(t.plan_id || '');
     setTenantDialogOpen(true);
