@@ -43,13 +43,13 @@ export default function AuditLog() {
   const [exporting, setExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['audit-logs', tableFilter, actionFilter, search, page],
+    queryKey: ['audit-logs', tableFilter, actionFilter, search, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from('audit_logs')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (tableFilter !== 'all') query = query.eq('table_name', tableFilter);
       if (actionFilter !== 'all') query = query.eq('action', actionFilter);
