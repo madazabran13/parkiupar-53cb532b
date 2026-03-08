@@ -148,7 +148,11 @@ export default function SuperAdmin() {
 
   const saveTenantMutation = useMutation({
     mutationFn: async () => {
-      const tenantData = {
+      const now = new Date().toISOString();
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+      const tenantData: Record<string, any> = {
         name: tName,
         slug: tSlug || slugify(tName),
         address: tAddress || null,
@@ -160,6 +164,19 @@ export default function SuperAdmin() {
         longitude: tLng ? parseFloat(tLng) : null,
         plan_id: tPlanId || null,
       };
+
+      // Set plan dates when assigning a plan
+      if (tPlanId) {
+        const hadPlanBefore = editingTenant?.plan_id;
+        const planChanged = editingTenant?.plan_id !== tPlanId;
+        if (!hadPlanBefore || planChanged) {
+          tenantData.plan_started_at = now;
+          tenantData.plan_expires_at = expiresAt.toISOString();
+        }
+      } else {
+        tenantData.plan_started_at = null;
+        tenantData.plan_expires_at = null;
+      }
 
       if (editingTenant) {
         const { error } = await supabase.from('tenants').update(tenantData).eq('id', editingTenant.id);
