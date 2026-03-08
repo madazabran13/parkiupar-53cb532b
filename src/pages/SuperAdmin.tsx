@@ -98,6 +98,36 @@ export default function SuperAdmin() {
     },
   });
 
+  // Reactivation requests from notifications
+  const { data: reactivationRequests = [] } = useQuery({
+    queryKey: ['reactivation-requests'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('title', 'Solicitud de reactivación')
+        .eq('is_read', false)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const handleReactivate = async (notifId: string, tenantId: string) => {
+    // Enable tenant
+    const { error } = await supabase.from('tenants').update({ is_active: true }).eq('id', tenantId);
+    if (error) { toast.error(`Error: ${error.message}`); return; }
+    // Mark notification as read
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+    toast.success('Parqueadero reactivado exitosamente');
+    queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+    queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
+  };
+
+  const handleDismissReactivation = async (notifId: string) => {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+    queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
+  };
+
   const pendingRequests = planRequests.filter((r: any) => r.status === 'pending');
 
   const handleRequestAction = async (requestId: string, status: 'approved' | 'rejected', tenantId?: string, planId?: string, notes?: string) => {
