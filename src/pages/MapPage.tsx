@@ -441,18 +441,18 @@ export default function MapPage() {
   return (
     <div className={`flex flex-col ${isPublic ? 'h-[100dvh] p-2 sm:p-4 md:p-6' : 'h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5rem)]'} gap-2 sm:gap-4`}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {isPublic && (
-            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary">
-              <Car className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary flex-shrink-0">
+              <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
             </div>
           )}
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-              {isPublic ? 'ParkingVpar' : 'Mapa de Parqueaderos'}
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl md:text-2xl font-bold text-foreground truncate">
+              {isPublic ? 'ParkingVpar' : 'Mapa'}
             </h1>
-            <p className="text-sm text-muted-foreground">Disponibilidad en tiempo real · {filteredTenants.length} parqueaderos</p>
+            <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{filteredTenants.length} parqueaderos</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
