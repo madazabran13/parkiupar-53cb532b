@@ -295,7 +295,7 @@ export default function MapPage() {
     setShowList(false);
   };
 
-  const TenantList = () => (
+  const tenantListContent = (
     <>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -480,7 +480,7 @@ export default function MapPage() {
       <div className="flex flex-1 gap-4 min-h-0 relative">
         {/* Desktop sidebar */}
         <div className="hidden md:flex w-72 lg:w-80 flex-shrink-0 flex-col gap-3">
-          <TenantList />
+          {tenantListContent}
         </div>
 
         {/* Mobile slide-over list */}
@@ -492,7 +492,7 @@ export default function MapPage() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <TenantList />
+            {tenantListContent}
           </div>
         )}
 
