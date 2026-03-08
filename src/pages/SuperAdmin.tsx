@@ -146,7 +146,7 @@ export default function SuperAdmin() {
   };
 
   const resetTenantForm = () => {
-    setTName(''); setTSlug(''); setTAddress(''); setTPhone(''); setTEmail('');
+    setTName(''); setTAddress(''); setTPhone(''); setTEmail('');
     setTSpaces('20');
     setTLat('10.4735'); setTLng('-73.2503'); setTPlanId('');
     setAdminName(''); setAdminEmail(''); setAdminPassword('');
