@@ -122,6 +122,8 @@ export default function Payments() {
   const [renewMonths, setRenewMonths] = useState(1);
   const [page, setPage] = useState(1);
   const [histPage, setHistPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [histPageSize, setHistPageSize] = useState(10);
   const [activeTab, setActiveTab] = useState('status');
 
   const checkExpirations = useMutation({
