@@ -179,11 +179,11 @@ export default function SuperAdmin() {
       }
 
       if (editingTenant) {
-        const { error } = await supabase.from('tenants').update(tenantData).eq('id', editingTenant.id);
+        const { error } = await supabase.from('tenants').update(tenantData as any).eq('id', editingTenant.id);
         if (error) throw error;
       } else {
         // Create tenant
-        const { data: newTenant, error } = await supabase.from('tenants').insert(tenantData).select('id').single();
+        const { data: newTenant, error } = await supabase.from('tenants').insert(tenantData as any).select('id').single();
         if (error) throw error;
 
         // Create admin user if credentials provided
