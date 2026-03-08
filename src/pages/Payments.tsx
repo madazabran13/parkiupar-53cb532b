@@ -164,6 +164,10 @@ export default function Payments() {
     });
   }, [tenants, search, statusFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const stats = useMemo(() => {
     let expired = 0, warning = 0, active = 0, noPlan = 0;
     tenants.forEach(t => {
