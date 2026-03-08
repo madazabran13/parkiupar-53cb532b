@@ -57,6 +57,8 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
