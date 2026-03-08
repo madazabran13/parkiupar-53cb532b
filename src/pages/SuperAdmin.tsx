@@ -35,7 +35,7 @@ export default function SuperAdmin() {
 
   // Tenant form
   const [tName, setTName] = useState('');
-  const [tSlug, setTSlug] = useState('');
+  
   const [tAddress, setTAddress] = useState('');
   const [tPhone, setTPhone] = useState('');
   const [tEmail, setTEmail] = useState('');
