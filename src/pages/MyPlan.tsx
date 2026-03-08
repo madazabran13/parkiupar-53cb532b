@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { CreditCard, Check, ArrowRight, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, Check, ArrowRight, Clock, CheckCircle2, XCircle, CalendarDays, CalendarClock } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { motion } from 'framer-motion';
 import type { Plan } from '@/types';
