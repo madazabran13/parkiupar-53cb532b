@@ -39,9 +39,21 @@ function getExpirationStatus(expiresAt: string | null): { label: string; variant
 export default function Payments() {
   const { role } = useAuth();
   const { tenant } = useTenant();
+  const queryClient = useQueryClient();
   const isSuperadmin = role === 'superadmin';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const checkExpirations = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-expirations');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
 
   const { data: tenants = [], isLoading } = useQuery({
     queryKey: ['payments-tenants', isSuperadmin, tenant?.id],
