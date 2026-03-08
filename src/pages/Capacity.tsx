@@ -267,8 +267,8 @@ export default function Capacity() {
   };
 
   const totalSpaces = tenant?.total_spaces || 20;
-  const availableSpaces = tenant?.available_spaces || 0;
-  const occupiedSpaces = totalSpaces - availableSpaces;
+  const occupiedSpaces = activeSessions.length;
+  const availableSpaces = Math.max(0, totalSpaces - occupiedSpaces);
 
   const occupiedMap = new Map<string, ParkingSession>();
   activeSessions.forEach((s) => {
@@ -277,7 +277,6 @@ export default function Capacity() {
 
   const sessionsWithoutSpace = [...activeSessions.filter((s) => !s.space_number)];
   const explicitOccupied = new Set([...occupiedMap.keys()].map(Number));
-  let filledCount = explicitOccupied.size;
 
   const finalSpaces = Array.from({ length: totalSpaces }, (_, i) => {
     const num = i + 1;
@@ -285,8 +284,7 @@ export default function Capacity() {
     if (occupiedMap.has(key)) {
       return { num, occupied: true, session: occupiedMap.get(key)!, vehicleType: occupiedMap.get(key)!.vehicle_type };
     }
-    if (!explicitOccupied.has(num) && filledCount < occupiedSpaces && sessionsWithoutSpace.length > 0) {
-      filledCount++;
+    if (!explicitOccupied.has(num) && sessionsWithoutSpace.length > 0) {
       const unassigned = sessionsWithoutSpace.shift();
       return { num, occupied: true, session: unassigned, vehicleType: unassigned?.vehicle_type || 'car' };
     }
