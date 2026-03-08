@@ -126,7 +126,7 @@ export function AppSidebar() {
                   isActive={location.pathname === item.path}
                   tooltip={item.label}
                 >
-                  <Link to={item.path}>
+                  <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
                   </Link>
