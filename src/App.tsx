@@ -25,6 +25,7 @@ import MapPage from "@/pages/MapPage";
 import Payments from "@/pages/Payments";
 import AuditLog from "@/pages/AuditLog";
 import AccessDenied from "@/pages/AccessDenied";
+import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
