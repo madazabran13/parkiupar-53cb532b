@@ -267,8 +267,8 @@ export default function Capacity() {
   };
 
   const totalSpaces = tenant?.total_spaces || 20;
-  const availableSpaces = tenant?.available_spaces || 0;
-  const occupiedSpaces = totalSpaces - availableSpaces;
+  const occupiedSpaces = activeSessions.length;
+  const availableSpaces = Math.max(0, totalSpaces - occupiedSpaces);
 
   const occupiedMap = new Map<string, ParkingSession>();
   activeSessions.forEach((s) => {
