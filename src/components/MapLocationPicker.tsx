@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Label } from '@/components/ui/label';
-import { MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { MapPin, Search, Loader2 } from 'lucide-react';
 
 interface MapLocationPickerProps {
   lat: number;
@@ -15,6 +17,35 @@ export default function MapLocationPicker({ lat, lng, onChange }: MapLocationPic
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const [displayCoords, setDisplayCoords] = useState({ lat, lng });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+
+  const updateMarker = (newLat: number, newLng: number) => {
+    setDisplayCoords({ lat: newLat, lng: newLng });
+    onChange(newLat, newLng);
+    if (markerRef.current && mapInstanceRef.current) {
+      markerRef.current.setLatLng([newLat, newLng]);
+      mapInstanceRef.current.setView([newLat, newLng], Math.max(mapInstanceRef.current.getZoom(), 16));
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        updateMarker(parseFloat(data[0].lat), parseFloat(data[0].lon));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSearching(false);
+    }
+  };
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -54,7 +85,6 @@ export default function MapLocationPicker({ lat, lng, onChange }: MapLocationPic
     mapInstanceRef.current = map;
     markerRef.current = marker;
 
-    // Fix tile rendering in dialog
     setTimeout(() => map.invalidateSize(), 200);
 
     return () => {
@@ -64,7 +94,6 @@ export default function MapLocationPicker({ lat, lng, onChange }: MapLocationPic
     };
   }, []);
 
-  // Sync external lat/lng changes
   useEffect(() => {
     if (markerRef.current && mapInstanceRef.current) {
       const currentPos = markerRef.current.getLatLng();
@@ -81,7 +110,26 @@ export default function MapLocationPicker({ lat, lng, onChange }: MapLocationPic
       <Label className="flex items-center gap-1.5">
         <MapPin className="h-3.5 w-3.5" /> Ubicación del parqueadero
       </Label>
-      <p className="text-xs text-muted-foreground">Haz clic en el mapa o arrastra el marcador para seleccionar la ubicación</p>
+      <div className="flex gap-2">
+        <Input
+          placeholder="Buscar dirección..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
+          className="text-sm"
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={handleSearch}
+          disabled={searching || !searchQuery.trim()}
+          className="flex-shrink-0"
+        >
+          {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Busca una dirección o haz clic en el mapa / arrastra el marcador</p>
       <div
         ref={mapRef}
         className="h-48 w-full rounded-lg border border-border overflow-hidden"
