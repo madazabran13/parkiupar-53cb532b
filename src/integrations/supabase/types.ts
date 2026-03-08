@@ -304,7 +304,9 @@ export type Database = {
           longitude: number | null
           name: string
           phone: string | null
+          plan_expires_at: string | null
           plan_id: string | null
+          plan_started_at: string | null
           settings: Json | null
           slug: string
           total_spaces: number
@@ -323,7 +325,9 @@ export type Database = {
           longitude?: number | null
           name: string
           phone?: string | null
+          plan_expires_at?: string | null
           plan_id?: string | null
+          plan_started_at?: string | null
           settings?: Json | null
           slug: string
           total_spaces?: number
@@ -342,7 +346,9 @@ export type Database = {
           longitude?: number | null
           name?: string
           phone?: string | null
+          plan_expires_at?: string | null
           plan_id?: string | null
+          plan_started_at?: string | null
           settings?: Json | null
           slug?: string
           total_spaces?: number

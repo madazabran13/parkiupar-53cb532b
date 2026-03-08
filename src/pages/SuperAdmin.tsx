@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
@@ -106,10 +106,15 @@ export default function SuperAdmin() {
       if (plan && tenant) {
         const occupied = tenant.total_spaces - tenant.available_spaces;
         const newAvailable = Math.max(plan.max_spaces - occupied, 0);
+        const now = new Date().toISOString();
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
         await supabase.from('tenants').update({
           plan_id: planId,
           total_spaces: plan.max_spaces,
           available_spaces: newAvailable,
+          plan_started_at: now,
+          plan_expires_at: expiresAt.toISOString(),
         }).eq('id', tenantId);
       }
     }
@@ -122,6 +127,23 @@ export default function SuperAdmin() {
   const totalTenants = tenants.length;
   const activeTenants = tenants.filter((t) => t.is_active).length;
   const totalActiveVehicles = tenants.reduce((sum, t) => sum + (t.total_spaces - t.available_spaces), 0);
+
+  // Tenants with plans expiring within 7 days
+  const expiringTenants = tenants.filter((t) => {
+    if (!t.plan_expires_at) return false;
+    const daysLeft = Math.ceil((new Date(t.plan_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return daysLeft <= 7 && daysLeft >= 0;
+  });
+
+  const expiredTenants = tenants.filter((t) => {
+    if (!t.plan_expires_at) return false;
+    return new Date(t.plan_expires_at).getTime() < Date.now();
+  });
+
+  const getDaysUntilExpiry = (expiresAt: string | null) => {
+    if (!expiresAt) return null;
+    return Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  };
 
   const resetTenantForm = () => {
     setTName(''); setTSlug(''); setTAddress(''); setTPhone(''); setTEmail('');
@@ -143,7 +165,11 @@ export default function SuperAdmin() {
 
   const saveTenantMutation = useMutation({
     mutationFn: async () => {
-      const tenantData = {
+      const now = new Date().toISOString();
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+      const tenantData: Record<string, any> = {
         name: tName,
         slug: tSlug || slugify(tName),
         address: tAddress || null,
@@ -156,12 +182,25 @@ export default function SuperAdmin() {
         plan_id: tPlanId || null,
       };
 
+      // Set plan dates when assigning a plan
+      if (tPlanId) {
+        const hadPlanBefore = editingTenant?.plan_id;
+        const planChanged = editingTenant?.plan_id !== tPlanId;
+        if (!hadPlanBefore || planChanged) {
+          tenantData.plan_started_at = now;
+          tenantData.plan_expires_at = expiresAt.toISOString();
+        }
+      } else {
+        tenantData.plan_started_at = null;
+        tenantData.plan_expires_at = null;
+      }
+
       if (editingTenant) {
-        const { error } = await supabase.from('tenants').update(tenantData).eq('id', editingTenant.id);
+        const { error } = await supabase.from('tenants').update(tenantData as any).eq('id', editingTenant.id);
         if (error) throw error;
       } else {
         // Create tenant
-        const { data: newTenant, error } = await supabase.from('tenants').insert(tenantData).select('id').single();
+        const { data: newTenant, error } = await supabase.from('tenants').insert(tenantData as any).select('id').single();
         if (error) throw error;
 
         // Create admin user if credentials provided
@@ -235,11 +274,26 @@ export default function SuperAdmin() {
     { key: 'name', label: 'Nombre' },
     { key: 'slug', label: 'Slug', render: (r) => <Badge variant="outline">{r.slug}</Badge> },
     { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Teléfono' },
     { key: 'total_spaces', label: 'Espacios' },
     { key: 'available_spaces', label: 'Disponibles', render: (r) => (
       <Badge variant={r.available_spaces === 0 ? 'destructive' : 'secondary'}>{r.available_spaces}/{r.total_spaces}</Badge>
     )},
+    { key: 'plan_expires_at', label: 'Vencimiento', render: (r) => {
+      if (!r.plan_expires_at) return <span className="text-muted-foreground text-xs">Sin plan</span>;
+      const days = getDaysUntilExpiry(r.plan_expires_at);
+      const expired = days !== null && days < 0;
+      const expiringSoon = days !== null && days >= 0 && days <= 7;
+      return (
+        <div className="flex items-center gap-1.5">
+          {expired && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
+          {expiringSoon && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+          <span className={`text-xs ${expired ? 'text-destructive font-semibold' : expiringSoon ? 'text-amber-500 font-medium' : 'text-muted-foreground'}`}>
+            {new Date(r.plan_expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {expired ? ' (Vencido)' : expiringSoon ? ` (${days}d)` : ''}
+          </span>
+        </div>
+      );
+    }},
     { key: 'is_active', label: 'Estado', render: (r) => (
       <Switch checked={r.is_active} onCheckedChange={(checked) => toggleTenantMutation.mutate({ id: r.id, is_active: checked })} />
     )},
@@ -292,6 +346,47 @@ export default function SuperAdmin() {
           <CardContent><div className="text-2xl font-bold">{plans.length}</div></CardContent>
         </Card>
       </div>
+
+      {/* Expiration Alerts */}
+      {(expiredTenants.length > 0 || expiringTenants.length > 0) && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Alertas de Vencimiento de Planes ({expiredTenants.length + expiringTenants.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {expiredTenants.map((t) => (
+              <div key={t.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-destructive/20 bg-background">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-destructive" />
+                  <div>
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <p className="text-xs text-destructive">Plan vencido el {new Date(t.plan_expires_at!).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                </div>
+                <Badge variant="destructive">Vencido</Badge>
+              </div>
+            ))}
+            {expiringTenants.map((t) => {
+              const days = getDaysUntilExpiry(t.plan_expires_at);
+              return (
+                <div key={t.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-amber-500/20 bg-background">
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-amber-500" />
+                    <div>
+                      <p className="text-sm font-semibold">{t.name}</p>
+                      <p className="text-xs text-amber-600">Vence en {days} día{days !== 1 ? 's' : ''} — {new Date(t.plan_expires_at!).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-amber-600 border-amber-500/30">Por vencer</Badge>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={currentTab} onValueChange={(v) => navigate(v === 'tenants' ? '/superadmin' : `/superadmin/${v}`)}>
         <TabsList className="w-full sm:w-auto">
