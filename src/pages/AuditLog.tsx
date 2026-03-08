@@ -32,13 +32,14 @@ const ACTION_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   DELETE: { label: 'Eliminación', variant: 'destructive' },
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 export default function AuditLog() {
   const [search, setSearch] = useState('');
   const [tableFilter, setTableFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [exporting, setExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
