@@ -1,1 +1,10 @@
 project_id = "xqgwetpzuslklycflebu"
+
+[functions.manage-users]
+verify_jwt = false
+
+[functions.seed-users]
+verify_jwt = false
+
+[functions.check-expirations]
+verify_jwt = false
