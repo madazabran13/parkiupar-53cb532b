@@ -277,7 +277,6 @@ export default function Capacity() {
 
   const sessionsWithoutSpace = [...activeSessions.filter((s) => !s.space_number)];
   const explicitOccupied = new Set([...occupiedMap.keys()].map(Number));
-  let filledCount = explicitOccupied.size;
 
   const finalSpaces = Array.from({ length: totalSpaces }, (_, i) => {
     const num = i + 1;
