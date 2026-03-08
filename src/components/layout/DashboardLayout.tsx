@@ -16,22 +16,22 @@ export default function DashboardLayout() {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-14 items-center gap-2 border-b bg-background px-3 sm:px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="h-6" />
+          <header className="flex h-12 sm:h-14 items-center gap-2 border-b bg-background px-2 sm:px-4">
+            <SidebarTrigger className="h-8 w-8" />
+            <Separator orientation="vertical" className="h-5 sm:h-6" />
             <div className="flex flex-1 items-center justify-between min-w-0">
-              <h1 className="text-sm font-semibold text-foreground truncate">
+              <h1 className="text-xs sm:text-sm font-semibold text-foreground truncate">
                 {tenant?.name || 'ParkingVpar'}
               </h1>
               {tenant && role !== 'superadmin' && (
-                <Badge variant="outline" className="gap-1 flex-shrink-0 hidden sm:flex">
+                <Badge variant="outline" className="gap-1 flex-shrink-0 hidden sm:flex text-xs">
                   <ParkingCircle className="h-3 w-3" />
                   {tenant.available_spaces}/{tenant.total_spaces} disponibles
                 </Badge>
               )}
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
+          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6">
             <Outlet />
           </main>
         </SidebarInset>
