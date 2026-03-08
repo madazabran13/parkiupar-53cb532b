@@ -100,64 +100,64 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Bienvenido, {profile?.full_name || 'Usuario'}</p>
+        <h1 className="text-lg sm:text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-xs sm:text-base text-muted-foreground">Bienvenido, {profile?.full_name || 'Usuario'}</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Espacios Disponibles</CardTitle>
-            <ParkingCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Espacios</CardTitle>
+            <ParkingCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{tenant?.available_spaces ?? '—'}</div>
-            <p className="text-xs text-muted-foreground">de {tenant?.total_spaces ?? '—'} totales</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{tenant?.available_spaces ?? '—'}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">de {tenant?.total_spaces ?? '—'} totales</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Vehículos Activos</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Activos</CardTitle>
+            <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeSessions.length}</div>
-            <p className="text-xs text-muted-foreground">en este momento</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{activeSessions.length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">en este momento</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ocupación</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Ocupación</CardTitle>
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{occupancyPercent}%</div>
-            <Badge variant={occupancyPercent > 80 ? 'destructive' : 'secondary'} className="mt-1">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{occupancyPercent}%</div>
+            <Badge variant={occupancyPercent > 80 ? 'destructive' : 'secondary'} className="mt-1 text-[10px] sm:text-xs">
               {occupancyPercent > 80 ? 'Alta' : 'Normal'}
             </Badge>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos Hoy</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Ingresos</CardTitle>
+            <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(todayRevenue)}</div>
-            <p className="text-xs text-muted-foreground">{todayCompleted.length} servicios completados</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{formatCurrency(todayRevenue)}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{todayCompleted.length} completados</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Active Sessions - Visual Cards */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Sesiones Activas</h2>
-          <Badge variant="secondary" className="ml-1">{activeSessions.length}</Badge>
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <h2 className="text-sm sm:text-lg font-semibold text-foreground">Sesiones Activas</h2>
+          <Badge variant="secondary" className="ml-1 text-[10px] sm:text-xs">{activeSessions.length}</Badge>
         </div>
 
         {activeSessions.length === 0 ? (
@@ -168,7 +168,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {activeSessions.map((session) => {
               const rate = rateMap[session.vehicle_type];
               const liveFee = rate
@@ -234,12 +234,12 @@ export default function Dashboard() {
 
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Ingresos por Tipo de Vehículo (Hoy)</CardTitle>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-sm sm:text-base">Ingresos por Tipo (Hoy)</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0">
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="name" className="text-xs" />
