@@ -439,7 +439,7 @@ export default function MapPage() {
   const isPublic = !user;
 
   return (
-    <div className={`flex flex-col ${isPublic ? 'h-screen p-4 sm:p-6' : 'h-[calc(100vh-5rem)]'} gap-4`}>
+    <div className={`flex flex-col ${isPublic ? 'h-[100dvh] p-2 sm:p-4 md:p-6' : 'h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5rem)]'} gap-2 sm:gap-4`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
