@@ -35,7 +35,7 @@ export default function SuperAdmin() {
 
   // Tenant form
   const [tName, setTName] = useState('');
-  const [tSlug, setTSlug] = useState('');
+  
   const [tAddress, setTAddress] = useState('');
   const [tPhone, setTPhone] = useState('');
   const [tEmail, setTEmail] = useState('');
@@ -146,7 +146,7 @@ export default function SuperAdmin() {
   };
 
   const resetTenantForm = () => {
-    setTName(''); setTSlug(''); setTAddress(''); setTPhone(''); setTEmail('');
+    setTName(''); setTAddress(''); setTPhone(''); setTEmail('');
     setTSpaces('20');
     setTLat('10.4735'); setTLng('-73.2503'); setTPlanId('');
     setAdminName(''); setAdminEmail(''); setAdminPassword('');
@@ -155,7 +155,7 @@ export default function SuperAdmin() {
 
   const openEditTenant = (t: Tenant) => {
     setEditingTenant(t);
-    setTName(t.name); setTSlug(t.slug); setTAddress(t.address || ''); setTPhone(t.phone || '');
+    setTName(t.name); setTAddress(t.address || ''); setTPhone(t.phone || '');
     setTEmail(t.email || ''); setTSpaces(String(t.total_spaces)); setTLat(String(t.latitude || '')); setTLng(String(t.longitude || ''));
     setTPlanId(t.plan_id || '');
     setTenantDialogOpen(true);
@@ -171,7 +171,7 @@ export default function SuperAdmin() {
 
       const tenantData: Record<string, any> = {
         name: tName,
-        slug: tSlug || slugify(tName),
+        slug: slugify(tName),
         address: tAddress || null,
         phone: tPhone || null,
         email: tEmail || null,
@@ -272,7 +272,7 @@ export default function SuperAdmin() {
 
   const tenantColumns: Column<Tenant>[] = [
     { key: 'name', label: 'Nombre' },
-    { key: 'slug', label: 'Slug', render: (r) => <Badge variant="outline">{r.slug}</Badge> },
+    
     { key: 'email', label: 'Email' },
     { key: 'total_spaces', label: 'Espacios' },
     { key: 'available_spaces', label: 'Disponibles', render: (r) => (
@@ -531,11 +531,7 @@ export default function SuperAdmin() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Nombre *</Label>
-                <Input value={tName} onChange={(e) => { setTName(e.target.value); if (!editingTenant) setTSlug(slugify(e.target.value)); }} />
-              </div>
-              <div className="space-y-2">
-                <Label>Slug</Label>
-                <Input value={tSlug} onChange={(e) => setTSlug(e.target.value)} />
+                <Input value={tName} onChange={(e) => setTName(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
