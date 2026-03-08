@@ -272,7 +272,7 @@ export default function SuperAdmin() {
 
   const tenantColumns: Column<Tenant>[] = [
     { key: 'name', label: 'Nombre' },
-    { key: 'slug', label: 'Slug', render: (r) => <Badge variant="outline">{r.slug}</Badge> },
+    
     { key: 'email', label: 'Email' },
     { key: 'total_spaces', label: 'Espacios' },
     { key: 'available_spaces', label: 'Disponibles', render: (r) => (
