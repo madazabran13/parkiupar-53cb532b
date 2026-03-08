@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CalendarClock, AlertTriangle, CheckCircle, XCircle, Search, Building2, CreditCard, Clock, RefreshCw, RotateCcw } from 'lucide-react';
+import { CalendarClock, AlertTriangle, CheckCircle, XCircle, Search, Building2, CreditCard, Clock, RefreshCw, RotateCcw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { format, differenceInDays, isPast, addMonths, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState, useMemo } from 'react';
