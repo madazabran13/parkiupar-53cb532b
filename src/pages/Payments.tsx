@@ -63,6 +63,8 @@ export default function Payments() {
   const [renewTenant, setRenewTenant] = useState<TenantWithPlan | null>(null);
   const [renewPlanId, setRenewPlanId] = useState<string>('');
   const [renewMonths, setRenewMonths] = useState<number>(1);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const checkExpirations = useMutation({
     mutationFn: async () => {
