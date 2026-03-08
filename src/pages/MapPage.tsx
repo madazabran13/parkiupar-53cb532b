@@ -105,6 +105,9 @@ export default function MapPage() {
   // Get all unique category names for filter
   const allCategoryNames = useMemo(() => {
     const names = new Set<string>();
+    // Always include standard vehicle types
+    Object.values(VEHICLE_TYPE_LABELS).forEach(label => names.add(label));
+    // Also include any custom category names from the database
     Object.values(ratesMap).forEach(rates => rates.forEach(r => names.add(r.name)));
     return Array.from(names).sort();
   }, [ratesMap]);
