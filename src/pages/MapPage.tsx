@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw } from 'lucide-react';
 import type { Tenant, VehicleCategory } from '@/types';
+import { VEHICLE_TYPE_LABELS } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
