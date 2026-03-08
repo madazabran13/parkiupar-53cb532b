@@ -26,6 +26,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/map': 'map',
   '/team': 'team',
   '/audit': 'audit',
+  '/payments': '_always_',
   '/my-plan': '_always_',
   '/settings': 'settings',
 };
