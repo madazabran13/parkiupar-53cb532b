@@ -12,7 +12,7 @@ import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate,
 import type { Tenant, VehicleCategory } from '@/types';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
