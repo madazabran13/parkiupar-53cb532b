@@ -69,13 +69,6 @@ export default function MapPage() {
   const [locating, setLocating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
-    await queryClient.invalidateQueries({ queryKey: ['map-rates'] });
-    setTimeout(() => setRefreshing(false), 600);
-  }, [queryClient]);
-
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
     queryFn: async () => {
@@ -467,7 +460,8 @@ export default function MapPage() {
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            onClick={handleRefresh}
+            onClick={handleLocate}
+            disabled={locating}
             title="Actualizar datos"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />

@@ -61,7 +61,10 @@ export function AppSidebar() {
   const handleRefresh = async () => {
     setRefreshing(true);
     await queryClient.invalidateQueries();
-    setTimeout(() => setRefreshing(false), 600);
+    setTimeout(() => {
+      setRefreshing(false);
+      window.location.reload();
+    }, 600);
   };
 
   const isSuperadmin = role === 'superadmin';
