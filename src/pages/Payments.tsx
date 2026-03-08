@@ -112,11 +112,25 @@ export default function Payments() {
       transition={{ duration: 0.3 }}
       className="space-y-4 sm:space-y-6"
     >
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Pagos y Vencimientos</h1>
-        <p className="text-sm text-muted-foreground">
-          {isSuperadmin ? 'Control de vencimientos de todos los parqueaderos' : 'Estado de tu suscripción'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Pagos y Vencimientos</h1>
+          <p className="text-sm text-muted-foreground">
+            {isSuperadmin ? 'Control de vencimientos de todos los parqueaderos' : 'Estado de tu suscripción'}
+          </p>
+        </div>
+        {isSuperadmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={() => checkExpirations.mutate()}
+            disabled={checkExpirations.isPending}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${checkExpirations.isPending ? 'animate-spin' : ''}`} />
+            Verificar alertas
+          </Button>
+        )}
       </div>
 
       {/* Stats cards */}
