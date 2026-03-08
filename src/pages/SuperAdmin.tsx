@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock } from 'lucide-react';
+import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock, RotateCw } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
@@ -366,7 +366,27 @@ export default function SuperAdmin() {
                     <p className="text-xs text-destructive">Plan vencido el {new Date(t.plan_expires_at!).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                   </div>
                 </div>
-                <Badge variant="destructive">Vencido</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="destructive">Vencido</Badge>
+                  <Button
+                    size="sm"
+                    className="h-7 gap-1 text-xs"
+                    onClick={async () => {
+                      const now = new Date();
+                      const expiresAt = new Date();
+                      expiresAt.setMonth(expiresAt.getMonth() + 1);
+                      const { error } = await supabase.from('tenants').update({
+                        plan_started_at: now.toISOString(),
+                        plan_expires_at: expiresAt.toISOString(),
+                      } as any).eq('id', t.id);
+                      if (error) { toast.error(`Error: ${error.message}`); return; }
+                      toast.success(`Plan de ${t.name} renovado por 30 días`);
+                      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+                    }}
+                  >
+                    <RotateCw className="h-3 w-3" /> Renovar
+                  </Button>
+                </div>
               </div>
             ))}
             {expiringTenants.map((t) => {
@@ -380,7 +400,26 @@ export default function SuperAdmin() {
                       <p className="text-xs text-amber-600">Vence en {days} día{days !== 1 ? 's' : ''} — {new Date(t.plan_expires_at!).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-amber-600 border-amber-500/30">Por vencer</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-amber-600 border-amber-500/30">Por vencer</Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 text-xs"
+                      onClick={async () => {
+                        const expiresAt = new Date(t.plan_expires_at!);
+                        expiresAt.setMonth(expiresAt.getMonth() + 1);
+                        const { error } = await supabase.from('tenants').update({
+                          plan_expires_at: expiresAt.toISOString(),
+                        } as any).eq('id', t.id);
+                        if (error) { toast.error(`Error: ${error.message}`); return; }
+                        toast.success(`Plan de ${t.name} extendido 30 días más`);
+                        queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+                      }}
+                    >
+                      <RotateCw className="h-3 w-3" /> Extender
+                    </Button>
+                  </div>
                 </div>
               );
             })}
