@@ -43,12 +43,6 @@ const App = () => (
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             {/* Map without auth */}
             <Route path="/map-public" element={<MapPage />} />
-            {/* Viewer map - same fullscreen experience, but authenticated */}
-            <Route path="/map" element={
-              <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer']}>
-                <MapPage />
-              </ProtectedRoute>
-            } />
 
             {/* Protected dashboard routes */}
             <Route
@@ -65,6 +59,7 @@ const App = () => (
               <Route path="/reports" element={<Reports />} />
               <Route path="/capacity" element={<Capacity />} />
               <Route path="/team" element={<TeamUsers />} />
+              <Route path="/map" element={<MapPage />} />
               
               <Route path="/my-plan" element={<MyPlan />} />
               <Route path="/audit" element={<AuditLog />} />

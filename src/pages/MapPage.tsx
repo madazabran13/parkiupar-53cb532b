@@ -441,27 +441,21 @@ export default function MapPage() {
     </>
   );
 
-  const { role, signOut } = useAuth();
-  const isFullscreen = !user || role === 'viewer';
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
-  };
+  const isPublic = !user;
 
   return (
-    <div className={`flex flex-col ${isFullscreen ? 'h-[100dvh] p-2 sm:p-4 md:p-6' : 'h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5rem)]'} gap-2 sm:gap-4`}>
+    <div className={`flex flex-col ${isPublic ? 'h-[100dvh] p-2 sm:p-4 md:p-6' : 'h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-5rem)]'} gap-2 sm:gap-4`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          {isFullscreen && (
+          {isPublic && (
             <div className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary flex-shrink-0">
               <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
             </div>
           )}
           <div className="min-w-0">
             <h1 className="text-base sm:text-xl md:text-2xl font-bold text-foreground truncate">
-              {isFullscreen ? 'ParkingVpar' : 'Mapa'}
+              {isPublic ? 'ParkingVpar' : 'Mapa'}
             </h1>
             <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{filteredTenants.length} parqueaderos</p>
           </div>
@@ -484,11 +478,6 @@ export default function MapPage() {
             <Link to="/login">
               <Button variant="outline" size="sm">Iniciar Sesión</Button>
             </Link>
-          )}
-          {user && role === 'viewer' && (
-            <Button variant="outline" size="sm" onClick={handleLogout} className="gap-1">
-              <LogOut className="h-3.5 w-3.5" /> Salir
-            </Button>
           )}
         </div>
       </div>
