@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
-  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun,
+  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,6 +26,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/map': 'map',
   '/team': 'team',
   '/audit': 'audit',
+  '/payments': '_always_',
   '/my-plan': '_always_',
   '/settings': 'settings',
 };
@@ -41,12 +42,14 @@ const MENU_ITEMS = {
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
   audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
+  payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
 } as const;
 
 const SUPERADMIN_ITEMS = [
   { label: 'Parqueaderos', icon: Building2, path: '/superadmin' },
   { label: 'Planes', icon: CreditCard, path: '/superadmin/plans' },
+  { label: 'Pagos', icon: Wallet, path: '/payments' },
   { label: 'Usuarios', icon: Users, path: '/superadmin/users' },
   { label: 'Configuración', icon: Settings, path: '/superadmin/settings' },
 ];

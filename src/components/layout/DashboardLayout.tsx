@@ -7,6 +7,7 @@ import { useTenant } from '@/hooks/useTenant';
 import { Badge } from '@/components/ui/badge';
 import { ParkingCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export default function DashboardLayout() {
   const { role } = useAuth();
@@ -30,6 +31,7 @@ export default function DashboardLayout() {
                   {tenant.available_spaces}/{tenant.total_spaces} disponibles
                 </Badge>
               )}
+              <NotificationBell />
             </div>
           </header>
           <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 pb-16 sm:pb-4 md:pb-6">
