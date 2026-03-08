@@ -347,6 +347,47 @@ export default function SuperAdmin() {
         </Card>
       </div>
 
+      {/* Expiration Alerts */}
+      {(expiredTenants.length > 0 || expiringTenants.length > 0) && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Alertas de Vencimiento de Planes ({expiredTenants.length + expiringTenants.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {expiredTenants.map((t) => (
+              <div key={t.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-destructive/20 bg-background">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-destructive" />
+                  <div>
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <p className="text-xs text-destructive">Plan vencido el {new Date(t.plan_expires_at!).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                </div>
+                <Badge variant="destructive">Vencido</Badge>
+              </div>
+            ))}
+            {expiringTenants.map((t) => {
+              const days = getDaysUntilExpiry(t.plan_expires_at);
+              return (
+                <div key={t.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-amber-500/20 bg-background">
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-amber-500" />
+                    <div>
+                      <p className="text-sm font-semibold">{t.name}</p>
+                      <p className="text-xs text-amber-600">Vence en {days} día{days !== 1 ? 's' : ''} — {new Date(t.plan_expires_at!).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-amber-600 border-amber-500/30">Por vencer</Badge>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs value={currentTab} onValueChange={(v) => navigate(v === 'tenants' ? '/superadmin' : `/superadmin/${v}`)}>
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="tenants" className="flex-1 sm:flex-none relative">
