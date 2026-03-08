@@ -151,7 +151,7 @@ export default function AuditLog() {
 
   const logs = data?.logs || [];
   const total = data?.total || 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-6">
