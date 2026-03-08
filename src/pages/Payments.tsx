@@ -468,7 +468,7 @@ export default function Payments() {
               </div>
             </CardContent>
           </Card>
-          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} />
+          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} pageSize={pageSize} onPageSizeChange={s => { setPageSize(s); setPage(1); }} totalItems={filtered.length} />
         </TabsContent>
 
         {/* ── History Tab ── */}
