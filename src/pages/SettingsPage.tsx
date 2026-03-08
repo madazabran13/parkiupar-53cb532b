@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
+import MapLocationPicker from '@/components/MapLocationPicker';
 
 export default function SettingsPage() {
   const { profile, user, updatePassword, role, tenantId } = useAuth();
