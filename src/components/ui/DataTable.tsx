@@ -5,6 +5,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -15,7 +16,6 @@ export interface Column<T> {
   filterable?: boolean;
   render?: (row: T) => React.ReactNode;
   className?: string;
-  /** Hide this column on mobile card view */
   hideOnMobile?: boolean;
 }
 
@@ -31,11 +31,13 @@ interface DataTableProps<T> {
 
 type SortDir = 'asc' | 'desc' | null;
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+
 export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   loading = false,
-  pageSize = 10,
+  pageSize: defaultPageSize = 10,
   searchPlaceholder = 'Buscar...',
   onRowClick,
   actions,
@@ -46,10 +48,10 @@ export function DataTable<T extends Record<string, any>>({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
 
   const filtered = useMemo(() => {
     let result = [...data];
-
     if (globalSearch) {
       const q = globalSearch.toLowerCase();
       result = result.filter((row) =>
@@ -59,7 +61,6 @@ export function DataTable<T extends Record<string, any>>({
         })
       );
     }
-
     Object.entries(columnFilters).forEach(([key, value]) => {
       if (value) {
         const q = value.toLowerCase();
@@ -69,7 +70,6 @@ export function DataTable<T extends Record<string, any>>({
         });
       }
     });
-
     if (sortKey && sortDir) {
       result.sort((a, b) => {
         const aVal = a[sortKey] ?? '';
@@ -78,7 +78,6 @@ export function DataTable<T extends Record<string, any>>({
         return sortDir === 'asc' ? cmp : -cmp;
       });
     }
-
     return result;
   }, [data, globalSearch, columnFilters, sortKey, sortDir, columns]);
 
@@ -108,6 +107,11 @@ export function DataTable<T extends Record<string, any>>({
     setPage(1);
   };
 
+  const handlePageSizeChange = (newSize: string) => {
+    setPageSize(Number(newSize));
+    setPage(1);
+  };
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -121,9 +125,21 @@ export function DataTable<T extends Record<string, any>>({
 
   const Pagination = () => totalPages > 1 ? (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span className="text-[10px] sm:text-xs text-muted-foreground">
-        Pág. {safeCurrentPage} de {totalPages}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] sm:text-xs text-muted-foreground">
+          {filtered.length} registros — Pág. {safeCurrentPage} de {totalPages}
+        </span>
+        <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+          <SelectTrigger className="h-7 w-[70px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PAGE_SIZE_OPTIONS.map(s => (
+              <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="flex items-center gap-1">
         <Button variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" disabled={safeCurrentPage === 1} onClick={() => setPage(1)}>
           <ChevronsLeft className="h-3.5 w-3.5" />
@@ -157,7 +173,21 @@ export function DataTable<T extends Record<string, any>>({
         </Button>
       </div>
     </div>
-  ) : null;
+  ) : (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] sm:text-xs text-muted-foreground">{filtered.length} registros</span>
+      <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+        <SelectTrigger className="h-7 w-[70px] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PAGE_SIZE_OPTIONS.map(s => (
+            <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <div className="space-y-3">

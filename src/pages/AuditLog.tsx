@@ -32,23 +32,24 @@ const ACTION_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   DELETE: { label: 'Eliminación', variant: 'destructive' },
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 export default function AuditLog() {
   const [search, setSearch] = useState('');
   const [tableFilter, setTableFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [exporting, setExporting] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['audit-logs', tableFilter, actionFilter, search, page],
+    queryKey: ['audit-logs', tableFilter, actionFilter, search, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from('audit_logs')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (tableFilter !== 'all') query = query.eq('table_name', tableFilter);
       if (actionFilter !== 'all') query = query.eq('action', actionFilter);
@@ -150,7 +151,7 @@ export default function AuditLog() {
 
   const logs = data?.logs || [];
   const total = data?.total || 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-6">
@@ -283,22 +284,28 @@ export default function AuditLog() {
         </CardContent>
       </Card>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">{total} registros</p>
+          <Select value={String(pageSize)} onValueChange={v => { setPageSize(Number(v)); setPage(0); }}>
+            <SelectTrigger className="h-7 w-[70px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map(s => <SelectItem key={s} value={String(s)}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {totalPages > 1 && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-muted-foreground">
-              {page + 1} / {totalPages}
-            </span>
+            <span className="text-sm text-muted-foreground">{page + 1} / {totalPages}</span>
             <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

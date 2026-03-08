@@ -67,6 +67,8 @@ export default function SuperAdmin() {
     { key: 'team', label: 'Gestión de Usuarios' },
     { key: 'settings', label: 'Configuración' },
     { key: 'audit', label: 'Auditoría' },
+    { key: 'payments', label: 'Pagos y Facturación' },
+    { key: 'my_plan', label: 'Mi Plan' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
