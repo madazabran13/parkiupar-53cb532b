@@ -285,8 +285,7 @@ export default function Capacity() {
     if (occupiedMap.has(key)) {
       return { num, occupied: true, session: occupiedMap.get(key)!, vehicleType: occupiedMap.get(key)!.vehicle_type };
     }
-    if (!explicitOccupied.has(num) && filledCount < occupiedSpaces && sessionsWithoutSpace.length > 0) {
-      filledCount++;
+    if (!explicitOccupied.has(num) && sessionsWithoutSpace.length > 0) {
       const unassigned = sessionsWithoutSpace.shift();
       return { num, occupied: true, session: unassigned, vehicleType: unassigned?.vehicle_type || 'car' };
     }
