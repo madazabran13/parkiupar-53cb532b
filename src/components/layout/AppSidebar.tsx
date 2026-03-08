@@ -42,6 +42,7 @@ const MENU_ITEMS = {
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
   audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
+  payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
 } as const;
 
