@@ -100,14 +100,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Bienvenido, {profile?.full_name || 'Usuario'}</p>
+        <h1 className="text-lg sm:text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-xs sm:text-base text-muted-foreground">Bienvenido, {profile?.full_name || 'Usuario'}</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Espacios Disponibles</CardTitle>
