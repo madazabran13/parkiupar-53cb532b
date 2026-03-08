@@ -32,7 +32,7 @@ const ACTION_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   DELETE: { label: 'Eliminación', variant: 'destructive' },
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export default function AuditLog() {
   const [search, setSearch] = useState('');
