@@ -542,7 +542,7 @@ export default function SuperAdmin() {
               <div className="space-y-2"><Label>Teléfono</Label><Input value={tPhone} onChange={(e) => setTPhone(e.target.value)} /></div>
               <div className="space-y-2"><Label>Email</Label><Input type="email" value={tEmail} onChange={(e) => setTEmail(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div className="space-y-2">
                 <Label>Espacios</Label>
                 <Input type="number" value={tSpaces} onChange={(e) => setTSpaces(e.target.value)} disabled />
@@ -550,9 +550,12 @@ export default function SuperAdmin() {
                   <p className="text-xs text-muted-foreground">Máximo según plan: {plans.find(p => p.id === tPlanId)!.max_spaces}</p>
                 )}
               </div>
-              <div className="space-y-2"><Label>Latitud</Label><Input value={tLat} onChange={(e) => setTLat(e.target.value)} /></div>
-              <div className="space-y-2"><Label>Longitud</Label><Input value={tLng} onChange={(e) => setTLng(e.target.value)} /></div>
             </div>
+            <MapLocationPicker
+              lat={parseFloat(tLat) || 10.4735}
+              lng={parseFloat(tLng) || -73.2503}
+              onChange={(lat, lng) => { setTLat(String(lat)); setTLng(String(lng)); }}
+            />
             {plans.length > 0 && (
               <div className="space-y-2">
                 <Label>Plan</Label>
