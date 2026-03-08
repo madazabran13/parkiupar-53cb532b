@@ -171,7 +171,7 @@ export default function SuperAdmin() {
 
       const tenantData: Record<string, any> = {
         name: tName,
-        slug: tSlug || slugify(tName),
+        slug: slugify(tName),
         address: tAddress || null,
         phone: tPhone || null,
         email: tEmail || null,
