@@ -49,9 +49,7 @@ export default function Register() {
     <div className="flex min-h-screen items-center justify-center bg-muted px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Car className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img src="/logo.png" alt="ParkingVpar" className="mx-auto mb-2 h-14 w-14 rounded-lg object-contain" />
           <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
           <CardDescription>Regístrate para ver la disponibilidad de parqueaderos</CardDescription>
         </CardHeader>

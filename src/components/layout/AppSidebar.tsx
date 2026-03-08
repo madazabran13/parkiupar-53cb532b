@@ -95,9 +95,7 @@ export function AppSidebar() {
             {tenant?.logo_url ? (
               <img src={tenant.logo_url} alt={tenant.name} className="h-8 w-8 rounded object-cover flex-shrink-0" />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded bg-primary flex-shrink-0">
-                <Car className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <img src="/logo.png" alt="ParkingVpar" className="h-8 w-8 rounded object-contain flex-shrink-0" />
             )}
             <span className="font-bold text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
               {tenant?.name || 'ParkingVpar'}
