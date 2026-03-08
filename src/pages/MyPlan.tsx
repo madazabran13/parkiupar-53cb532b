@@ -97,7 +97,7 @@ export default function MyPlan() {
           </CardHeader>
           {currentPlan && (
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Precio mensual</p>
                   <p className="text-xl font-bold text-foreground">{formatCurrency(currentPlan.price_monthly)}</p>
@@ -106,13 +106,36 @@ export default function MyPlan() {
                   <p className="text-sm text-muted-foreground">Espacios máximos</p>
                   <p className="text-xl font-bold text-foreground">{currentPlan.max_spaces}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Módulos incluidos</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {(Array.isArray(currentPlan.modules) ? currentPlan.modules : []).map((m: string) => (
-                      <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>
-                    ))}
+                {tenant?.plan_started_at && (
+                  <div>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" /> Fecha de inicio</p>
+                    <p className="text-lg font-semibold text-foreground">
+                      {new Date(tenant.plan_started_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
                   </div>
+                )}
+                {tenant?.plan_expires_at && (() => {
+                  const daysLeft = Math.ceil((new Date(tenant.plan_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  const expired = daysLeft < 0;
+                  const expiringSoon = daysLeft >= 0 && daysLeft <= 7;
+                  return (
+                    <div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" /> Fecha de vencimiento</p>
+                      <p className={`text-lg font-semibold ${expired ? 'text-destructive' : expiringSoon ? 'text-amber-500' : 'text-foreground'}`}>
+                        {new Date(tenant.plan_expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      {expired && <Badge variant="destructive" className="mt-1">Plan vencido</Badge>}
+                      {expiringSoon && !expired && <Badge variant="secondary" className="mt-1 text-amber-600 border-amber-500/30">Vence en {daysLeft} día{daysLeft !== 1 ? 's' : ''}</Badge>}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">Módulos incluidos</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {(Array.isArray(currentPlan.modules) ? currentPlan.modules : []).map((m: string) => (
+                    <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>
+                  ))}
                 </div>
               </div>
             </CardContent>
