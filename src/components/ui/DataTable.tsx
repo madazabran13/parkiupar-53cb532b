@@ -35,7 +35,7 @@ export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   loading = false,
-  pageSize = 8,
+  pageSize = 10,
   searchPlaceholder = 'Buscar...',
   onRowClick,
   actions,

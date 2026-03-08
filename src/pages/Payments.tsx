@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CalendarClock, AlertTriangle, CheckCircle, XCircle, Search, Building2, CreditCard, Clock, RefreshCw, RotateCcw } from 'lucide-react';
+import { CalendarClock, AlertTriangle, CheckCircle, XCircle, Search, Building2, CreditCard, Clock, RefreshCw, RotateCcw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { format, differenceInDays, isPast, addMonths, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState, useMemo } from 'react';
@@ -63,6 +63,8 @@ export default function Payments() {
   const [renewTenant, setRenewTenant] = useState<TenantWithPlan | null>(null);
   const [renewPlanId, setRenewPlanId] = useState<string>('');
   const [renewMonths, setRenewMonths] = useState<number>(1);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const checkExpirations = useMutation({
     mutationFn: async () => {
@@ -162,6 +164,10 @@ export default function Payments() {
     });
   }, [tenants, search, statusFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const stats = useMemo(() => {
     let expired = 0, warning = 0, active = 0, noPlan = 0;
     tenants.forEach(t => {
@@ -259,9 +265,9 @@ export default function Payments() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar parqueadero..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Buscar parqueadero..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
@@ -305,7 +311,7 @@ export default function Payments() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map(t => {
+                  paginated.map(t => {
                     const status = getExpirationStatus(t.plan_expires_at);
                     const StatusIcon = status.icon;
                     return (
@@ -369,7 +375,47 @@ export default function Payments() {
         </CardContent>
       </Card>
 
-      {/* Renewal Dialog */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">
+            {filtered.length} registros — Pág. {safePage} de {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === 1} onClick={() => setPage(1)}>
+              <ChevronsLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === 1} onClick={() => setPage(safePage - 1)}>
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+              let pageNum: number;
+              if (totalPages <= 3) pageNum = i + 1;
+              else if (safePage <= 2) pageNum = i + 1;
+              else if (safePage >= totalPages - 1) pageNum = totalPages - 2 + i;
+              else pageNum = safePage - 1 + i;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={pageNum === safePage ? 'default' : 'outline'}
+                  size="icon"
+                  className="h-8 w-8 text-xs"
+                  onClick={() => setPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage === totalPages} onClick={() => setPage(totalPages)}>
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={!!renewTenant} onOpenChange={(open) => !open && setRenewTenant(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
