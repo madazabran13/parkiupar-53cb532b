@@ -274,11 +274,26 @@ export default function SuperAdmin() {
     { key: 'name', label: 'Nombre' },
     { key: 'slug', label: 'Slug', render: (r) => <Badge variant="outline">{r.slug}</Badge> },
     { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Teléfono' },
     { key: 'total_spaces', label: 'Espacios' },
     { key: 'available_spaces', label: 'Disponibles', render: (r) => (
       <Badge variant={r.available_spaces === 0 ? 'destructive' : 'secondary'}>{r.available_spaces}/{r.total_spaces}</Badge>
     )},
+    { key: 'plan_expires_at', label: 'Vencimiento', render: (r) => {
+      if (!r.plan_expires_at) return <span className="text-muted-foreground text-xs">Sin plan</span>;
+      const days = getDaysUntilExpiry(r.plan_expires_at);
+      const expired = days !== null && days < 0;
+      const expiringSoon = days !== null && days >= 0 && days <= 7;
+      return (
+        <div className="flex items-center gap-1.5">
+          {expired && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
+          {expiringSoon && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+          <span className={`text-xs ${expired ? 'text-destructive font-semibold' : expiringSoon ? 'text-amber-500 font-medium' : 'text-muted-foreground'}`}>
+            {new Date(r.plan_expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {expired ? ' (Vencido)' : expiringSoon ? ` (${days}d)` : ''}
+          </span>
+        </div>
+      );
+    }},
     { key: 'is_active', label: 'Estado', render: (r) => (
       <Switch checked={r.is_active} onCheckedChange={(checked) => toggleTenantMutation.mutate({ id: r.id, is_active: checked })} />
     )},
