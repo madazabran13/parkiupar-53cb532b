@@ -73,27 +73,39 @@ const DURATION_OPTIONS = [
   { label: '12 meses', value: 12 },
 ];
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
-function Pagination({ page, totalPages, setPage }: { page: number; totalPages: number; setPage: (p: number) => void }) {
-  if (totalPages <= 1) return null;
+function Pagination({ page, totalPages, setPage, pageSize, onPageSizeChange, totalItems }: { 
+  page: number; totalPages: number; setPage: (p: number) => void; 
+  pageSize: number; onPageSizeChange: (s: number) => void; totalItems: number;
+}) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4">
-      <span className="text-xs text-muted-foreground">Pág. {page} de {totalPages}</span>
-      <div className="flex items-center gap-1">
-        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-          let pn: number;
-          if (totalPages <= 3) pn = i + 1;
-          else if (page <= 2) pn = i + 1;
-          else if (page >= totalPages - 1) pn = totalPages - 2 + i;
-          else pn = page - 1 + i;
-          return <Button key={pn} variant={pn === page ? 'default' : 'outline'} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(pn)}>{pn}</Button>;
-        })}
-        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(page + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{totalItems} registros — Pág. {page} de {totalPages}</span>
+        <Select value={String(pageSize)} onValueChange={v => { onPageSizeChange(Number(v)); }}>
+          <SelectTrigger className="h-7 w-[70px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {PAGE_SIZE_OPTIONS.map(s => <SelectItem key={s} value={String(s)}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft className="h-3.5 w-3.5" /></Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+          {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+            let pn: number;
+            if (totalPages <= 3) pn = i + 1;
+            else if (page <= 2) pn = i + 1;
+            else if (page >= totalPages - 1) pn = totalPages - 2 + i;
+            else pn = page - 1 + i;
+            return <Button key={pn} variant={pn === page ? 'default' : 'outline'} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(pn)}>{pn}</Button>;
+          })}
+          <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(page + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(totalPages)}><ChevronsRight className="h-3.5 w-3.5" /></Button>
+        </div>
+      )}
     </div>
   );
 }
