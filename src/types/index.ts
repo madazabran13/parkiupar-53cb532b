@@ -21,6 +21,8 @@ export interface Tenant {
   slug: string;
   logo_url: string | null;
   plan_id: string | null;
+  plan_started_at: string | null;
+  plan_expires_at: string | null;
   address: string | null;
   city: string;
   phone: string | null;
