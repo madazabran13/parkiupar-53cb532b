@@ -531,7 +531,7 @@ export default function SuperAdmin() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Nombre *</Label>
-                <Input value={tName} onChange={(e) => { setTName(e.target.value); if (!editingTenant) setTSlug(slugify(e.target.value)); }} />
+                <Input value={tName} onChange={(e) => setTName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Slug</Label>
