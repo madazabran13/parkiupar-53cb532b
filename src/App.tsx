@@ -84,6 +84,7 @@ const App = () => (
             </Route>
 
             <Route path="/access-denied" element={<AccessDenied />} />
+            <Route path="/suspended" element={<SuspendedAccount />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenant } from '@/hooks/useTenant';
 import type { AppRole } from '@/types';
 
 interface ProtectedRouteProps {
@@ -9,8 +10,9 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
+  const { tenant, loading: tenantLoading } = useTenant();
 
-  if (loading) {
+  if (loading || tenantLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -23,6 +25,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If tenant is suspended and user is not superadmin, redirect to suspended page
+  if (role !== 'superadmin' && tenant && !tenant.is_active) {
+    return <Navigate to="/suspended" replace />;
   }
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
