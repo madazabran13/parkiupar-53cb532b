@@ -49,6 +49,7 @@ const MENU_ITEMS = {
 const SUPERADMIN_ITEMS = [
   { label: 'Parqueaderos', icon: Building2, path: '/superadmin' },
   { label: 'Planes', icon: CreditCard, path: '/superadmin/plans' },
+  { label: 'Pagos', icon: Wallet, path: '/payments' },
   { label: 'Usuarios', icon: Users, path: '/superadmin/users' },
   { label: 'Configuración', icon: Settings, path: '/superadmin/settings' },
 ];
