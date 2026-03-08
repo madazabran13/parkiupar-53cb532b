@@ -154,10 +154,10 @@ export default function Dashboard() {
 
       {/* Active Sessions - Visual Cards */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Sesiones Activas</h2>
-          <Badge variant="secondary" className="ml-1">{activeSessions.length}</Badge>
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <h2 className="text-sm sm:text-lg font-semibold text-foreground">Sesiones Activas</h2>
+          <Badge variant="secondary" className="ml-1 text-[10px] sm:text-xs">{activeSessions.length}</Badge>
         </div>
 
         {activeSessions.length === 0 ? (
