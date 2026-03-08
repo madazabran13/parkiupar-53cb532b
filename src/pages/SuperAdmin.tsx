@@ -128,6 +128,23 @@ export default function SuperAdmin() {
   const activeTenants = tenants.filter((t) => t.is_active).length;
   const totalActiveVehicles = tenants.reduce((sum, t) => sum + (t.total_spaces - t.available_spaces), 0);
 
+  // Tenants with plans expiring within 7 days
+  const expiringTenants = tenants.filter((t) => {
+    if (!t.plan_expires_at) return false;
+    const daysLeft = Math.ceil((new Date(t.plan_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return daysLeft <= 7 && daysLeft >= 0;
+  });
+
+  const expiredTenants = tenants.filter((t) => {
+    if (!t.plan_expires_at) return false;
+    return new Date(t.plan_expires_at).getTime() < Date.now();
+  });
+
+  const getDaysUntilExpiry = (expiresAt: string | null) => {
+    if (!expiresAt) return null;
+    return Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  };
+
   const resetTenantForm = () => {
     setTName(''); setTSlug(''); setTAddress(''); setTPhone(''); setTEmail('');
     setTSpaces('20');
