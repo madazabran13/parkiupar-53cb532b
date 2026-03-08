@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
+import MapLocationPicker from '@/components/MapLocationPicker';
 
 export default function SettingsPage() {
   const { profile, user, updatePassword, role, tenantId } = useAuth();
@@ -318,17 +319,12 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Coordinates */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Latitud</Label>
-                  <Input value={tLat} onChange={(e) => setTLat(e.target.value)} placeholder="10.4735" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Longitud</Label>
-                  <Input value={tLng} onChange={(e) => setTLng(e.target.value)} placeholder="-73.2503" />
-                </div>
-              </div>
+              {/* Map Location Picker */}
+              <MapLocationPicker
+                lat={parseFloat(tLat) || 10.4735}
+                lng={parseFloat(tLng) || -73.2503}
+                onChange={(lat, lng) => { setTLat(String(lat)); setTLng(String(lng)); }}
+              />
 
               <div className="flex justify-end">
                 <Button
