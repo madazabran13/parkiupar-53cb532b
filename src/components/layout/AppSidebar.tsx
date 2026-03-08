@@ -7,13 +7,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  SidebarHeader, SidebarFooter,
+  SidebarHeader, SidebarFooter, useSidebar,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -56,6 +57,8 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -123,7 +126,7 @@ export function AppSidebar() {
                   isActive={location.pathname === item.path}
                   tooltip={item.label}
                 >
-                  <Link to={item.path}>
+                  <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
                   </Link>
