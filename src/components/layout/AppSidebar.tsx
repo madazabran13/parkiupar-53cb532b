@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
-  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield,
+  Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -131,7 +131,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3">
+      <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground flex-shrink-0">
             {profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
@@ -144,6 +144,19 @@ export function AppSidebar() {
               {tenant?.name || (role === 'superadmin' ? 'Super Admin' : 'Sin asignar')}
             </span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:hidden"
+            onClick={() => {
+              const isDark = document.documentElement.classList.toggle('dark');
+              localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            }}
+            title="Cambiar tema"
+          >
+            <Sun className="h-3.5 w-3.5 dark:hidden" />
+            <Moon className="h-3.5 w-3.5 hidden dark:block" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
