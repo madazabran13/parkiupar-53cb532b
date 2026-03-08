@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
+import { MobileBottomNav } from './MobileBottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { Badge } from '@/components/ui/badge';
@@ -31,10 +32,11 @@ export default function DashboardLayout() {
               )}
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6">
+          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 pb-16 sm:pb-4 md:pb-6">
             <Outlet />
           </main>
         </SidebarInset>
+        <MobileBottomNav />
       </div>
     </SidebarProvider>
   );
