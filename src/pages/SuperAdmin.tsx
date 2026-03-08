@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock, RotateCw } from 'lucide-react';
+import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock, RotateCw, ShieldAlert } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
@@ -97,6 +97,36 @@ export default function SuperAdmin() {
       return data || [];
     },
   });
+
+  // Reactivation requests from notifications
+  const { data: reactivationRequests = [] } = useQuery({
+    queryKey: ['reactivation-requests'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('title', 'Solicitud de reactivación')
+        .eq('is_read', false)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const handleReactivate = async (notifId: string, tenantId: string) => {
+    // Enable tenant
+    const { error } = await supabase.from('tenants').update({ is_active: true }).eq('id', tenantId);
+    if (error) { toast.error(`Error: ${error.message}`); return; }
+    // Mark notification as read
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+    toast.success('Parqueadero reactivado exitosamente');
+    queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+    queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
+  };
+
+  const handleDismissReactivation = async (notifId: string) => {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+    queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
+  };
 
   const pendingRequests = planRequests.filter((r: any) => r.status === 'pending');
 
@@ -477,6 +507,44 @@ export default function SuperAdmin() {
                     </div>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Reactivation Requests */}
+          {reactivationRequests.length > 0 && (
+            <Card className="border-destructive/30 bg-destructive/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-destructive" />
+                  Solicitudes de Reactivación ({reactivationRequests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {reactivationRequests.map((notif: any) => {
+                  const tenantId = notif.metadata?.tenant_id;
+                  const tenantName = tenants.find(t => t.id === tenantId)?.name;
+                  return (
+                    <div key={notif.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{notif.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(notif.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {tenantId && (
+                          <Button size="sm" variant="default" className="h-7 gap-1 text-xs" onClick={() => handleReactivate(notif.id, tenantId)}>
+                            <CheckCircle2 className="h-3 w-3" /> Activar
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => handleDismissReactivation(notif.id)}>
+                          <XCircle className="h-3 w-3" /> Descartar
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
           )}
