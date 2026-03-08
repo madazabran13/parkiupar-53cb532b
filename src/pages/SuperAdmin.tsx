@@ -106,10 +106,15 @@ export default function SuperAdmin() {
       if (plan && tenant) {
         const occupied = tenant.total_spaces - tenant.available_spaces;
         const newAvailable = Math.max(plan.max_spaces - occupied, 0);
+        const now = new Date().toISOString();
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
         await supabase.from('tenants').update({
           plan_id: planId,
           total_spaces: plan.max_spaces,
           available_spaces: newAvailable,
+          plan_started_at: now,
+          plan_expires_at: expiresAt.toISOString(),
         }).eq('id', tenantId);
       }
     }
