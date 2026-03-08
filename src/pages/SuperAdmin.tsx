@@ -533,10 +533,6 @@ export default function SuperAdmin() {
                 <Label>Nombre *</Label>
                 <Input value={tName} onChange={(e) => setTName(e.target.value)} />
               </div>
-              <div className="space-y-2">
-                <Label>Slug</Label>
-                <Input value={tSlug} onChange={(e) => setTSlug(e.target.value)} />
-              </div>
             </div>
             <div className="space-y-2">
               <Label>Dirección</Label>
