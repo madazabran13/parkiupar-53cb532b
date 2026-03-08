@@ -7,6 +7,7 @@ import { useTenant } from '@/hooks/useTenant';
 import { Badge } from '@/components/ui/badge';
 import { ParkingCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export default function DashboardLayout() {
   const { role } = useAuth();
