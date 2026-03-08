@@ -94,7 +94,7 @@ export function AppSidebar() {
               </div>
             )}
             <span className="font-bold text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
-              {tenant?.name || 'ParkingPro'}
+              {tenant?.name || 'ParkingVpar'}
             </span>
           </Link>
           <Button

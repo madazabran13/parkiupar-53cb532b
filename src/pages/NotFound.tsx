@@ -61,7 +61,7 @@ const NotFound = () => {
           <code className="rounded bg-muted-foreground/10 px-1.5 py-0.5 text-sm font-mono text-foreground">
             {location.pathname}
           </code>{' '}
-          no existe en ParkingPro.
+          no existe en ParkingVpar.
         </motion.p>
 
         <motion.div

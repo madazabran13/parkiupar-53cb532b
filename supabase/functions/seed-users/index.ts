@@ -7,10 +7,10 @@ Deno.serve(async () => {
   );
 
   const users = [
-    { email: "central@parkingpro.co", password: "Central2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000001", name: "Admin Central Valledupar", role: "admin" },
-    { email: "plaza@parkingpro.co", password: "Plaza2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000002", name: "Admin Plaza del Sol", role: "admin" },
-    { email: "easypark@parkingpro.co", password: "EasyPark2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000003", name: "Admin EasyPark La Ceiba", role: "admin" },
-    { email: "mayales@parkingpro.co", password: "Mayales2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000004", name: "Admin Los Mayales", role: "admin" },
+    { email: "central@ParkingVpar.co", password: "Central2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000001", name: "Admin Central Valledupar", role: "admin" },
+    { email: "plaza@ParkingVpar.co", password: "Plaza2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000002", name: "Admin Plaza del Sol", role: "admin" },
+    { email: "easypark@ParkingVpar.co", password: "EasyPark2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000003", name: "Admin EasyPark La Ceiba", role: "admin" },
+    { email: "mayales@ParkingVpar.co", password: "Mayales2024!", tenantId: "b2c3d4e5-0001-0001-0001-000000000004", name: "Admin Los Mayales", role: "admin" },
   ];
 
   const results = [];

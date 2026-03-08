@@ -1,6 +1,6 @@
 
 -- ============================================
--- Insert test data for ParkingPro
+-- Insert test data for ParkingVpar
 -- ============================================
 
 -- 1. Plans

@@ -1,6 +1,6 @@
 
 -- ============================================
--- ParkingPro SaaS - Complete Database Schema
+-- ParkingVpar SaaS - Complete Database Schema
 -- ============================================
 
 -- 1. ENUMS

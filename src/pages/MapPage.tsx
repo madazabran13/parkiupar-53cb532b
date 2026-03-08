@@ -457,7 +457,7 @@ export default function MapPage() {
           )}
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-              {isPublic ? 'ParkingPro' : 'Mapa de Parqueaderos'}
+              {isPublic ? 'ParkingVpar' : 'Mapa de Parqueaderos'}
             </h1>
             <p className="text-sm text-muted-foreground">Disponibilidad en tiempo real · {filteredTenants.length} parqueaderos</p>
           </div>

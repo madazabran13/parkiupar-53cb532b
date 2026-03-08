@@ -41,7 +41,7 @@ export default function Login() {
       return;
     }
 
-    toast.success('Bienvenido a ParkingPro');
+    toast.success('Bienvenido a ParkingVpar');
     setWaitingForRole(true);
   };
 
@@ -63,7 +63,7 @@ export default function Login() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
             <Car className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">ParkingPro</CardTitle>
+          <CardTitle className="text-2xl font-bold">ParkingVpar</CardTitle>
           <CardDescription>Inicia sesión en tu cuenta</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>

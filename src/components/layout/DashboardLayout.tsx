@@ -21,7 +21,7 @@ export default function DashboardLayout() {
             <Separator orientation="vertical" className="h-6" />
             <div className="flex flex-1 items-center justify-between min-w-0">
               <h1 className="text-sm font-semibold text-foreground truncate">
-                {tenant?.name || 'ParkingPro'}
+                {tenant?.name || 'ParkingVpar'}
               </h1>
               {tenant && role !== 'superadmin' && (
                 <Badge variant="outline" className="gap-1 flex-shrink-0 hidden sm:flex">

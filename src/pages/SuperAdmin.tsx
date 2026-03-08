@@ -262,7 +262,7 @@ export default function SuperAdmin() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Super Administrador</h1>
-        <p className="text-muted-foreground">Gestión global de la plataforma ParkingPro</p>
+        <p className="text-muted-foreground">Gestión global de la plataforma ParkingVpar</p>
       </div>
 
       {/* Global metrics */}
