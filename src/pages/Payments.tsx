@@ -311,7 +311,7 @@ export default function Payments() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map(t => {
+                  paginated.map(t => {
                     const status = getExpirationStatus(t.plan_expires_at);
                     const StatusIcon = status.icon;
                     return (
