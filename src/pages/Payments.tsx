@@ -256,13 +256,13 @@ export default function Payments() {
     });
   }, [tenants, search, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const histTotalPages = Math.max(1, Math.ceil(history.length / PAGE_SIZE));
+  const histTotalPages = Math.max(1, Math.ceil(history.length / histPageSize));
   const safeHistPage = Math.min(histPage, histTotalPages);
-  const paginatedHist = history.slice((safeHistPage - 1) * PAGE_SIZE, safeHistPage * PAGE_SIZE);
+  const paginatedHist = history.slice((safeHistPage - 1) * histPageSize, safeHistPage * histPageSize);
 
   const stats = useMemo(() => {
     let expired = 0, warning = 0, active = 0, noPlan = 0;
