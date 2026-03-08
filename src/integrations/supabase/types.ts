@@ -240,6 +240,66 @@ export type Database = {
           },
         ]
       }
+      payment_history: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          months: number
+          new_expires_at: string
+          notes: string | null
+          payment_method: string | null
+          plan_id: string | null
+          plan_name: string
+          previous_expires_at: string | null
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          months?: number
+          new_expires_at: string
+          notes?: string | null
+          payment_method?: string | null
+          plan_id?: string | null
+          plan_name: string
+          previous_expires_at?: string | null
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          months?: number
+          new_expires_at?: string
+          notes?: string | null
+          payment_method?: string | null
+          plan_id?: string | null
+          plan_name?: string
+          previous_expires_at?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_history_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_requests: {
         Row: {
           admin_notes: string | null
