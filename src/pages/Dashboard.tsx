@@ -109,45 +109,45 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Espacios Disponibles</CardTitle>
-            <ParkingCircle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Espacios</CardTitle>
+            <ParkingCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{tenant?.available_spaces ?? '—'}</div>
-            <p className="text-xs text-muted-foreground">de {tenant?.total_spaces ?? '—'} totales</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{tenant?.available_spaces ?? '—'}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">de {tenant?.total_spaces ?? '—'} totales</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Vehículos Activos</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Activos</CardTitle>
+            <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeSessions.length}</div>
-            <p className="text-xs text-muted-foreground">en este momento</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{activeSessions.length}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">en este momento</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ocupación</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Ocupación</CardTitle>
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{occupancyPercent}%</div>
-            <Badge variant={occupancyPercent > 80 ? 'destructive' : 'secondary'} className="mt-1">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{occupancyPercent}%</div>
+            <Badge variant={occupancyPercent > 80 ? 'destructive' : 'secondary'} className="mt-1 text-[10px] sm:text-xs">
               {occupancyPercent > 80 ? 'Alta' : 'Normal'}
             </Badge>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos Hoy</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">Ingresos</CardTitle>
+            <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(todayRevenue)}</div>
-            <p className="text-xs text-muted-foreground">{todayCompleted.length} servicios completados</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-xl sm:text-2xl font-bold">{formatCurrency(todayRevenue)}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{todayCompleted.length} completados</p>
           </CardContent>
         </Card>
       </div>
