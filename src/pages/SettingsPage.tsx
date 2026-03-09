@@ -19,7 +19,6 @@ export default function SettingsPage() {
   const { tenant, planModules } = useTenant();
   const { colorData, currentHex, isDirty, previewPreset, previewCustomHex, save: saveColor, revert: revertColor, presets } = useThemeColor();
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [customHex, setCustomHex] = useState('');
 
   // Profile form
