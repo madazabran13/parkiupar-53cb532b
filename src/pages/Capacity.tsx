@@ -462,11 +462,11 @@ export default function Capacity() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Nombre *</Label>
+                <Label>Nombre (opcional)</Label>
                 <Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Teléfono *</Label>
+                <Label>Teléfono (opcional)</Label>
                 <Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
               </div>
             </div>
