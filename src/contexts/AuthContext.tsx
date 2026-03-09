@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import type { AppRole, UserProfile } from '@/types';
 
 interface AuthContextType {
