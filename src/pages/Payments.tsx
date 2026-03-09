@@ -36,7 +36,7 @@ type TenantWithPlan = {
   address: string | null;
   phone: string | null;
   email: string | null;
-  logo_url: string | null;
+  
   plans: { id: string; name: string; price_monthly: number } | null;
 };
 
