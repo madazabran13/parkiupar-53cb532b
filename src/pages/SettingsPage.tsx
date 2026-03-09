@@ -135,60 +135,6 @@ export default function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Logo Section */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Image className="h-4 w-4" /> Logo del Parqueadero
-                </Label>
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-shrink-0">
-                    {logoPreview ? (
-                      <img
-                        src={logoPreview}
-                        alt="Logo"
-                        className="h-20 w-20 rounded-lg object-cover border border-border shadow-sm"
-                      />
-                    ) : (
-                      <div className="h-20 w-20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted">
-                        <Building2 className="h-8 w-8 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingLogo}
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                      {uploadingLogo ? 'Subiendo...' : 'Subir logo'}
-                    </Button>
-                    {logoPreview && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2 text-destructive hover:text-destructive"
-                        onClick={handleRemoveLogo}
-                        disabled={uploadingLogo}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Eliminar
-                      </Button>
-                    )}
-                    <p className="text-[11px] text-muted-foreground">PNG, JPG. Máx 2MB.</p>
-                  </div>
-                </div>
-              </div>
-
               {/* Name & Address */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
