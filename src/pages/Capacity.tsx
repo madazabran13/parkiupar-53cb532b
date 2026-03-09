@@ -236,7 +236,7 @@ export default function Capacity() {
       queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
     },
-    onError: () => toast.error('Error al registrar entrada'),
+    onError: (e: any) => toast.error(e.message || 'Error al registrar entrada'),
   });
 
   const exitMutation = useMutation({
