@@ -1,7 +1,6 @@
 export type AppRole = 'superadmin' | 'admin' | 'operator' | 'viewer';
 export type VehicleType = 'car' | 'motorcycle' | 'truck' | 'bicycle';
 export type SessionStatus = 'active' | 'completed' | 'cancelled';
-export type LicenseType = 'basic' | 'pro' | 'enterprise';
 
 export interface Plan {
   id: string;
