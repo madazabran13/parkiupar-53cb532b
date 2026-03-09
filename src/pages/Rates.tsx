@@ -249,16 +249,25 @@ export default function Rates() {
               <Label>Tarifa por hora (COP) *</Label>
               <Input type="number" placeholder="3500" value={ratePerHour} onChange={(e) => setRatePerHour(e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Fracción (min)</Label>
-                <Input type="number" value={fractionMinutes} onChange={(e) => setFractionMinutes(e.target.value)} />
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label>Cobro por fracciones</Label>
+                <p className="text-xs text-muted-foreground">Cobra por fracciones de tiempo en vez de hora completa</p>
               </div>
-              <div className="space-y-2">
-                <Label>Mínimo (min)</Label>
-                <Input type="number" value={minimumMinutes} onChange={(e) => setMinimumMinutes(e.target.value)} />
-              </div>
+              <Switch checked={fractionEnabled} onCheckedChange={setFractionEnabled} />
             </div>
+            {fractionEnabled && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Fracción (min)</Label>
+                  <Input type="number" value={fractionMinutes} onChange={(e) => setFractionMinutes(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mínimo (min)</Label>
+                  <Input type="number" value={minimumMinutes} onChange={(e) => setMinimumMinutes(e.target.value)} />
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
