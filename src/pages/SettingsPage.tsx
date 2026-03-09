@@ -380,8 +380,8 @@ export default function SettingsPage() {
         </Card>
       </motion.div>
 
-      {/* Theme Color - only if plan includes theme_color module or user is superadmin */}
-      {(role === 'superadmin' || planModules.length === 0 || planModules.includes('theme_color')) && (
+      {/* Theme Color - only if plan includes theme_color module or user is superadmin, and not viewer */}
+      {role !== 'viewer' && (role === 'superadmin' || planModules.length === 0 || planModules.includes('theme_color')) && (
       <motion.div {...fadeIn} transition={{ delay: 0.15 }}>
         <Card>
           <CardHeader>
