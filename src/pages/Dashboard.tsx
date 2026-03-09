@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, LogOut } from 'lucide-react';
+import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, LogOut, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateLiveFee, calculateParkingFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS } from '@/types';
