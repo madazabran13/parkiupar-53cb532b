@@ -101,6 +101,22 @@ export default function Parking() {
   // Register entry
   const entryMutation = useMutation({
     mutationFn: async () => {
+      // Check if plate is already active in any parking lot
+      const { data: activeSession } = await supabase
+        .from('parking_sessions')
+        .select('id, tenant_id')
+        .eq('plate', plate.toUpperCase())
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (activeSession) {
+        if (activeSession.tenant_id === tenantId) {
+          throw new Error('Este vehículo ya se encuentra dentro del parqueadero');
+        } else {
+          throw new Error('Este vehículo se encuentra activo en otro parqueadero de la red');
+        }
+      }
+
       let customerId: string | null = null;
       let vehicleId: string | null = null;
 
@@ -147,7 +163,7 @@ export default function Parking() {
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
     },
-    onError: () => toast.error('Error al registrar entrada'),
+    onError: (e: any) => toast.error(e.message || 'Error al registrar entrada'),
   });
 
   // Register exit
