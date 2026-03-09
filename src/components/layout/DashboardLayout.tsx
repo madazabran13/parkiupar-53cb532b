@@ -5,6 +5,7 @@ import { AppSidebar } from './AppSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Badge } from '@/components/ui/badge';
 import { ParkingCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
