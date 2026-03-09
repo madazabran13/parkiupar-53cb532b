@@ -2,21 +2,23 @@ import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { User, Lock } from 'lucide-react';
+import { User, Lock, Palette, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function ProfileSettings() {
   const { profile, user, updatePassword } = useAuth();
+  const { colorData, currentHex, isDirty, previewPreset, previewCustomHex, save: saveColor, revert: revertColor, presets } = useThemeColor();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [customHex, setCustomHex] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -51,7 +53,7 @@ export default function ProfileSettings() {
     },
     onSuccess: () => {
       toast.success('Contraseña actualizada');
-      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+      setNewPassword(''); setConfirmPassword('');
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
@@ -100,6 +102,105 @@ export default function ProfileSettings() {
               disabled={updateProfileMutation.isPending || !fullName.trim()}
             >
               {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Theme Color */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Palette className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle>Color del Tema</CardTitle>
+              <CardDescription>Personaliza el color principal de la aplicación</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Preset colors */}
+          <div className="space-y-2">
+            <Label>Colores predeterminados</Label>
+            <div className="flex flex-wrap gap-3">
+              {presets.map((preset) => {
+                const isActive = colorData.preset === preset.name;
+                const bgColor = `hsl(${preset.hue}, ${preset.saturation}%, ${preset.lightness}%)`;
+                return (
+                  <button
+                    key={preset.name}
+                    onClick={() => previewPreset(preset.name)}
+                    className="relative flex flex-col items-center gap-1.5 group"
+                    title={preset.label}
+                  >
+                    <div
+                      className={cn(
+                        'h-10 w-10 rounded-full border-2 transition-all flex items-center justify-center shadow-sm',
+                        isActive ? 'border-foreground scale-110 shadow-md' : 'border-transparent hover:scale-105 hover:shadow-md'
+                      )}
+                      style={{ backgroundColor: bgColor }}
+                    >
+                      {isActive && <Check className="h-4 w-4 text-white drop-shadow-sm" />}
+                    </div>
+                    <span className={cn(
+                      'text-[10px]',
+                      isActive ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                    )}>
+                      {preset.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Custom color picker */}
+          <div className="space-y-2">
+            <Label>Color personalizado</Label>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={currentHex}
+                  onChange={(e) => {
+                    setCustomHex(e.target.value);
+                    previewCustomHex(e.target.value);
+                  }}
+                  className="h-10 w-10 rounded-full cursor-pointer border border-border appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none"
+                />
+              </div>
+              <Input
+                value={customHex || currentHex}
+                onChange={(e) => {
+                  setCustomHex(e.target.value);
+                  if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+                    previewCustomHex(e.target.value);
+                  }
+                }}
+                placeholder="#3b82f6"
+                className="w-32 font-mono text-sm"
+                maxLength={7}
+              />
+              <div
+                className="h-8 flex-1 rounded-md border border-border"
+                style={{ backgroundColor: `hsl(var(--primary))` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Selecciona un color o ingresa un código hexadecimal</p>
+          </div>
+
+          {/* Save / Revert buttons */}
+          <div className="flex justify-end gap-2">
+            {isDirty && (
+              <Button variant="outline" onClick={() => { revertColor(); setCustomHex(''); }}>
+                Cancelar
+              </Button>
+            )}
+            <Button
+              onClick={() => { saveColor(); toast.success('Color guardado'); }}
+              disabled={!isDirty}
+            >
+              {isDirty ? 'Guardar Color' : 'Color guardado'}
             </Button>
           </div>
         </CardContent>
