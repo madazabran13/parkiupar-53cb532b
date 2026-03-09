@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, Check, AlertTriangle, Info, XCircle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Bell, Check, AlertTriangle, Info, XCircle, ShieldAlert, CheckCircle2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -90,6 +90,32 @@ export function NotificationBell() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
+  const deleteNotification = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from('notifications').delete().eq('id', id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: 'Notificación eliminada' });
+    },
+  });
+
+  const deleteAllNotifications = useMutation({
+    mutationFn: async () => {
+      const base = supabase.from('notifications').delete();
+
+      const q = role === 'superadmin'
+        ? base.or(`user_id.eq.${user!.id},user_id.is.null`)
+        : base.eq('user_id', user!.id);
+
+      await q;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: 'Todas las notificaciones eliminadas' });
+    },
+  });
+
   const handleReactivate = async (notifId: string, tenantId: string) => {
     const { error } = await supabase.from('tenants').update({ is_active: true }).eq('id', tenantId);
     if (error) {
@@ -121,11 +147,24 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between p-3 border-b">
           <h4 className="font-semibold text-sm">Notificaciones</h4>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => markAllRead.mutate()}>
-              <Check className="h-3 w-3 mr-1" /> Marcar todas
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => markAllRead.mutate()}>
+                <Check className="h-3 w-3 mr-1" /> Leer
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs h-7 px-2 text-destructive hover:text-destructive" 
+                onClick={() => deleteAllNotifications.mutate()}
+                disabled={deleteAllNotifications.isPending}
+              >
+                <Trash2 className="h-3 w-3 mr-1" /> Borrar
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-96">
           {notifications.length === 0 ? (
@@ -145,7 +184,7 @@ export function NotificationBell() {
               return (
                 <div
                   key={n.id}
-                  className={`flex gap-3 p-3 border-b last:border-0 transition-colors ${!n.is_read ? 'bg-muted/30' : ''} ${!isReactivation ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                  className={`flex gap-3 p-3 border-b last:border-0 transition-colors group ${!n.is_read ? 'bg-muted/30' : ''} ${!isReactivation ? 'cursor-pointer hover:bg-muted/50' : ''}`}
                   onClick={() => !n.is_read && !isReactivation && markAsRead.mutate(n.id)}
                 >
                   <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${color}`} />
@@ -185,7 +224,20 @@ export function NotificationBell() {
                       </div>
                     )}
                   </div>
-                  {!n.is_read && !isReactivation && <div className="h-2 w-2 rounded-full bg-primary mt-1 flex-shrink-0" />}
+                  <div className="flex flex-col items-center gap-1">
+                    {!n.is_read && !isReactivation && <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification.mutate(n.id);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               );
             })
