@@ -383,8 +383,18 @@ export default function SuperAdmin() {
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase.from('tenants').update({ is_active }).eq('id', id);
       if (error) throw error;
+      // Mark reactivation notifications for this tenant as read
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('tenant_id', id)
+        .eq('is_read', false)
+        .eq('title', 'Solicitud de reactivación');
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-tenants'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications'] });
+    },
   });
 
   // Plans CRUD
