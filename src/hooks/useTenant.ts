@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Tenant } from '@/types';
 
-const POLL_INTERVAL = 30_000; // 30 seconds
+const POLL_INTERVAL = 3_000; // 3 seconds
 
 export function useTenant() {
   const { tenantId } = useAuth();
