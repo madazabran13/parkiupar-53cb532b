@@ -14,7 +14,7 @@ export default function SuspendedAccount() {
   const { user, profile, signOut } = useAuth();
   const { tenant } = useTenant();
   const navigate = useNavigate();
-  const [requested, setRequested] = useState(false);
+  const [requestCount, setRequestCount] = useState(0);
 
   const reactivateMutation = useMutation({
     mutationFn: async () => {
@@ -39,7 +39,7 @@ export default function SuspendedAccount() {
       }
     },
     onSuccess: () => {
-      setRequested(true);
+      setRequestCount(prev => prev + 1);
       toast({ title: '✅ Solicitud enviada', description: 'El administrador ha sido notificado. Te contactaremos pronto.' });
     },
     onError: (err: any) => {
@@ -126,7 +126,7 @@ export default function SuspendedAccount() {
               transition={{ delay: 0.7 }}
               className="space-y-3"
             >
-              {!requested ? (
+              {requestCount === 0 ? (
                 <Button
                   className="w-full gap-2"
                   size="lg"
@@ -137,18 +137,30 @@ export default function SuspendedAccount() {
                   {reactivateMutation.isPending ? 'Enviando solicitud...' : 'Solicitar reactivación'}
                 </Button>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-center"
-                >
-                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                    ✅ Solicitud enviada correctamente
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    El administrador de la plataforma recibirá tu solicitud y te habilitará el acceso.
-                  </p>
-                </motion.div>
+                <div className="space-y-3">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-center"
+                  >
+                    <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                      ✅ Solicitud enviada ({requestCount} {requestCount === 1 ? 'vez' : 'veces'})
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      El administrador de la plataforma recibirá tu solicitud y te habilitará el acceso.
+                    </p>
+                  </motion.div>
+                  <Button
+                    variant="secondary"
+                    className="w-full gap-2"
+                    size="sm"
+                    onClick={() => reactivateMutation.mutate()}
+                    disabled={reactivateMutation.isPending}
+                  >
+                    <Send className="h-4 w-4" />
+                    {reactivateMutation.isPending ? 'Enviando...' : 'Enviar otra solicitud'}
+                  </Button>
+                </div>
               )}
 
               <Button
