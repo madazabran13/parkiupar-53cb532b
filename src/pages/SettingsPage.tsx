@@ -440,7 +440,7 @@ export default function SettingsPage() {
                     value={currentHex}
                     onChange={(e) => {
                       setCustomHex(e.target.value);
-                      selectCustomHex(e.target.value);
+                      previewCustomHex(e.target.value);
                     }}
                     className="h-10 w-10 rounded-full cursor-pointer border border-border appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none"
                   />
