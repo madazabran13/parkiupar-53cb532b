@@ -214,6 +214,19 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Overcapacity Alert */}
+      {tenant && activeSessions.length > tenant.total_spaces && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="font-semibold">Sobrecupo detectado</AlertTitle>
+          <AlertDescription className="text-sm">
+            Hay <strong>{activeSessions.length}</strong> vehículos estacionados pero tu plan solo permite <strong>{tenant.total_spaces}</strong> espacios.
+            Se excede en <strong>{activeSessions.length - tenant.total_spaces}</strong> {activeSessions.length - tenant.total_spaces === 1 ? 'vehículo' : 'vehículos'}.
+            Considera actualizar tu plan o registrar salidas pendientes.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Active Sessions - Visual Cards */}
       <div>
         <div className="flex items-center gap-2 mb-3 sm:mb-4">
