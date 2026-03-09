@@ -231,9 +231,9 @@ export default function Dashboard() {
         ) : (
           <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {activeSessions.map((session) => {
-              const rate = rateMap[session.vehicle_type];
-              const liveFee = rate
-                ? calculateLiveFee(session.entry_time, rate.rate_per_hour, rate.fraction_minutes)
+              const sessionRate = getSessionRate(session);
+              const liveFee = sessionRate
+                ? calculateLiveFee(session.entry_time, sessionRate.rate_per_hour, sessionRate.fraction_minutes)
                 : 0;
               const VehicleIcon = VEHICLE_ICONS[session.vehicle_type] || Car;
               const entryDate = new Date(session.entry_time);
