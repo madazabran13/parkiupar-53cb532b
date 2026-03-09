@@ -70,6 +70,7 @@ export default function SuperAdmin() {
     { key: 'audit', label: 'Auditoría' },
     { key: 'payments', label: 'Pagos y Facturación' },
     { key: 'my_plan', label: 'Mi Plan' },
+    { key: 'theme_color', label: 'Color del Tema' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
