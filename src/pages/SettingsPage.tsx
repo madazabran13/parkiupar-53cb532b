@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { profile, user, updatePassword, role, tenantId } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
   const { colorData, currentHex, isDirty, previewPreset, previewCustomHex, save: saveColor, revert: revertColor, presets } = useThemeColor();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -380,7 +380,8 @@ export default function SettingsPage() {
         </Card>
       </motion.div>
 
-      {/* Theme Color */}
+      {/* Theme Color - only if plan includes theme_color module or user is superadmin */}
+      {(role === 'superadmin' || planModules.length === 0 || planModules.includes('theme_color')) && (
       <motion.div {...fadeIn} transition={{ delay: 0.15 }}>
         <Card>
           <CardHeader>
@@ -482,6 +483,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </motion.div>
+      )}
 
       {/* Password */}
       <motion.div {...fadeIn} transition={{ delay: 0.2 }}>
