@@ -13,7 +13,7 @@ import { useRealtime } from '@/hooks/useRealtime';
 
 export default function SuspendedAccount() {
   const { user, profile, signOut } = useAuth();
-  const { tenant, refetch: refetchTenant } = useTenant();
+  const { tenant } = useTenant();
   const navigate = useNavigate();
   const [requestCount, setRequestCount] = useState(0);
   const [isReactivated, setIsReactivated] = useState(false);
