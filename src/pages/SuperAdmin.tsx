@@ -125,19 +125,38 @@ export default function SuperAdmin() {
     queryKeys: [['admin-tenants']],
   });
 
-  const handleReactivate = async (notifId: string, tenantId: string) => {
-    // Enable tenant
+  // Group reactivation requests by tenant
+  const groupedReactivations = reactivationRequests.reduce((acc: Record<string, { tenantId: string; count: number; notifIds: string[]; lastMessage: string; lastDate: string }>, notif: any) => {
+    const tid = notif.metadata?.tenant_id || 'unknown';
+    if (!acc[tid]) {
+      acc[tid] = { tenantId: tid, count: 0, notifIds: [], lastMessage: notif.message, lastDate: notif.created_at };
+    }
+    acc[tid].count++;
+    acc[tid].notifIds.push(notif.id);
+    if (notif.created_at > acc[tid].lastDate) {
+      acc[tid].lastDate = notif.created_at;
+      acc[tid].lastMessage = notif.message;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+  const groupedReactivationList = Object.values(groupedReactivations);
+
+  const handleReactivate = async (notifIds: string[], tenantId: string) => {
     const { error } = await supabase.from('tenants').update({ is_active: true }).eq('id', tenantId);
     if (error) { toast.error(`Error: ${error.message}`); return; }
-    // Mark notification as read
-    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+    // Mark ALL notifications for this tenant as read
+    for (const nid of notifIds) {
+      await supabase.from('notifications').update({ is_read: true }).eq('id', nid);
+    }
     toast.success('Parqueadero reactivado exitosamente');
     queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
     queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
   };
 
-  const handleDismissReactivation = async (notifId: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+  const handleDismissReactivation = async (notifIds: string[]) => {
+    for (const nid of notifIds) {
+      await supabase.from('notifications').update({ is_read: true }).eq('id', nid);
+    }
     queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
   };
 
@@ -524,8 +543,8 @@ export default function SuperAdmin() {
             </Card>
           )}
 
-          {/* Reactivation Requests */}
-          {reactivationRequests.length > 0 && (
+          {/* Reactivation Requests - grouped by tenant */}
+          {groupedReactivationList.length > 0 && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2">
@@ -534,24 +553,26 @@ export default function SuperAdmin() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {reactivationRequests.map((notif: any) => {
-                  const tenantId = notif.metadata?.tenant_id;
-                  const tenantName = tenants.find(t => t.id === tenantId)?.name;
+                {groupedReactivationList.map((group: any) => {
+                  const tenantName = tenants.find(t => t.id === group.tenantId)?.name || 'Desconocido';
                   return (
-                    <div key={notif.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+                    <div key={group.tenantId} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-background">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{notif.message}</p>
+                        <p className="text-sm font-medium">
+                          <span className="font-semibold">{tenantName}</span>
+                          {group.count > 1 && (
+                            <Badge variant="destructive" className="ml-2 text-[10px]">{group.count} solicitudes</Badge>
+                          )}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(notif.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          Última solicitud: {new Date(group.lastDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {tenantId && (
-                          <Button size="sm" variant="default" className="h-7 gap-1 text-xs" onClick={() => handleReactivate(notif.id, tenantId)}>
-                            <CheckCircle2 className="h-3 w-3" /> Activar
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => handleDismissReactivation(notif.id)}>
+                        <Button size="sm" variant="default" className="h-7 gap-1 text-xs" onClick={() => handleReactivate(group.notifIds, group.tenantId)}>
+                          <CheckCircle2 className="h-3 w-3" /> Activar
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => handleDismissReactivation(group.notifIds)}>
                           <XCircle className="h-3 w-3" /> Descartar
                         </Button>
                       </div>
