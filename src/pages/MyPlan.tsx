@@ -15,6 +15,23 @@ import { formatCurrency } from '@/lib/utils/formatters';
 import { motion } from 'framer-motion';
 import type { Plan } from '@/types';
 
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  parking: 'Gestión de Vehículos',
+  customers: 'Clientes',
+  rates: 'Tarifas',
+  capacity: 'Control de Aforo',
+  reports: 'Reportes',
+  reports_download: 'Descarga de Reportes PDF',
+  map: 'Mapa',
+  team: 'Gestión de Usuarios',
+  settings: 'Configuración',
+  audit: 'Auditoría',
+  payments: 'Pagos y Facturación',
+  my_plan: 'Mi Plan',
+  theme_color: 'Color del Tema',
+};
+
 export default function MyPlan() {
   const { tenantId } = useAuth();
   const { tenant } = useTenant();
@@ -134,7 +151,7 @@ export default function MyPlan() {
                 <p className="text-sm text-muted-foreground">Módulos incluidos</p>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {(Array.isArray(currentPlan.modules) ? currentPlan.modules : []).map((m: string) => (
-                    <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>
+                    <Badge key={m} variant="outline" className="text-[10px]">{MODULE_LABELS[m] || m}</Badge>
                   ))}
                 </div>
               </div>
@@ -177,7 +194,7 @@ export default function MyPlan() {
                       {(Array.isArray(plan.modules) ? plan.modules : []).map((m: string) => (
                         <li key={m} className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Check className="h-3.5 w-3.5 text-primary/60 flex-shrink-0" />
-                          {m}
+                          {MODULE_LABELS[m] || m}
                         </li>
                       ))}
                     </ul>
