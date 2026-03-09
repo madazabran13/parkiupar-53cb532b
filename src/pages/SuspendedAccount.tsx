@@ -14,7 +14,7 @@ export default function SuspendedAccount() {
   const { user, profile, signOut } = useAuth();
   const { tenant } = useTenant();
   const navigate = useNavigate();
-  const [requested, setRequested] = useState(false);
+  const [requestCount, setRequestCount] = useState(0);
 
   const reactivateMutation = useMutation({
     mutationFn: async () => {
@@ -39,7 +39,7 @@ export default function SuspendedAccount() {
       }
     },
     onSuccess: () => {
-      setRequested(true);
+      setRequestCount(prev => prev + 1);
       toast({ title: '✅ Solicitud enviada', description: 'El administrador ha sido notificado. Te contactaremos pronto.' });
     },
     onError: (err: any) => {

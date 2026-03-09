@@ -102,6 +102,7 @@ export default function SuperAdmin() {
   // Reactivation requests from notifications
   const { data: reactivationRequests = [] } = useQuery({
     queryKey: ['reactivation-requests'],
+    refetchInterval: 10000,
     queryFn: async () => {
       const { data } = await supabase
         .from('notifications')
@@ -111,6 +112,17 @@ export default function SuperAdmin() {
         .order('created_at', { ascending: false });
       return data || [];
     },
+  });
+
+  // Real-time updates for notifications and tenants
+  useRealtime({
+    table: 'notifications',
+    queryKeys: [['reactivation-requests'], ['notifications']],
+  });
+
+  useRealtime({
+    table: 'tenants',
+    queryKeys: [['admin-tenants']],
   });
 
   const handleReactivate = async (notifId: string, tenantId: string) => {
