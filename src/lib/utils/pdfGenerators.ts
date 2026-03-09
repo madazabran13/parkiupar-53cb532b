@@ -123,7 +123,6 @@ type InvoiceData = {
   previousExpires: string | null;
   newExpires: string;
   paymentDate: string;
-  logoUrl?: string | null;
   companyName?: string;
 };
 
@@ -135,17 +134,7 @@ export async function generateInvoicePDF(data: InvoiceData) {
   doc.setFillColor(17, 24, 39);
   doc.rect(0, 0, pw, 50, 'F');
 
-  // Logo (try to load)
-  let logoLoaded = false;
-  if (data.logoUrl) {
-    try {
-      const img = await loadImage(data.logoUrl);
-      doc.addImage(img, 'PNG', 14, 8, 34, 34);
-      logoLoaded = true;
-    } catch { /* skip logo */ }
-  }
-
-  const textX = logoLoaded ? 54 : 14;
+  const textX = 14;
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');

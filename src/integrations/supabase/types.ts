@@ -404,7 +404,6 @@ export type Database = {
           id: string
           is_active: boolean
           latitude: number | null
-          logo_url: string | null
           longitude: number | null
           name: string
           phone: string | null
@@ -425,7 +424,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           latitude?: number | null
-          logo_url?: string | null
           longitude?: number | null
           name: string
           phone?: string | null
@@ -446,7 +444,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           latitude?: number | null
-          logo_url?: string | null
           longitude?: number | null
           name?: string
           phone?: string | null
