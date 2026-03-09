@@ -27,17 +27,43 @@ export function NotificationBell() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const channelConfig: Record<string, string> = {
+      event: '*',
+      schema: 'public',
+      table: 'notifications',
+    };
+
+    if (role !== 'superadmin') {
+      channelConfig.filter = `user_id=eq.${user.id}`;
+    }
+
+    const channel = supabase
+      .channel(`realtime-notifications-${role}-${user.id}`)
+      .on('postgres_changes', channelConfig as any, () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, role, queryClient]);
+
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications', user?.id],
     enabled: !!user,
-    refetchInterval: 30000,
+    refetchInterval: role === 'superadmin' ? 10000 : 30000,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(30);
+      const base = supabase.from('notifications').select('*');
+
+      const q = role === 'superadmin'
+        ? base.or(`user_id.eq.${user!.id},user_id.is.null`)
+        : base.eq('user_id', user!.id);
+
+      const { data } = await q.order('created_at', { ascending: false }).limit(30);
       return data || [];
     },
   });
