@@ -47,6 +47,29 @@ export default function Parking() {
   const [spaceNumber, setSpaceNumber] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Edit form state
+  const [editPlate, setEditPlate] = useState('');
+  const [editVehicleType, setEditVehicleType] = useState<VehicleType>('car');
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editCustomerPhone, setEditCustomerPhone] = useState('');
+  const [editSpaceNumber, setEditSpaceNumber] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+
+  const canEdit = (session: ParkingSession) => {
+    const elapsed = (Date.now() - new Date(session.entry_time).getTime()) / 1000;
+    return elapsed <= 120; // 2 minutes
+  };
+
+  const openEditDialog = (session: ParkingSession) => {
+    setEditSession(session);
+    setEditPlate(session.plate);
+    setEditVehicleType(session.vehicle_type);
+    setEditCustomerName(session.customer_name || '');
+    setEditCustomerPhone(session.customer_phone || '');
+    setEditSpaceNumber(session.space_number || '');
+    setEditNotes(session.notes || '');
+  };
+
   const { data: rates = [] } = useQuery({
     queryKey: ['rates', tenantId],
     enabled: !!tenantId,
