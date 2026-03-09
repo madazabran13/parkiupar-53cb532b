@@ -190,7 +190,7 @@ export default function Parking() {
   const exitMutation = useMutation({
     mutationFn: async (session: ParkingSession) => {
       const exitTime = new Date().toISOString();
-      const rate = rateMap[session.vehicle_type];
+      const rate = getSessionRate(session);
       const fee = rate
         ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
         : { total: 0, totalMinutes: 0 };
