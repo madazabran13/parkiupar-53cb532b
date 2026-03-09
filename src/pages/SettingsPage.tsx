@@ -450,7 +450,7 @@ export default function SettingsPage() {
                   onChange={(e) => {
                     setCustomHex(e.target.value);
                     if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
-                      selectCustomHex(e.target.value);
+                      previewCustomHex(e.target.value);
                     }
                   }}
                   placeholder="#3b82f6"
