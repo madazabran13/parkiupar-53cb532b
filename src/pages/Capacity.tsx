@@ -57,9 +57,9 @@ export default function Capacity() {
   const [exitSpace, setExitSpace] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
 
-  // Live price refresh every 3s
+  // Live price refresh every 1s
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 3000);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
