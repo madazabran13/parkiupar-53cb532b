@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, LogOut as ExitIcon } from 'lucide-react';
+import { Plus, LogOut as ExitIcon, Pencil } from 'lucide-react';
 import { formatCurrency, formatDateTime, formatDuration, formatTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
@@ -25,6 +25,7 @@ export default function Parking() {
   const queryClient = useQueryClient();
   const [entryOpen, setEntryOpen] = useState(false);
   const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
+  const [editSession, setEditSession] = useState<ParkingSession | null>(null);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -45,6 +46,29 @@ export default function Parking() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [spaceNumber, setSpaceNumber] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Edit form state
+  const [editPlate, setEditPlate] = useState('');
+  const [editVehicleType, setEditVehicleType] = useState<VehicleType>('car');
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editCustomerPhone, setEditCustomerPhone] = useState('');
+  const [editSpaceNumber, setEditSpaceNumber] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+
+  const canEdit = (session: ParkingSession) => {
+    const elapsed = (Date.now() - new Date(session.entry_time).getTime()) / 1000;
+    return elapsed <= 120; // 2 minutes
+  };
+
+  const openEditDialog = (session: ParkingSession) => {
+    setEditSession(session);
+    setEditPlate(session.plate);
+    setEditVehicleType(session.vehicle_type);
+    setEditCustomerName(session.customer_name || '');
+    setEditCustomerPhone(session.customer_phone || '');
+    setEditSpaceNumber(session.space_number || '');
+    setEditNotes(session.notes || '');
+  };
 
   const { data: rates = [] } = useQuery({
     queryKey: ['rates', tenantId],
@@ -152,6 +176,40 @@ export default function Parking() {
     onError: () => toast.error('Error al registrar salida'),
   });
 
+  // Edit session mutation
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editSession) return;
+      if (!canEdit(editSession)) {
+        throw new Error('TIMEOUT');
+      }
+      const rate = rateMap[editVehicleType];
+      const { error } = await supabase.from('parking_sessions').update({
+        plate: editPlate.toUpperCase(),
+        vehicle_type: editVehicleType,
+        customer_name: editCustomerName || null,
+        customer_phone: editCustomerPhone || null,
+        space_number: editSpaceNumber || null,
+        notes: editNotes || null,
+        rate_per_hour: rate?.rate_per_hour || 0,
+      }).eq('id', editSession.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Vehículo actualizado');
+      setEditSession(null);
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+    },
+    onError: (err: any) => {
+      if (err.message === 'TIMEOUT') {
+        toast.error('Ya pasaron más de 2 minutos, no se puede editar');
+        setEditSession(null);
+      } else {
+        toast.error('Error al actualizar');
+      }
+    },
+  });
+
   const resetForm = () => {
     setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes('');
   };
@@ -218,9 +276,16 @@ export default function Parking() {
             loading={loadingActive}
             searchPlaceholder="Buscar por placa, cliente..."
             actions={(row) => (
-              <Button size="sm" variant="outline" onClick={() => setExitSession(row)}>
-                <ExitIcon className="h-3 w-3 mr-1" /> Salida
-              </Button>
+              <div className="flex gap-1">
+                {canEdit(row) && (
+                  <Button size="sm" variant="ghost" onClick={() => openEditDialog(row)} title="Editar (disponible por 2 min)">
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setExitSession(row)}>
+                  <ExitIcon className="h-3 w-3 mr-1" /> Salida
+                </Button>
+              </div>
             )}
           />
         </TabsContent>
@@ -353,6 +418,60 @@ export default function Parking() {
               disabled={exitMutation.isPending}
             >
               {exitMutation.isPending ? 'Procesando...' : 'Confirmar Salida'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editSession} onOpenChange={() => setEditSession(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Vehículo</DialogTitle>
+            <DialogDescription>
+              Puedes editar dentro de los primeros 2 minutos
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Placa *</Label>
+              <Input value={editPlate} onChange={(e) => setEditPlate(e.target.value.toUpperCase())} className="uppercase" />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de vehículo *</Label>
+              <Select value={editVehicleType} onValueChange={(v) => setEditVehicleType(v as VehicleType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input value={editCustomerName} onChange={(e) => setEditCustomerName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Teléfono del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input value={editCustomerPhone} onChange={(e) => setEditCustomerPhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Espacio <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input value={editSpaceNumber} onChange={(e) => setEditSpaceNumber(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notas <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSession(null)}>Cancelar</Button>
+            <Button
+              onClick={() => editMutation.mutate()}
+              disabled={!editPlate || editMutation.isPending}
+            >
+              {editMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
           </DialogFooter>
         </DialogContent>
