@@ -3,14 +3,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
+import { useThemeColor, COLOR_PRESETS } from '@/hooks/useThemeColor';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image } from 'lucide-react';
+import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image, Palette, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MapLocationPicker from '@/components/MapLocationPicker';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { profile, user, updatePassword, role, tenantId } = useAuth();
