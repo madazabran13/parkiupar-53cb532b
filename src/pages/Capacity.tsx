@@ -385,21 +385,29 @@ export default function Capacity() {
         <CardHeader><CardTitle className="flex items-center gap-2"><ParkingCircle className="h-5 w-5" /> Mapa de Espacios</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-            {finalSpaces.map((space) => (
-              <button
-                key={space.num}
-                onClick={() => handleSpaceClick(space)}
-                className={`relative flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 ${
-                  space.occupied
-                    ? `${TYPE_COLORS[space.vehicleType || 'car'] || 'bg-blue-500 hover:bg-blue-600'} text-white border-transparent shadow-sm`
-                    : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
-                }`}
-                title={space.session ? `${space.session.plate} - ${getCategoryLabel(space.session.vehicle_type)} - Click para dar salida` : `Espacio #${space.num} - Click para registrar`}
-              >
-                <span className="font-bold">{space.num}</span>
-                {space.session && <span className="text-[9px] truncate w-full text-center">{space.session.plate}</span>}
-              </button>
-            ))}
+            {finalSpaces.map((space) => {
+              const spaceRate = space.session ? findRateForSession(space.session) : null;
+              const spaceLiveFee = space.session && spaceRate
+                ? calculateLiveFee(space.session.entry_time, spaceRate.rate_per_hour, spaceRate.fraction_minutes)
+                : 0;
+
+              return (
+                <button
+                  key={space.num}
+                  onClick={() => handleSpaceClick(space)}
+                  className={`relative flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 ${
+                    space.occupied
+                      ? `${TYPE_COLORS[space.vehicleType || 'car'] || 'bg-blue-500 hover:bg-blue-600'} text-white border-transparent shadow-sm`
+                      : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
+                  }`}
+                  title={space.session ? `${space.session.plate} - ${getCategoryLabel(space.session.vehicle_type)} - ${formatCurrency(spaceLiveFee)} - Click para dar salida` : `Espacio #${space.num} - Click para registrar`}
+                >
+                  <span className="font-bold">{space.num}</span>
+                  {space.session && <span className="text-[9px] truncate w-full text-center">{space.session.plate}</span>}
+                  {space.session && spaceLiveFee > 0 && <span className="text-[8px] font-bold opacity-90">{formatCurrency(spaceLiveFee)}</span>}
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
