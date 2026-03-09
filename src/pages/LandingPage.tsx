@@ -71,7 +71,7 @@ const operatorBenefits = [
 
 const faqs = [
   {
-    question: '¿Qué necesito para empezar a usar ParkingVpar?',
+    question: '¿Qué necesito para empezar a usar ParkiUpar?',
     answer: 'Solo necesitas un dispositivo con acceso a internet (computador, tablet o celular) y crear tu cuenta. No requiere instalación.',
   },
   {
@@ -79,12 +79,12 @@ const faqs = [
     answer: 'Parqueaderos pequeños, medianos y grandes que buscan digitalizar y optimizar la gestión de su operación diaria.',
   },
   {
-    question: '¿Qué tipo de planes ofrece ParkingVpar?',
+    question: '¿Qué tipo de planes ofrece ParkiUpar?',
     answer: 'Ofrecemos planes con suscripción mensual adaptados a la cantidad de espacios y funcionalidades que necesites.',
   },
   {
     question: '¿Es compatible con dispositivos móviles?',
-    answer: 'Sí, ParkingVpar es 100% responsive y funciona en cualquier navegador desde celular, tablet o computador.',
+    answer: 'Sí, ParkiUpar es 100% responsive y funciona en cualquier navegador desde celular, tablet o computador.',
   },
 ];
 
@@ -96,8 +96,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="ParkingVpar" className="h-8 w-8" />
-              <span className="text-xl font-bold text-foreground">ParkingVpar</span>
+              <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8" />
+              <span className="text-xl font-bold text-foreground">ParkiUpar</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Características</a>
@@ -176,7 +176,7 @@ export default function LandingPage() {
             >
               <img
                 src={heroDashboard}
-                alt="Dashboard ParkingVpar mostrando gestión de parqueadero"
+                alt="Dashboard ParkiUpar mostrando gestión de parqueadero"
                 className="w-full max-w-lg drop-shadow-2xl"
               />
             </motion.div>
@@ -352,7 +352,7 @@ export default function LandingPage() {
             {[
               {
                 name: 'Parqueadero Centro',
-                text: 'ParkingVpar nos permitió controlar los ingresos diarios de forma transparente. Ya no hay filtraciones de dinero y el reporte es en tiempo real.',
+                text: 'ParkiUpar nos permitió controlar los ingresos diarios de forma transparente. Ya no hay filtraciones de dinero y el reporte es en tiempo real.',
               },
               {
                 name: 'Parqueadero La Terminal',
@@ -435,7 +435,7 @@ export default function LandingPage() {
                   ¿Listo para digitalizar tu parqueadero?
                 </h2>
                 <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto mb-8">
-                  Únete a los parqueaderos que ya optimizaron su operación con ParkingVpar.
+                  Únete a los parqueaderos que ya optimizaron su operación con ParkiUpar.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button size="lg" variant="secondary" asChild className="text-base px-8 h-12">
@@ -456,11 +456,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="ParkingVpar" className="h-7 w-7" />
-              <span className="font-bold text-foreground">ParkingVpar</span>
+              <img src="/logo.png" alt="ParkiUpar" className="h-7 w-7" />
+              <span className="font-bold text-foreground">ParkiUpar</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ParkingVpar. Todos los derechos reservados.
+              © {new Date().getFullYear()} ParkiUpar. Todos los derechos reservados.
             </p>
             <div className="flex gap-6">
               <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Características</a>

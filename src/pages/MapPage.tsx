@@ -455,7 +455,7 @@ export default function MapPage() {
           )}
           <div className="min-w-0">
             <h1 className="text-base sm:text-xl md:text-2xl font-bold text-foreground truncate">
-              {isPublic ? 'ParkingVpar' : 'Mapa'}
+              {isPublic ? 'ParkiUpar' : 'Mapa'}
             </h1>
             <p className="text-[10px] sm:text-sm text-muted-foreground truncate">{filteredTenants.length} parqueaderos</p>
           </div>

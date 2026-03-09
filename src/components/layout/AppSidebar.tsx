@@ -95,9 +95,9 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
           <Link to={isSuperadmin ? '/superadmin' : role === 'viewer' ? '/map' : '/dashboard'} className="flex items-center gap-2 flex-1 min-w-0">
-            <img src="/logo.png" alt="ParkingVpar" className="h-8 w-8 rounded object-contain flex-shrink-0" />
+            <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8 rounded object-contain flex-shrink-0" />
             <span className="font-bold text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
-              {tenant?.name || 'ParkingVpar'}
+              {tenant?.name || 'ParkiUpar'}
             </span>
           </Link>
           <Button

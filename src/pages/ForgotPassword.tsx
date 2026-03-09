@@ -30,7 +30,7 @@ export default function ForgotPassword() {
     <div className="flex min-h-screen items-center justify-center bg-muted px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src="/logo.png" alt="ParkingVpar" className="mx-auto mb-2 h-14 w-14 rounded-lg object-contain" />
+          <img src="/logo.png" alt="ParkiUpar" className="mx-auto mb-2 h-14 w-14 rounded-lg object-contain" />
           <CardTitle>Recuperar Contraseña</CardTitle>
         </CardHeader>
         {sent ? (

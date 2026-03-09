@@ -92,7 +92,7 @@ export default function Reports() {
     doc.rect(0, 0, pageWidth, 35, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
-    doc.text(tenant?.name || 'ParkingVpar', 14, 18);
+    doc.text(tenant?.name || 'ParkiUpar', 14, 18);
     doc.setFontSize(10);
     doc.text('Reporte de Ingresos', 14, 28);
     doc.text(`Generado: ${formatDate(new Date())}`, pageWidth - 14, 28, { align: 'right' });

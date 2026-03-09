@@ -1,6 +1,6 @@
 
 -- ============================================
--- ParkingVpar SaaS - Complete Database Schema
+-- ParkiUpar SaaS - Complete Database Schema
 -- ============================================
 
 -- 1. ENUMS
