@@ -163,7 +163,7 @@ export default function Parking() {
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
     },
-    onError: () => toast.error('Error al registrar entrada'),
+    onError: (e: any) => toast.error(e.message || 'Error al registrar entrada'),
   });
 
   // Register exit
