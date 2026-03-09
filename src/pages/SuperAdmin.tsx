@@ -4,6 +4,7 @@ import MapLocationPicker from '@/components/MapLocationPicker';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtime } from '@/hooks/useRealtime';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
