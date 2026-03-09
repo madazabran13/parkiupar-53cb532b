@@ -176,7 +176,40 @@ export default function Parking() {
     onError: () => toast.error('Error al registrar salida'),
   });
 
-  const resetForm = () => {
+  // Edit session mutation
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editSession) return;
+      if (!canEdit(editSession)) {
+        throw new Error('TIMEOUT');
+      }
+      const rate = rateMap[editVehicleType];
+      const { error } = await supabase.from('parking_sessions').update({
+        plate: editPlate.toUpperCase(),
+        vehicle_type: editVehicleType,
+        customer_name: editCustomerName || null,
+        customer_phone: editCustomerPhone || null,
+        space_number: editSpaceNumber || null,
+        notes: editNotes || null,
+        rate_per_hour: rate?.rate_per_hour || 0,
+      }).eq('id', editSession.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Vehículo actualizado');
+      setEditSession(null);
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+    },
+    onError: (err: any) => {
+      if (err.message === 'TIMEOUT') {
+        toast.error('Ya pasaron más de 2 minutos, no se puede editar');
+        setEditSession(null);
+      } else {
+        toast.error('Error al actualizar');
+      }
+    },
+  });
+
     setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes('');
   };
 
