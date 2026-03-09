@@ -422,6 +422,60 @@ export default function Parking() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editSession} onOpenChange={() => setEditSession(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Vehículo</DialogTitle>
+            <DialogDescription>
+              Puedes editar dentro de los primeros 2 minutos
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Placa *</Label>
+              <Input value={editPlate} onChange={(e) => setEditPlate(e.target.value.toUpperCase())} className="uppercase" />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de vehículo *</Label>
+              <Select value={editVehicleType} onValueChange={(v) => setEditVehicleType(v as VehicleType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input value={editCustomerName} onChange={(e) => setEditCustomerName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Teléfono del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input value={editCustomerPhone} onChange={(e) => setEditCustomerPhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Espacio <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input value={editSpaceNumber} onChange={(e) => setEditSpaceNumber(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notas <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSession(null)}>Cancelar</Button>
+            <Button
+              onClick={() => editMutation.mutate()}
+              disabled={!editPlate || editMutation.isPending}
+            >
+              {editMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
