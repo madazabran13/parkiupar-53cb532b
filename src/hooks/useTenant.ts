@@ -15,12 +15,34 @@ export function useTenant() {
     if (!tenantId) return;
     const { data } = await supabase
       .from('tenants')
-      .select('*, plans(modules)')
+      .select('*, plans(modules, max_spaces)')
       .eq('id', tenantId)
       .single();
     if (data) {
       const { plans, ...tenantData } = data as any;
-      setTenant(tenantData as unknown as Tenant);
+      const t = tenantData as unknown as Tenant;
+
+      // Auto-fix: if available_spaces exceeds total_spaces, correct it
+      if (t.available_spaces > t.total_spaces) {
+        const corrected = Math.max(t.total_spaces, 0);
+        t.available_spaces = corrected;
+        // Fire-and-forget DB correction
+        supabase.from('tenants').update({ available_spaces: corrected }).eq('id', tenantId).then(() => {});
+      }
+
+      // Auto-fix: if plan has max_spaces and tenant total_spaces doesn't match
+      if (plans?.max_spaces && t.total_spaces !== plans.max_spaces) {
+        const occupied = t.total_spaces - t.available_spaces;
+        t.total_spaces = plans.max_spaces;
+        t.available_spaces = Math.max(plans.max_spaces - Math.max(occupied, 0), 0);
+        // Fire-and-forget DB correction
+        supabase.from('tenants').update({ 
+          total_spaces: t.total_spaces, 
+          available_spaces: t.available_spaces 
+        }).eq('id', tenantId).then(() => {});
+      }
+
+      setTenant(t);
       setPlanModules(Array.isArray(plans?.modules) ? plans.modules : []);
     }
   }, [tenantId]);
