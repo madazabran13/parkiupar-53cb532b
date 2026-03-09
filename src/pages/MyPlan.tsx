@@ -15,6 +15,23 @@ import { formatCurrency } from '@/lib/utils/formatters';
 import { motion } from 'framer-motion';
 import type { Plan } from '@/types';
 
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  parking: 'Gestión de Vehículos',
+  customers: 'Clientes',
+  rates: 'Tarifas',
+  capacity: 'Control de Aforo',
+  reports: 'Reportes',
+  reports_download: 'Descarga de Reportes PDF',
+  map: 'Mapa',
+  team: 'Gestión de Usuarios',
+  settings: 'Configuración',
+  audit: 'Auditoría',
+  payments: 'Pagos y Facturación',
+  my_plan: 'Mi Plan',
+  theme_color: 'Color del Tema',
+};
+
 export default function MyPlan() {
   const { tenantId } = useAuth();
   const { tenant } = useTenant();
