@@ -42,6 +42,7 @@ export default function Rates() {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('car');
   const [ratePerHour, setRatePerHour] = useState('');
+  const [fractionEnabled, setFractionEnabled] = useState(false);
   const [fractionMinutes, setFractionMinutes] = useState('15');
   const [minimumMinutes, setMinimumMinutes] = useState('15');
 
