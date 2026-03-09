@@ -253,11 +253,11 @@ export default function Parking() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Nombre del cliente *</Label>
+              <Label>Nombre del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
               <Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Teléfono del cliente *</Label>
+              <Label>Teléfono del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
               <Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
             </div>
             <div className="space-y-2">
