@@ -63,6 +63,7 @@ export default function Rates() {
     setName('');
     setIcon('car');
     setRatePerHour('');
+    setFractionEnabled(false);
     setFractionMinutes('15');
     setMinimumMinutes('15');
     setEditing(null);
