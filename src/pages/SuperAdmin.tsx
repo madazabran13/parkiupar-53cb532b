@@ -393,7 +393,8 @@ export default function SuperAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
-      queryClient.invalidateQueries({ queryKey: ['superadmin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
