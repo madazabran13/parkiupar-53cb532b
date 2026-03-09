@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 export default function SettingsPage() {
   const { profile, user, updatePassword, role, tenantId } = useAuth();
   const { tenant } = useTenant();
-  const { colorData, currentHex, selectPreset, selectCustomHex, presets } = useThemeColor();
+  const { colorData, currentHex, isDirty, previewPreset, previewCustomHex, save: saveColor, revert: revertColor, presets } = useThemeColor();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customHex, setCustomHex] = useState('');
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                   return (
                     <button
                       key={preset.name}
-                      onClick={() => selectPreset(preset.name)}
+                      onClick={() => previewPreset(preset.name)}
                       className={cn(
                         'relative flex flex-col items-center gap-1.5 group'
                       )}
@@ -440,7 +440,7 @@ export default function SettingsPage() {
                     value={currentHex}
                     onChange={(e) => {
                       setCustomHex(e.target.value);
-                      selectCustomHex(e.target.value);
+                      previewCustomHex(e.target.value);
                     }}
                     className="h-10 w-10 rounded-full cursor-pointer border border-border appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none"
                   />
@@ -450,7 +450,7 @@ export default function SettingsPage() {
                   onChange={(e) => {
                     setCustomHex(e.target.value);
                     if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
-                      selectCustomHex(e.target.value);
+                      previewCustomHex(e.target.value);
                     }
                   }}
                   placeholder="#3b82f6"
@@ -463,6 +463,21 @@ export default function SettingsPage() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">Selecciona un color o ingresa un código hexadecimal</p>
+            </div>
+
+            {/* Save / Revert buttons */}
+            <div className="flex justify-end gap-2">
+              {isDirty && (
+                <Button variant="outline" onClick={() => { revertColor(); setCustomHex(''); }}>
+                  Cancelar
+                </Button>
+              )}
+              <Button
+                onClick={() => { saveColor(); toast.success('Color guardado'); }}
+                disabled={!isDirty}
+              >
+                {isDirty ? 'Guardar Color' : 'Color guardado'}
+              </Button>
             </div>
           </CardContent>
         </Card>
