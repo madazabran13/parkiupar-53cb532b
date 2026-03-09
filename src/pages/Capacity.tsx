@@ -173,17 +173,20 @@ export default function Capacity() {
 
   const entryMutation = useMutation({
     mutationFn: async () => {
-      if (!tenantId || !plate || !customerName || !customerPhone) throw new Error('Faltan datos');
+      if (!tenantId || !plate) throw new Error('Faltan datos');
       const category = categoryMap[selectedCategoryId];
 
-      // Upsert customer
-      const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId).eq('phone', customerPhone).single();
-      let customerId = existingCustomer?.id;
-      if (!customerId) {
-        const { data: newCustomer } = await supabase.from('customers').insert({ tenant_id: tenantId, phone: customerPhone, full_name: customerName }).select('id').single();
-        customerId = newCustomer?.id;
-      } else {
-        await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
+      // Upsert customer only if phone is provided
+      let customerId: string | undefined;
+      if (customerPhone) {
+        const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId).eq('phone', customerPhone).single();
+        customerId = existingCustomer?.id;
+        if (!customerId) {
+          const { data: newCustomer } = await supabase.from('customers').insert({ tenant_id: tenantId, phone: customerPhone, full_name: customerName || 'Sin nombre' }).select('id').single();
+          customerId = newCustomer?.id;
+        } else if (customerName) {
+          await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
+        }
       }
 
       // Upsert vehicle - use category icon as vehicle_type for DB enum compatibility
@@ -191,18 +194,18 @@ export default function Capacity() {
       const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('tenant_id', tenantId).eq('plate', plate.toUpperCase()).single();
       let vehicleId = existingVehicle?.id;
       if (!vehicleId) {
-        const { data: newVehicle } = await supabase.from('vehicles').insert({ tenant_id: tenantId, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_id: customerId }).select('id').single();
+        const { data: newVehicle } = await supabase.from('vehicles').insert({ tenant_id: tenantId, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_id: customerId || null }).select('id').single();
         vehicleId = newVehicle?.id;
       }
 
       const { error } = await supabase.from('parking_sessions').insert({
         tenant_id: tenantId,
         vehicle_id: vehicleId,
-        customer_id: customerId,
+        customer_id: customerId || null,
         plate: plate.toUpperCase(),
         vehicle_type: vehicleType,
-        customer_name: customerName,
-        customer_phone: customerPhone,
+        customer_name: customerName || null,
+        customer_phone: customerPhone || null,
         space_number: selectedSpace ? String(selectedSpace) : null,
         rate_per_hour: category?.rate_per_hour || 0,
         notes: notes || null,
