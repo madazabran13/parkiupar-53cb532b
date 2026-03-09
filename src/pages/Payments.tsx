@@ -152,7 +152,7 @@ export default function Payments() {
     queryFn: async () => {
       let query = supabase
         .from('tenants')
-        .select('id, name, slug, plan_id, plan_started_at, plan_expires_at, is_active, city, address, phone, email, logo_url, plans(id, name, price_monthly)')
+        .select('id, name, slug, plan_id, plan_started_at, plan_expires_at, is_active, city, address, phone, email, plans(id, name, price_monthly)')
         .eq('is_active', true)
         .order('plan_expires_at', { ascending: true, nullsFirst: false });
       if (!isSuperadmin && tenant?.id) query = query.eq('id', tenant.id);
