@@ -125,19 +125,38 @@ export default function SuperAdmin() {
     queryKeys: [['admin-tenants']],
   });
 
-  const handleReactivate = async (notifId: string, tenantId: string) => {
-    // Enable tenant
+  // Group reactivation requests by tenant
+  const groupedReactivations = reactivationRequests.reduce((acc: Record<string, { tenantId: string; count: number; notifIds: string[]; lastMessage: string; lastDate: string }>, notif: any) => {
+    const tid = notif.metadata?.tenant_id || 'unknown';
+    if (!acc[tid]) {
+      acc[tid] = { tenantId: tid, count: 0, notifIds: [], lastMessage: notif.message, lastDate: notif.created_at };
+    }
+    acc[tid].count++;
+    acc[tid].notifIds.push(notif.id);
+    if (notif.created_at > acc[tid].lastDate) {
+      acc[tid].lastDate = notif.created_at;
+      acc[tid].lastMessage = notif.message;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+  const groupedReactivationList = Object.values(groupedReactivations);
+
+  const handleReactivate = async (notifIds: string[], tenantId: string) => {
     const { error } = await supabase.from('tenants').update({ is_active: true }).eq('id', tenantId);
     if (error) { toast.error(`Error: ${error.message}`); return; }
-    // Mark notification as read
-    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+    // Mark ALL notifications for this tenant as read
+    for (const nid of notifIds) {
+      await supabase.from('notifications').update({ is_read: true }).eq('id', nid);
+    }
     toast.success('Parqueadero reactivado exitosamente');
     queryClient.invalidateQueries({ queryKey: ['admin-tenants'] });
     queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
   };
 
-  const handleDismissReactivation = async (notifId: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
+  const handleDismissReactivation = async (notifIds: string[]) => {
+    for (const nid of notifIds) {
+      await supabase.from('notifications').update({ is_read: true }).eq('id', nid);
+    }
     queryClient.invalidateQueries({ queryKey: ['reactivation-requests'] });
   };
 
