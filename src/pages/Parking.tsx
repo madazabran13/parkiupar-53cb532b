@@ -263,7 +263,7 @@ export default function Parking() {
     {
       key: 'live_fee', label: 'Tarifa', sortable: false, filterable: false,
       render: (r) => {
-        const rate = rateMap[r.vehicle_type];
+        const rate = getSessionRate(r);
         return rate ? formatCurrency(calculateLiveFee(r.entry_time, rate.rate_per_hour, rate.fraction_minutes)) : '—';
       },
     },
