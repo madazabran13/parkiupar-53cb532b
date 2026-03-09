@@ -78,7 +78,27 @@ export default function Parking() {
       return (data || []) as unknown as VehicleRate[];
     },
   });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['vehicle-categories', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('vehicle_categories').select('*').eq('tenant_id', tenantId!).eq('is_active', true);
+      return (data || []) as unknown as VehicleCategory[];
+    },
+  });
+
   const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
+
+  // Resolve rate: vehicle_rates > vehicle_categories > session stored rate
+  const getSessionRate = (session: ParkingSession): { rate_per_hour: number; fraction_minutes: number } | null => {
+    const fromRates = rateMap[session.vehicle_type];
+    if (fromRates) return { rate_per_hour: fromRates.rate_per_hour, fraction_minutes: fromRates.fraction_minutes };
+    const fromCat = categories.find((c) => c.icon === session.vehicle_type);
+    if (fromCat) return { rate_per_hour: fromCat.rate_per_hour, fraction_minutes: fromCat.fraction_minutes };
+    if (session.rate_per_hour && session.rate_per_hour > 0) return { rate_per_hour: session.rate_per_hour, fraction_minutes: 15 };
+    return null;
+  };
 
   const { data: activeSessions = [], isLoading: loadingActive } = useQuery({
     queryKey: ['sessions-active', tenantId],
