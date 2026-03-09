@@ -175,9 +175,15 @@ export default function Rates() {
                     <span className="text-sm font-normal text-muted-foreground">/hora</span>
                   </div>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <p>Fracción: {cat.fraction_minutes} min</p>
-                    <p>Costo/fracción: {formatCurrency(cat.rate_per_hour * cat.fraction_minutes / 60)}</p>
-                    <p>Mínimo: {cat.minimum_minutes} min</p>
+                    {cat.fraction_minutes < 60 ? (
+                      <>
+                        <p>Fracción: {cat.fraction_minutes} min</p>
+                        <p>Costo/fracción: {formatCurrency(cat.rate_per_hour * cat.fraction_minutes / 60)}</p>
+                        {cat.minimum_minutes > 0 && <p>Mínimo: {cat.minimum_minutes} min</p>}
+                      </>
+                    ) : (
+                      <p>Cobro por hora completa</p>
+                    )}
                   </div>
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
