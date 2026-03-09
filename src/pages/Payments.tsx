@@ -227,7 +227,7 @@ export default function Payments() {
         previousExpires: renewTenant.plan_expires_at,
         newExpires: newExpiration.toISOString(),
         paymentDate: new Date().toISOString(),
-        logoUrl: renewTenant.logo_url,
+        
       });
     },
     onSuccess: () => {
