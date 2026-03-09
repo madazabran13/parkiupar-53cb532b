@@ -14,6 +14,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 export default function DashboardLayout() {
   const { role } = useAuth();
   const { tenant } = useTenant();
+  useThemeColor(); // Apply persisted theme color
   const navigate = useNavigate();
 
   // Immediately redirect to suspended page when tenant is deactivated via realtime
