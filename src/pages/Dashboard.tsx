@@ -12,7 +12,7 @@ import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, 
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateLiveFee, calculateParkingFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS } from '@/types';
-import type { ParkingSession, VehicleRate } from '@/types';
+import type { ParkingSession, VehicleRate, VehicleCategory } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
 import { toast } from 'sonner';
@@ -86,7 +86,31 @@ export default function Dashboard() {
     },
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['vehicle-categories', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('vehicle_categories')
+        .select('*')
+        .eq('tenant_id', tenantId!)
+        .eq('is_active', true);
+      return (data || []) as unknown as VehicleCategory[];
+    },
+  });
+
   const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
+
+  // Resolve rate for a session: vehicle_rates > vehicle_categories > session stored rate
+  const getSessionRate = (session: ParkingSession): { rate_per_hour: number; fraction_minutes: number } | null => {
+    const fromRates = rateMap[session.vehicle_type];
+    if (fromRates) return { rate_per_hour: fromRates.rate_per_hour, fraction_minutes: fromRates.fraction_minutes };
+    const fromCat = categories.find((c) => c.icon === session.vehicle_type);
+    if (fromCat) return { rate_per_hour: fromCat.rate_per_hour, fraction_minutes: fromCat.fraction_minutes };
+    if (session.rate_per_hour && session.rate_per_hour > 0) return { rate_per_hour: session.rate_per_hour, fraction_minutes: 15 };
+    return null;
+  };
+
   const todayRevenue = todayCompleted.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const occupancyPercent = tenant
     ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100)
@@ -101,7 +125,7 @@ export default function Dashboard() {
   })).filter((d) => d.cantidad > 0);
 
   // Exit fee calculation for selected session
-  const selectedRate = selectedSession ? rateMap[selectedSession.vehicle_type] : null;
+  const selectedRate = selectedSession ? getSessionRate(selectedSession) : null;
   const exitFee = selectedSession && selectedRate
     ? calculateParkingFee(selectedSession.entry_time, new Date().toISOString(), selectedRate.rate_per_hour, selectedRate.fraction_minutes)
     : null;
@@ -110,7 +134,7 @@ export default function Dashboard() {
   const exitMutation = useMutation({
     mutationFn: async (session: ParkingSession) => {
       const exitTime = new Date().toISOString();
-      const rate = rateMap[session.vehicle_type];
+      const rate = getSessionRate(session);
       const fee = rate
         ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
         : { total: 0, totalMinutes: 0 };
@@ -207,9 +231,9 @@ export default function Dashboard() {
         ) : (
           <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {activeSessions.map((session) => {
-              const rate = rateMap[session.vehicle_type];
-              const liveFee = rate
-                ? calculateLiveFee(session.entry_time, rate.rate_per_hour, rate.fraction_minutes)
+              const sessionRate = getSessionRate(session);
+              const liveFee = sessionRate
+                ? calculateLiveFee(session.entry_time, sessionRate.rate_per_hour, sessionRate.fraction_minutes)
                 : 0;
               const VehicleIcon = VEHICLE_ICONS[session.vehicle_type] || Car;
               const entryDate = new Date(session.entry_time);
