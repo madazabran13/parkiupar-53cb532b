@@ -75,7 +75,7 @@ export default function SuspendedAccount() {
     }, 250);
   }, []);
 
-  // Detect when tenant is reactivated
+  // Detect when tenant is reactivated or re-suspended
   useEffect(() => {
     if (tenantStatus?.is_active === true && !isReactivated) {
       setIsReactivated(true);
@@ -83,6 +83,11 @@ export default function SuspendedAccount() {
         setConfettiLaunched(true);
         launchConfetti();
       }
+    } else if (tenantStatus?.is_active === false && isReactivated) {
+      // Reset if suspended again
+      setIsReactivated(false);
+      setConfettiLaunched(false);
+      setRequestCount(0);
     }
   }, [tenantStatus?.is_active, isReactivated, confettiLaunched, launchConfetti]);
 
