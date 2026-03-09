@@ -27,6 +27,7 @@ import AuditLog from "@/pages/AuditLog";
 import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Landing page */}
+            <Route path="/" element={<LandingPage />} />
+            
             {/* Public routes */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
@@ -85,7 +89,6 @@ const App = () => (
 
             <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/suspended" element={<SuspendedAccount />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
