@@ -36,8 +36,6 @@ export default function SettingsPage() {
   const [tEmail, setTEmail] = useState('');
   const [tLat, setTLat] = useState('');
   const [tLng, setTLng] = useState('');
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (profile) {
