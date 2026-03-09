@@ -18,25 +18,15 @@ export default function SuspendedAccount() {
 
   const reactivateMutation = useMutation({
     mutationFn: async () => {
-      // Insert a notification for all superadmins
-      const { data: superadmins } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('role', 'superadmin');
-
-      if (superadmins && superadmins.length > 0) {
-        const notifications = superadmins.map((sa) => ({
-          user_id: sa.id,
-          tenant_id: tenant?.id || null,
-          type: 'warning',
-          title: 'Solicitud de reactivación',
-          message: `El parqueadero "${tenant?.name || 'Desconocido'}" (admin: ${profile?.full_name || user?.email}) solicita la reactivación de su cuenta.`,
-          metadata: { tenant_id: tenant?.id, requester_id: user?.id },
-        }));
-
-        const { error } = await supabase.from('notifications').insert(notifications);
-        if (error) throw error;
-      }
+      const { error } = await supabase.from('notifications').insert({
+        user_id: null, // global notification visible to superadmin
+        tenant_id: tenant?.id || null,
+        type: 'warning',
+        title: 'Solicitud de reactivación',
+        message: `El parqueadero "${tenant?.name || 'Desconocido'}" (admin: ${profile?.full_name || user?.email}) solicita la reactivación de su cuenta.`,
+        metadata: { tenant_id: tenant?.id, requester_id: user?.id },
+      });
+      if (error) throw error;
     },
     onSuccess: () => {
       setRequestCount(prev => prev + 1);

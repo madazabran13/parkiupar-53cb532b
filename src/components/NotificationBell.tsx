@@ -79,11 +79,13 @@ export function NotificationBell() {
 
   const markAllRead = useMutation({
     mutationFn: async () => {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user!.id)
-        .eq('is_read', false);
+      const base = supabase.from('notifications').update({ is_read: true }).eq('is_read', false);
+
+      const q = role === 'superadmin'
+        ? base.or(`user_id.eq.${user!.id},user_id.is.null`)
+        : base.eq('user_id', user!.id);
+
+      await q;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
