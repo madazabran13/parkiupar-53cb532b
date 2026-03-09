@@ -403,7 +403,7 @@ export default function SettingsPage() {
                   return (
                     <button
                       key={preset.name}
-                      onClick={() => selectPreset(preset.name)}
+                      onClick={() => previewPreset(preset.name)}
                       className={cn(
                         'relative flex flex-col items-center gap-1.5 group'
                       )}
