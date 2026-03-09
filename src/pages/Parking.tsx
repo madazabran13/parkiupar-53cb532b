@@ -281,7 +281,7 @@ export default function Parking() {
   ];
 
   // Exit confirmation data
-  const exitRate = exitSession ? rateMap[exitSession.vehicle_type] : null;
+  const exitRate = exitSession ? getSessionRate(exitSession) : null;
   const exitFee = exitSession && exitRate
     ? calculateParkingFee(exitSession.entry_time, new Date().toISOString(), exitRate.rate_per_hour, exitRate.fraction_minutes)
     : null;
