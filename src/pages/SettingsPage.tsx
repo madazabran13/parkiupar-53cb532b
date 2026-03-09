@@ -52,7 +52,6 @@ export default function SettingsPage() {
       setTEmail(tenant.email || '');
       setTLat(tenant.latitude ? String(tenant.latitude) : '');
       setTLng(tenant.longitude ? String(tenant.longitude) : '');
-      setLogoPreview(tenant.logo_url);
     }
   }, [tenant]);
 
