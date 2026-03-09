@@ -194,7 +194,7 @@ export default function MyPlan() {
                       {(Array.isArray(plan.modules) ? plan.modules : []).map((m: string) => (
                         <li key={m} className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Check className="h-3.5 w-3.5 text-primary/60 flex-shrink-0" />
-                          {m}
+                          {MODULE_LABELS[m] || m}
                         </li>
                       ))}
                     </ul>
