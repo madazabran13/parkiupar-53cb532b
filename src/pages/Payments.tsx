@@ -331,7 +331,7 @@ export default function Payments() {
       previousExpires: h.previous_expires_at,
       newExpires: h.new_expires_at,
       paymentDate: h.created_at,
-      logoUrl: t?.logo_url,
+      
     });
     toast({ title: 'Factura descargada' });
   };
