@@ -387,42 +387,43 @@ export default function Parking() {
 
               {exitFee && exitRate && (
                 <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
-                  {/* Breakdown */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tiempo total</span>
-                      <span className="font-medium">{exitFee.totalMinutes} min ({Math.floor(exitFee.totalMinutes / 60)}h {exitFee.totalMinutes % 60}m)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tarifa por hora</span>
-                      <span className="font-medium">{formatCurrency(exitRate.rate_per_hour)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fracción</span>
-                      <span className="font-medium">{exitRate.fraction_minutes} min</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Costo por fracción</span>
-                      <span className="font-medium">{formatCurrency(exitFee.costPerFraction)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fracciones cobradas</span>
-                      <span className="font-medium">{exitFee.fractions}</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-border" />
-
-                  {/* Calculation formula */}
-                  <p className="text-xs text-muted-foreground text-center">
-                    {exitFee.fractions} fracciones × {formatCurrency(exitFee.costPerFraction)} = {formatCurrency(exitFee.total)}
-                  </p>
-
                   {/* Total */}
                   <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Total a cobrar</p>
                     <p className="text-3xl font-bold text-primary">{formatCurrency(exitFee.total)}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {exitFee.totalMinutes} min · {exitFee.fractions} fracciones × {formatCurrency(exitFee.costPerFraction)}
+                    </p>
                   </div>
+
+                  {/* Collapsible breakdown */}
+                  <details className="group">
+                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors text-center select-none">
+                      Ver desglose detallado
+                    </summary>
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Tiempo total</span>
+                        <span className="font-medium">{exitFee.totalMinutes} min ({Math.floor(exitFee.totalMinutes / 60)}h {exitFee.totalMinutes % 60}m)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Tarifa por hora</span>
+                        <span className="font-medium">{formatCurrency(exitRate.rate_per_hour)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Fracción</span>
+                        <span className="font-medium">{exitRate.fraction_minutes} min</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Costo por fracción</span>
+                        <span className="font-medium">{formatCurrency(exitFee.costPerFraction)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Fracciones cobradas</span>
+                        <span className="font-medium">{exitFee.fractions}</span>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               )}
             </div>
