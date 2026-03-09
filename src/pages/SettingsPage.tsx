@@ -3,20 +3,24 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
+import { useThemeColor, COLOR_PRESETS } from '@/hooks/useThemeColor';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image } from 'lucide-react';
+import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image, Palette, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MapLocationPicker from '@/components/MapLocationPicker';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { profile, user, updatePassword, role, tenantId } = useAuth();
   const { tenant } = useTenant();
+  const { colorData, currentHex, selectPreset, selectCustomHex, presets } = useThemeColor();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [customHex, setCustomHex] = useState('');
 
   // Profile form
   const [fullName, setFullName] = useState('');
@@ -371,6 +375,94 @@ export default function SettingsPage() {
               <Button onClick={() => updateProfileMutation.mutate()} disabled={updateProfileMutation.isPending || !fullName.trim()}>
                 {updateProfileMutation.isPending ? 'Guardando...' : 'Guardar Perfil'}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Theme Color */}
+      <motion.div {...fadeIn} transition={{ delay: 0.15 }}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle>Color del Tema</CardTitle>
+                <CardDescription>Personaliza el color principal de la aplicación</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Preset colors */}
+            <div className="space-y-2">
+              <Label>Colores predeterminados</Label>
+              <div className="flex flex-wrap gap-3">
+                {presets.map((preset) => {
+                  const isActive = colorData.preset === preset.name;
+                  const bgColor = `hsl(${preset.hue}, ${preset.saturation}%, ${preset.lightness}%)`;
+                  return (
+                    <button
+                      key={preset.name}
+                      onClick={() => selectPreset(preset.name)}
+                      className={cn(
+                        'relative flex flex-col items-center gap-1.5 group'
+                      )}
+                      title={preset.label}
+                    >
+                      <div
+                        className={cn(
+                          'h-10 w-10 rounded-full border-2 transition-all flex items-center justify-center shadow-sm',
+                          isActive ? 'border-foreground scale-110 shadow-md' : 'border-transparent hover:scale-105 hover:shadow-md'
+                        )}
+                        style={{ backgroundColor: bgColor }}
+                      >
+                        {isActive && <Check className="h-4 w-4 text-white drop-shadow-sm" />}
+                      </div>
+                      <span className={cn(
+                        'text-[10px]',
+                        isActive ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                      )}>
+                        {preset.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom color picker */}
+            <div className="space-y-2">
+              <Label>Color personalizado</Label>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={currentHex}
+                    onChange={(e) => {
+                      setCustomHex(e.target.value);
+                      selectCustomHex(e.target.value);
+                    }}
+                    className="h-10 w-10 rounded-full cursor-pointer border border-border appearance-none bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none"
+                  />
+                </div>
+                <Input
+                  value={customHex || currentHex}
+                  onChange={(e) => {
+                    setCustomHex(e.target.value);
+                    if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+                      selectCustomHex(e.target.value);
+                    }
+                  }}
+                  placeholder="#3b82f6"
+                  className="w-32 font-mono text-sm"
+                  maxLength={7}
+                />
+                <div
+                  className="h-8 flex-1 rounded-md border border-border"
+                  style={{ backgroundColor: `hsl(var(--primary))` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Selecciona un color o ingresa un código hexadecimal</p>
             </div>
           </CardContent>
         </Card>
