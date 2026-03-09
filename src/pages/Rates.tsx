@@ -42,6 +42,7 @@ export default function Rates() {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('car');
   const [ratePerHour, setRatePerHour] = useState('');
+  const [fractionEnabled, setFractionEnabled] = useState(false);
   const [fractionMinutes, setFractionMinutes] = useState('15');
   const [minimumMinutes, setMinimumMinutes] = useState('15');
 
@@ -62,6 +63,7 @@ export default function Rates() {
     setName('');
     setIcon('car');
     setRatePerHour('');
+    setFractionEnabled(false);
     setFractionMinutes('15');
     setMinimumMinutes('15');
     setEditing(null);
@@ -77,6 +79,7 @@ export default function Rates() {
     setName(cat.name);
     setIcon(cat.icon);
     setRatePerHour(String(cat.rate_per_hour));
+    setFractionEnabled(cat.fraction_minutes !== 60);
     setFractionMinutes(String(cat.fraction_minutes));
     setMinimumMinutes(String(cat.minimum_minutes));
     setDialogOpen(true);
@@ -89,8 +92,8 @@ export default function Rates() {
         name,
         icon,
         rate_per_hour: parseFloat(ratePerHour) || 0,
-        fraction_minutes: parseInt(fractionMinutes) || 15,
-        minimum_minutes: parseInt(minimumMinutes) || 15,
+        fraction_minutes: fractionEnabled ? (parseInt(fractionMinutes) || 15) : 60,
+        minimum_minutes: fractionEnabled ? (parseInt(minimumMinutes) || 15) : 0,
       };
       if (editing) {
         const { error } = await supabase.from('vehicle_categories').update(payload).eq('id', editing.id);
@@ -172,9 +175,15 @@ export default function Rates() {
                     <span className="text-sm font-normal text-muted-foreground">/hora</span>
                   </div>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <p>Fracción: {cat.fraction_minutes} min</p>
-                    <p>Costo/fracción: {formatCurrency(cat.rate_per_hour * cat.fraction_minutes / 60)}</p>
-                    <p>Mínimo: {cat.minimum_minutes} min</p>
+                    {cat.fraction_minutes < 60 ? (
+                      <>
+                        <p>Fracción: {cat.fraction_minutes} min</p>
+                        <p>Costo/fracción: {formatCurrency(cat.rate_per_hour * cat.fraction_minutes / 60)}</p>
+                        {cat.minimum_minutes > 0 && <p>Mínimo: {cat.minimum_minutes} min</p>}
+                      </>
+                    ) : (
+                      <p>Cobro por hora completa</p>
+                    )}
                   </div>
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
@@ -240,16 +249,25 @@ export default function Rates() {
               <Label>Tarifa por hora (COP) *</Label>
               <Input type="number" placeholder="3500" value={ratePerHour} onChange={(e) => setRatePerHour(e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Fracción (min)</Label>
-                <Input type="number" value={fractionMinutes} onChange={(e) => setFractionMinutes(e.target.value)} />
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label>Cobro por fracciones</Label>
+                <p className="text-xs text-muted-foreground">Cobra por fracciones de tiempo en vez de hora completa</p>
               </div>
-              <div className="space-y-2">
-                <Label>Mínimo (min)</Label>
-                <Input type="number" value={minimumMinutes} onChange={(e) => setMinimumMinutes(e.target.value)} />
-              </div>
+              <Switch checked={fractionEnabled} onCheckedChange={setFractionEnabled} />
             </div>
+            {fractionEnabled && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Fracción (min)</Label>
+                  <Input type="number" value={fractionMinutes} onChange={(e) => setFractionMinutes(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mínimo (min)</Label>
+                  <Input type="number" value={minimumMinutes} onChange={(e) => setMinimumMinutes(e.target.value)} />
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
