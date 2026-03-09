@@ -92,8 +92,8 @@ export default function Rates() {
         name,
         icon,
         rate_per_hour: parseFloat(ratePerHour) || 0,
-        fraction_minutes: parseInt(fractionMinutes) || 15,
-        minimum_minutes: parseInt(minimumMinutes) || 15,
+        fraction_minutes: fractionEnabled ? (parseInt(fractionMinutes) || 15) : 60,
+        minimum_minutes: fractionEnabled ? (parseInt(minimumMinutes) || 15) : 0,
       };
       if (editing) {
         const { error } = await supabase.from('vehicle_categories').update(payload).eq('id', editing.id);
