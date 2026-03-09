@@ -86,7 +86,31 @@ export default function Dashboard() {
     },
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['vehicle-categories', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('vehicle_categories')
+        .select('*')
+        .eq('tenant_id', tenantId!)
+        .eq('is_active', true);
+      return (data || []) as unknown as VehicleCategory[];
+    },
+  });
+
   const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
+
+  // Resolve rate for a session: vehicle_rates > vehicle_categories > session stored rate
+  const getSessionRate = (session: ParkingSession): { rate_per_hour: number; fraction_minutes: number } | null => {
+    const fromRates = rateMap[session.vehicle_type];
+    if (fromRates) return { rate_per_hour: fromRates.rate_per_hour, fraction_minutes: fromRates.fraction_minutes };
+    const fromCat = categories.find((c) => c.icon === session.vehicle_type);
+    if (fromCat) return { rate_per_hour: fromCat.rate_per_hour, fraction_minutes: fromCat.fraction_minutes };
+    if (session.rate_per_hour && session.rate_per_hour > 0) return { rate_per_hour: session.rate_per_hour, fraction_minutes: 15 };
+    return null;
+  };
+
   const todayRevenue = todayCompleted.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const occupancyPercent = tenant
     ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100)
@@ -101,7 +125,7 @@ export default function Dashboard() {
   })).filter((d) => d.cantidad > 0);
 
   // Exit fee calculation for selected session
-  const selectedRate = selectedSession ? rateMap[selectedSession.vehicle_type] : null;
+  const selectedRate = selectedSession ? getSessionRate(selectedSession) : null;
   const exitFee = selectedSession && selectedRate
     ? calculateParkingFee(selectedSession.entry_time, new Date().toISOString(), selectedRate.rate_per_hour, selectedRate.fraction_minutes)
     : null;
