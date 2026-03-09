@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image, Palette, Check } from 'lucide-react';
+import { User, Lock, Building2, MapPin, Phone, Mail, Palette, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MapLocationPicker from '@/components/MapLocationPicker';
 import { cn } from '@/lib/utils';
