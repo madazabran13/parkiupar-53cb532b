@@ -486,7 +486,7 @@ export default function Capacity() {
             <Button variant="outline" onClick={closeEntryDialog}>Cancelar</Button>
             <Button
               onClick={() => entryMutation.mutate()}
-              disabled={!plate || !customerName || !customerPhone || !selectedCategoryId || !selectedSpace || entryMutation.isPending}
+              disabled={!plate || !selectedCategoryId || !selectedSpace || entryMutation.isPending}
             >
               {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
             </Button>
