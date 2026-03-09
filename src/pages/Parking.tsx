@@ -25,6 +25,7 @@ export default function Parking() {
   const queryClient = useQueryClient();
   const [entryOpen, setEntryOpen] = useState(false);
   const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
+  const [editSession, setEditSession] = useState<ParkingSession | null>(null);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
