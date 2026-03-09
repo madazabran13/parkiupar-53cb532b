@@ -29,7 +29,7 @@ export default function Parking() {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 60000);
+    const i = setInterval(() => setNow(Date.now()), 3000);
     return () => clearInterval(i);
   }, []);
 
