@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -12,6 +13,14 @@ import { NotificationBell } from '@/components/NotificationBell';
 export default function DashboardLayout() {
   const { role } = useAuth();
   const { tenant } = useTenant();
+  const navigate = useNavigate();
+
+  // Immediately redirect to suspended page when tenant is deactivated via realtime
+  useEffect(() => {
+    if (role !== 'superadmin' && tenant && !tenant.is_active) {
+      navigate('/suspended', { replace: true });
+    }
+  }, [tenant?.is_active, role, navigate, tenant]);
 
   return (
     <SidebarProvider>
