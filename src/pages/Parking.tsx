@@ -276,9 +276,16 @@ export default function Parking() {
             loading={loadingActive}
             searchPlaceholder="Buscar por placa, cliente..."
             actions={(row) => (
-              <Button size="sm" variant="outline" onClick={() => setExitSession(row)}>
-                <ExitIcon className="h-3 w-3 mr-1" /> Salida
-              </Button>
+              <div className="flex gap-1">
+                {canEdit(row) && (
+                  <Button size="sm" variant="ghost" onClick={() => openEditDialog(row)} title="Editar (disponible por 2 min)">
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setExitSession(row)}>
+                  <ExitIcon className="h-3 w-3 mr-1" /> Salida
+                </Button>
+              </div>
             )}
           />
         </TabsContent>
