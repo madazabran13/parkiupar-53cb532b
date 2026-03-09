@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Building2, Upload, Trash2, MapPin, Phone, Mail, Image, Palette, Check } from 'lucide-react';
+import { User, Lock, Building2, MapPin, Phone, Mail, Palette, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MapLocationPicker from '@/components/MapLocationPicker';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,6 @@ export default function SettingsPage() {
   const { tenant, planModules } = useTenant();
   const { colorData, currentHex, isDirty, previewPreset, previewCustomHex, save: saveColor, revert: revertColor, presets } = useThemeColor();
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [customHex, setCustomHex] = useState('');
 
   // Profile form
@@ -37,8 +36,6 @@ export default function SettingsPage() {
   const [tEmail, setTEmail] = useState('');
   const [tLat, setTLat] = useState('');
   const [tLng, setTLng] = useState('');
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -55,7 +52,6 @@ export default function SettingsPage() {
       setTEmail(tenant.email || '');
       setTLat(tenant.latitude ? String(tenant.latitude) : '');
       setTLng(tenant.longitude ? String(tenant.longitude) : '');
-      setLogoPreview(tenant.logo_url);
     }
   }, [tenant]);
 
@@ -113,89 +109,6 @@ export default function SettingsPage() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !tenantId) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Solo se permiten imágenes');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('La imagen no debe superar 2MB');
-      return;
-    }
-
-    setUploadingLogo(true);
-    try {
-      const ext = file.name.split('.').pop();
-      const filePath = `${tenantId}/logo.${ext}`;
-
-      // Delete old logo if exists
-      await supabase.storage.from('tenant-logos').remove([filePath]);
-
-      const { error: uploadError } = await supabase.storage
-        .from('tenant-logos')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('tenant-logos')
-        .getPublicUrl(filePath);
-
-      const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await supabase
-        .from('tenants')
-        .update({ logo_url: logoUrl })
-        .eq('id', tenantId);
-
-      if (updateError) throw updateError;
-
-      setLogoPreview(logoUrl);
-      toast.success('Logo actualizado');
-      queryClient.invalidateQueries();
-    } catch (err: any) {
-      toast.error(`Error al subir logo: ${err.message}`);
-    } finally {
-      setUploadingLogo(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleRemoveLogo = async () => {
-    if (!tenantId) return;
-    setUploadingLogo(true);
-    try {
-      // List and remove files in the tenant folder
-      const { data: files } = await supabase.storage
-        .from('tenant-logos')
-        .list(tenantId);
-
-      if (files && files.length > 0) {
-        await supabase.storage
-          .from('tenant-logos')
-          .remove(files.map(f => `${tenantId}/${f.name}`));
-      }
-
-      const { error } = await supabase
-        .from('tenants')
-        .update({ logo_url: null })
-        .eq('id', tenantId);
-
-      if (error) throw error;
-
-      setLogoPreview(null);
-      toast.success('Logo eliminado');
-      queryClient.invalidateQueries();
-    } catch (err: any) {
-      toast.error(`Error: ${err.message}`);
-    } finally {
-      setUploadingLogo(false);
-    }
-  };
-
   const fadeIn = {
     initial: { opacity: 0, y: 16 },
     animate: { opacity: 1, y: 0 },
@@ -222,60 +135,6 @@ export default function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Logo Section */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Image className="h-4 w-4" /> Logo del Parqueadero
-                </Label>
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-shrink-0">
-                    {logoPreview ? (
-                      <img
-                        src={logoPreview}
-                        alt="Logo"
-                        className="h-20 w-20 rounded-lg object-cover border border-border shadow-sm"
-                      />
-                    ) : (
-                      <div className="h-20 w-20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted">
-                        <Building2 className="h-8 w-8 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingLogo}
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                      {uploadingLogo ? 'Subiendo...' : 'Subir logo'}
-                    </Button>
-                    {logoPreview && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2 text-destructive hover:text-destructive"
-                        onClick={handleRemoveLogo}
-                        disabled={uploadingLogo}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Eliminar
-                      </Button>
-                    )}
-                    <p className="text-[11px] text-muted-foreground">PNG, JPG. Máx 2MB.</p>
-                  </div>
-                </div>
-              </div>
-
               {/* Name & Address */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
