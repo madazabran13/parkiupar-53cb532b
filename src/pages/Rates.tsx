@@ -79,6 +79,7 @@ export default function Rates() {
     setName(cat.name);
     setIcon(cat.icon);
     setRatePerHour(String(cat.rate_per_hour));
+    setFractionEnabled(cat.fraction_minutes !== 60);
     setFractionMinutes(String(cat.fraction_minutes));
     setMinimumMinutes(String(cat.minimum_minutes));
     setDialogOpen(true);
