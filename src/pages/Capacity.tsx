@@ -55,6 +55,13 @@ export default function Capacity() {
   // Exit dialog
   const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
   const [exitSpace, setExitSpace] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Live price refresh every 3s
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   useRealtime({
     table: 'parking_sessions',
