@@ -31,9 +31,9 @@ export default function Dashboard() {
   const [now, setNow] = useState(Date.now());
   const [selectedSession, setSelectedSession] = useState<ParkingSession | null>(null);
 
-  // Refresh live fees every 30s
+  // Refresh live fees every 3s
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 30000);
+    const interval = setInterval(() => setNow(Date.now()), 3000);
     return () => clearInterval(interval);
   }, []);
 
