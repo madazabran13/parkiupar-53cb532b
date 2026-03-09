@@ -151,7 +151,7 @@ export default function MyPlan() {
                 <p className="text-sm text-muted-foreground">Módulos incluidos</p>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {(Array.isArray(currentPlan.modules) ? currentPlan.modules : []).map((m: string) => (
-                    <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>
+                    <Badge key={m} variant="outline" className="text-[10px]">{MODULE_LABELS[m] || m}</Badge>
                   ))}
                 </div>
               </div>
