@@ -483,6 +483,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </motion.div>
+      )}
 
       {/* Password */}
       <motion.div {...fadeIn} transition={{ delay: 0.2 }}>
