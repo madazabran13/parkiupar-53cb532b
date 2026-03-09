@@ -77,23 +77,28 @@ export default function Parking() {
   // Register entry
   const entryMutation = useMutation({
     mutationFn: async () => {
-      // Upsert customer by phone
-      const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId!).eq('phone', customerPhone).single();
-      let customerId = existingCustomer?.id;
+      let customerId: string | null = null;
+      let vehicleId: string | null = null;
 
-      if (!customerId) {
-        const { data: newCustomer } = await supabase.from('customers').insert({ tenant_id: tenantId!, phone: customerPhone, full_name: customerName }).select('id').single();
-        customerId = newCustomer?.id;
-      } else {
-        await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
+      // Only create/find customer if phone is provided
+      if (customerPhone.trim()) {
+        const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId!).eq('phone', customerPhone).single();
+        customerId = existingCustomer?.id ?? null;
+
+        if (!customerId) {
+          const { data: newCustomer } = await supabase.from('customers').insert({ tenant_id: tenantId!, phone: customerPhone, full_name: customerName || 'Sin nombre' }).select('id').single();
+          customerId = newCustomer?.id ?? null;
+        } else if (customerName) {
+          await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
+        }
       }
 
       // Upsert vehicle
       const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('tenant_id', tenantId!).eq('plate', plate.toUpperCase()).single();
-      let vehicleId = existingVehicle?.id;
+      vehicleId = existingVehicle?.id ?? null;
       if (!vehicleId) {
         const { data: newVehicle } = await supabase.from('vehicles').insert({ tenant_id: tenantId!, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_id: customerId }).select('id').single();
-        vehicleId = newVehicle?.id;
+        vehicleId = newVehicle?.id ?? null;
       }
 
       const rate = rateMap[vehicleType];
@@ -103,8 +108,8 @@ export default function Parking() {
         customer_id: customerId,
         plate: plate.toUpperCase(),
         vehicle_type: vehicleType,
-        customer_name: customerName,
-        customer_phone: customerPhone,
+        customer_name: customerName || null,
+        customer_phone: customerPhone || null,
         space_number: spaceNumber || null,
         rate_per_hour: rate?.rate_per_hour || 0,
         notes: notes || null,
@@ -248,11 +253,11 @@ export default function Parking() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Nombre del cliente *</Label>
+              <Label>Nombre del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
               <Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Teléfono del cliente *</Label>
+              <Label>Teléfono del cliente <span className="text-muted-foreground text-xs">(opcional)</span></Label>
               <Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
             </div>
             <div className="space-y-2">
@@ -273,7 +278,7 @@ export default function Parking() {
             <Button variant="outline" onClick={() => setEntryOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => entryMutation.mutate()}
-              disabled={!plate || !customerName || !customerPhone || entryMutation.isPending}
+              disabled={!plate || entryMutation.isPending}
             >
               {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
             </Button>
