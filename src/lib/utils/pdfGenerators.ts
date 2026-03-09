@@ -123,7 +123,6 @@ type InvoiceData = {
   previousExpires: string | null;
   newExpires: string;
   paymentDate: string;
-  logoUrl?: string | null;
   companyName?: string;
 };
 
