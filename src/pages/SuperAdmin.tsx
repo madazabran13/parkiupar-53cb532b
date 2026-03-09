@@ -116,7 +116,23 @@ export default function SuperAdmin() {
 
   // Sound notification for new reactivation requests
   const prevReactivationCountRef = useRef<number>(reactivationRequests.length);
+  const notificationPermissionRef = useRef<NotificationPermission>('default');
   
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      notificationPermissionRef.current = Notification.permission;
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          notificationPermissionRef.current = permission;
+          if (permission === 'granted') {
+            toast.success('Notificaciones push activadas');
+          }
+        });
+      }
+    }
+  }, []);
+
   const playNotificationSound = useCallback(() => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -140,12 +156,37 @@ export default function SuperAdmin() {
     }
   }, []);
 
+  const sendPushNotification = useCallback((title: string, body: string) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notification = new Notification(title, {
+        body,
+        icon: '/logo.png',
+        badge: '/logo.png',
+        tag: 'reactivation-request',
+        requireInteraction: true,
+      });
+      
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+  }, []);
+
   useEffect(() => {
     const currentCount = reactivationRequests.length;
     const prevCount = prevReactivationCountRef.current;
     
     if (currentCount > prevCount && prevCount !== undefined) {
       playNotificationSound();
+      
+      // Send native push notification
+      sendPushNotification(
+        '🔔 Nueva solicitud de reactivación',
+        'Un parqueadero suspendido ha solicitado reactivación'
+      );
+      
+      // Also show in-app toast
       toast.info('🔔 Nueva solicitud de reactivación', {
         description: 'Un parqueadero suspendido ha solicitado reactivación',
         duration: 5000,
@@ -153,7 +194,7 @@ export default function SuperAdmin() {
     }
     
     prevReactivationCountRef.current = currentCount;
-  }, [reactivationRequests.length, playNotificationSound]);
+  }, [reactivationRequests.length, playNotificationSound, sendPushNotification]);
 
   // Real-time updates for notifications and tenants
   useRealtime({
