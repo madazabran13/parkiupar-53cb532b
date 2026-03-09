@@ -114,6 +114,47 @@ export default function SuperAdmin() {
     },
   });
 
+  // Sound notification for new reactivation requests
+  const prevReactivationCountRef = useRef<number>(reactivationRequests.length);
+  
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+      oscillator.frequency.setValueAtTime(1174.66, audioContext.currentTime + 0.1); // D6 note
+      oscillator.frequency.setValueAtTime(1318.51, audioContext.currentTime + 0.2); // E6 note
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.4);
+    } catch (e) {
+      console.log('Audio notification not supported');
+    }
+  }, []);
+
+  useEffect(() => {
+    const currentCount = reactivationRequests.length;
+    const prevCount = prevReactivationCountRef.current;
+    
+    if (currentCount > prevCount && prevCount !== undefined) {
+      playNotificationSound();
+      toast.info('🔔 Nueva solicitud de reactivación', {
+        description: 'Un parqueadero suspendido ha solicitado reactivación',
+        duration: 5000,
+      });
+    }
+    
+    prevReactivationCountRef.current = currentCount;
+  }, [reactivationRequests.length, playNotificationSound]);
+
   // Real-time updates for notifications and tenants
   useRealtime({
     table: 'notifications',
