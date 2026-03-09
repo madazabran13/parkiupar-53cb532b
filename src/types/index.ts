@@ -125,13 +125,6 @@ export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
   bicycle: 'Bicicleta',
 };
 
-export const VEHICLE_TYPE_COLORS: Record<VehicleType, string> = {
-  car: 'bg-blue-500',
-  motorcycle: 'bg-amber-500',
-  truck: 'bg-purple-500',
-  bicycle: 'bg-green-500',
-};
-
 export const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
   active: 'Activo',
   completed: 'Completado',
