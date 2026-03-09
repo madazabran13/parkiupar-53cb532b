@@ -210,6 +210,7 @@ export default function Parking() {
     },
   });
 
+  const resetForm = () => {
     setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes('');
   };
 
