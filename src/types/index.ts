@@ -1,7 +1,6 @@
 export type AppRole = 'superadmin' | 'admin' | 'operator' | 'viewer';
 export type VehicleType = 'car' | 'motorcycle' | 'truck' | 'bicycle';
 export type SessionStatus = 'active' | 'completed' | 'cancelled';
-export type LicenseType = 'basic' | 'pro' | 'enterprise';
 
 export interface Plan {
   id: string;
@@ -124,13 +123,6 @@ export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
   motorcycle: 'Moto',
   truck: 'Camión',
   bicycle: 'Bicicleta',
-};
-
-export const VEHICLE_TYPE_COLORS: Record<VehicleType, string> = {
-  car: 'bg-blue-500',
-  motorcycle: 'bg-amber-500',
-  truck: 'bg-purple-500',
-  bicycle: 'bg-green-500',
 };
 
 export const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
