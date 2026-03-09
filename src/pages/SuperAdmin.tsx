@@ -442,9 +442,19 @@ export default function SuperAdmin() {
     
     { key: 'email', label: 'Email' },
     { key: 'total_spaces', label: 'Espacios' },
-    { key: 'available_spaces', label: 'Disponibles', render: (r) => (
-      <Badge variant={r.available_spaces === 0 ? 'destructive' : 'secondary'}>{r.available_spaces}/{r.total_spaces}</Badge>
-    )},
+    { key: 'available_spaces', label: 'Disponibles', render: (r) => {
+      const occupied = r.total_spaces - r.available_spaces;
+      const overcapacity = occupied > r.total_spaces;
+      return (
+        <div className="flex items-center gap-1.5">
+          {overcapacity && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
+          <Badge variant={r.available_spaces <= 0 ? 'destructive' : overcapacity ? 'destructive' : 'secondary'}>
+            {r.available_spaces}/{r.total_spaces}
+          </Badge>
+          {overcapacity && <span className="text-[10px] text-destructive font-medium">Sobrecupo</span>}
+        </div>
+      );
+    }},
     { key: 'plan_expires_at', label: 'Vencimiento', render: (r) => {
       if (!r.plan_expires_at) return <span className="text-muted-foreground text-xs">Sin plan</span>;
       const days = getDaysUntilExpiry(r.plan_expires_at);
