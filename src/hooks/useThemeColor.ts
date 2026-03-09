@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface ThemeColorPreset {
@@ -24,7 +24,7 @@ function getStorageKey(userId: string) {
   return `${STORAGE_KEY_PREFIX}${userId}`;
 }
 
-function hslToHex(h: number, s: number, l: number): string {
+export function hslToHex(h: number, s: number, l: number): string {
   s /= 100;
   l /= 100;
   const a = s * Math.min(l, 1 - l);
@@ -36,7 +36,7 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+export function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return null;
   let r = parseInt(result[1], 16) / 255;
@@ -57,7 +57,7 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
-interface ThemeColorData {
+export interface ThemeColorData {
   preset?: string;
   hue: number;
   saturation: number;
@@ -68,16 +68,21 @@ function applyThemeColor(hue: number, sat: number, light: number) {
   const root = document.documentElement;
   const isDark = root.classList.contains('dark');
 
-  // Light mode primary
+  // Light mode
   const lightPrimary = `${hue} ${sat}% ${light}%`;
-  // Dark mode: slightly brighter
-  const darkPrimary = `${hue} ${Math.min(sat + 8, 100)}% ${Math.min(light + 7, 70)}%`;
+  // Dark mode: increase lightness, boost saturation for vibrancy
+  const darkLight = Math.min(light + 12, 72);
+  const darkSat = Math.min(sat + 10, 100);
+  const darkPrimary = `${hue} ${darkSat}% ${darkLight}%`;
 
   const primary = isDark ? darkPrimary : lightPrimary;
+  const primaryFg = isDark ? `${hue} 0% 100%` : `${hue} 0% 98%`;
 
   root.style.setProperty('--primary', primary);
+  root.style.setProperty('--primary-foreground', primaryFg);
   root.style.setProperty('--ring', primary);
   root.style.setProperty('--sidebar-primary', primary);
+  root.style.setProperty('--sidebar-primary-foreground', primaryFg);
   root.style.setProperty('--sidebar-ring', primary);
 }
 
@@ -85,7 +90,11 @@ const DEFAULT: ThemeColorData = { preset: 'blue', hue: 221, saturation: 83, ligh
 
 export function useThemeColor() {
   const { user } = useAuth();
-  const [colorData, setColorData] = useState<ThemeColorData>(DEFAULT);
+  // Saved = what's persisted in localStorage
+  const [savedData, setSavedData] = useState<ThemeColorData>(DEFAULT);
+  // Preview = what's currently shown (may differ from saved)
+  const [previewData, setPreviewData] = useState<ThemeColorData>(DEFAULT);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Load saved color on mount/user change
   useEffect(() => {
@@ -94,11 +103,15 @@ export function useThemeColor() {
       const saved = localStorage.getItem(getStorageKey(user.id));
       if (saved) {
         const parsed = JSON.parse(saved) as ThemeColorData;
-        setColorData(parsed);
+        setSavedData(parsed);
+        setPreviewData(parsed);
         applyThemeColor(parsed.hue, parsed.saturation, parsed.lightness);
       } else {
+        setSavedData(DEFAULT);
+        setPreviewData(DEFAULT);
         applyThemeColor(DEFAULT.hue, DEFAULT.saturation, DEFAULT.lightness);
       }
+      setIsDirty(false);
     } catch {
       applyThemeColor(DEFAULT.hue, DEFAULT.saturation, DEFAULT.lightness);
     }
@@ -107,40 +120,58 @@ export function useThemeColor() {
   // Re-apply on theme (dark/light) toggle
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      applyThemeColor(colorData.hue, colorData.saturation, colorData.lightness);
+      applyThemeColor(previewData.hue, previewData.saturation, previewData.lightness);
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
-  }, [colorData]);
+  }, [previewData]);
 
-  const setColor = useCallback((data: ThemeColorData) => {
-    if (!user?.id) return;
-    setColorData(data);
+  // Preview a color (apply visually but don't save)
+  const preview = useCallback((data: ThemeColorData) => {
+    setPreviewData(data);
+    setIsDirty(true);
     applyThemeColor(data.hue, data.saturation, data.lightness);
-    localStorage.setItem(getStorageKey(user.id), JSON.stringify(data));
-  }, [user?.id]);
+  }, []);
 
-  const selectPreset = useCallback((presetName: string) => {
+  const previewPreset = useCallback((presetName: string) => {
     const preset = COLOR_PRESETS.find(p => p.name === presetName);
     if (preset) {
-      setColor({ preset: preset.name, hue: preset.hue, saturation: preset.saturation, lightness: preset.lightness });
+      preview({ preset: preset.name, hue: preset.hue, saturation: preset.saturation, lightness: preset.lightness });
     }
-  }, [setColor]);
+  }, [preview]);
 
-  const selectCustomHex = useCallback((hex: string) => {
+  const previewCustomHex = useCallback((hex: string) => {
     const hsl = hexToHsl(hex);
     if (hsl) {
-      setColor({ preset: undefined, hue: hsl.h, saturation: hsl.s, lightness: hsl.l });
+      preview({ preset: undefined, hue: hsl.h, saturation: hsl.s, lightness: hsl.l });
     }
-  }, [setColor]);
+  }, [preview]);
 
-  const currentHex = hslToHex(colorData.hue, colorData.saturation, colorData.lightness);
+  // Save current preview to localStorage
+  const save = useCallback(() => {
+    if (!user?.id) return;
+    localStorage.setItem(getStorageKey(user.id), JSON.stringify(previewData));
+    setSavedData(previewData);
+    setIsDirty(false);
+  }, [user?.id, previewData]);
+
+  // Revert to saved
+  const revert = useCallback(() => {
+    setPreviewData(savedData);
+    setIsDirty(false);
+    applyThemeColor(savedData.hue, savedData.saturation, savedData.lightness);
+  }, [savedData]);
+
+  const currentHex = hslToHex(previewData.hue, previewData.saturation, previewData.lightness);
 
   return {
-    colorData,
+    colorData: previewData,
     currentHex,
-    selectPreset,
-    selectCustomHex,
+    isDirty,
+    previewPreset,
+    previewCustomHex,
+    save,
+    revert,
     presets: COLOR_PRESETS,
   };
 }
