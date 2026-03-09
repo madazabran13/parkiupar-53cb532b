@@ -329,13 +329,22 @@ export default function SuperAdmin() {
         plan_id: tPlanId || null,
       };
 
-      // Set plan dates when assigning a plan
+      // Set plan dates and sync spaces when assigning/changing a plan
       if (tPlanId) {
+        const selectedPlan = plans.find(p => p.id === tPlanId);
         const hadPlanBefore = editingTenant?.plan_id;
         const planChanged = editingTenant?.plan_id !== tPlanId;
         if (!hadPlanBefore || planChanged) {
           tenantData.plan_started_at = now;
           tenantData.plan_expires_at = expiresAt.toISOString();
+        }
+        // Always sync total_spaces with plan's max_spaces
+        if (selectedPlan) {
+          const occupied = editingTenant
+            ? (editingTenant.total_spaces - editingTenant.available_spaces)
+            : 0;
+          tenantData.total_spaces = selectedPlan.max_spaces;
+          tenantData.available_spaces = Math.max(selectedPlan.max_spaces - occupied, 0);
         }
       } else {
         tenantData.plan_started_at = null;
