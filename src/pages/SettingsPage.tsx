@@ -464,6 +464,21 @@ export default function SettingsPage() {
               </div>
               <p className="text-xs text-muted-foreground">Selecciona un color o ingresa un código hexadecimal</p>
             </div>
+
+            {/* Save / Revert buttons */}
+            <div className="flex justify-end gap-2">
+              {isDirty && (
+                <Button variant="outline" onClick={() => { revertColor(); setCustomHex(''); }}>
+                  Cancelar
+                </Button>
+              )}
+              <Button
+                onClick={() => { saveColor(); toast.success('Color guardado'); }}
+                disabled={!isDirty}
+              >
+                {isDirty ? 'Guardar Color' : 'Color guardado'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
