@@ -2,24 +2,27 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, ShieldOff, Send, LogOut, CheckCircle2, Loader2 } from 'lucide-react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { toast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRealtime } from '@/hooks/useRealtime';
+import confetti from 'canvas-confetti';
 
 export default function SuspendedAccount() {
   const { user, profile, signOut } = useAuth();
   const { tenant } = useTenant();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [requestCount, setRequestCount] = useState(0);
   const [isReactivated, setIsReactivated] = useState(false);
+  const [confettiLaunched, setConfettiLaunched] = useState(false);
 
   // Poll tenant status to detect reactivation
-  const { data: tenantStatus } = useQuery({
+  const { data: tenantStatus, refetch: refetchTenantStatus } = useQuery({
     queryKey: ['tenant-status', tenant?.id],
     enabled: !!tenant?.id,
     refetchInterval: 5000, // Check every 5 seconds
@@ -40,15 +43,78 @@ export default function SuspendedAccount() {
     queryKeys: [['tenant-status', tenant?.id]],
   });
 
+  // Launch confetti celebration
+  const launchConfetti = useCallback(() => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        return;
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#fbbf24', '#f59e0b'],
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#fbbf24', '#f59e0b'],
+      });
+    }, 250);
+  }, []);
+
   // Detect when tenant is reactivated
   useEffect(() => {
-    if (tenantStatus?.is_active === true) {
+    if (tenantStatus?.is_active === true && !isReactivated) {
       setIsReactivated(true);
+      if (!confettiLaunched) {
+        setConfettiLaunched(true);
+        launchConfetti();
+      }
     }
-  }, [tenantStatus?.is_active]);
+  }, [tenantStatus?.is_active, isReactivated, confettiLaunched, launchConfetti]);
+
+  // Check if already activated before sending another request
+  const checkAndSendRequest = useCallback(async () => {
+    // First, check current status
+    const { data } = await supabase
+      .from('tenants')
+      .select('is_active')
+      .eq('id', tenant!.id)
+      .single();
+
+    if (data?.is_active === true) {
+      // Already activated!
+      setIsReactivated(true);
+      if (!confettiLaunched) {
+        setConfettiLaunched(true);
+        launchConfetti();
+      }
+      return true; // Return true to indicate it's already activated
+    }
+    return false; // Return false to continue with request
+  }, [tenant?.id, confettiLaunched, launchConfetti]);
 
   const reactivateMutation = useMutation({
     mutationFn: async () => {
+      // Check if already activated first
+      const alreadyActive = await checkAndSendRequest();
+      if (alreadyActive) {
+        throw new Error('ALREADY_ACTIVE');
+      }
+
       const { error } = await supabase.from('notifications').insert({
         user_id: null, // global notification visible to superadmin
         tenant_id: tenant?.id || null,
@@ -64,6 +130,10 @@ export default function SuspendedAccount() {
       toast({ title: '✅ Solicitud enviada', description: 'El administrador ha sido notificado. Te contactaremos pronto.' });
     },
     onError: (err: any) => {
+      if (err.message === 'ALREADY_ACTIVE') {
+        // Don't show error, the UI will update to show reactivated state
+        return;
+      }
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     },
   });
@@ -97,7 +167,12 @@ export default function SuspendedAccount() {
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               >
                 <div className="mx-auto h-16 w-16 rounded-full bg-white/20 flex items-center justify-center mb-3">
-                  <CheckCircle2 className="h-8 w-8 text-white" />
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 10, 0] }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                  >
+                    <CheckCircle2 className="h-8 w-8 text-white" />
+                  </motion.div>
                 </div>
               </motion.div>
               <motion.h1
@@ -106,7 +181,7 @@ export default function SuspendedAccount() {
                 transition={{ delay: 0.3 }}
                 className="text-xl font-bold text-white"
               >
-                ¡Cuenta Reactivada!
+                🎉 ¡Cuenta Reactivada!
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -125,9 +200,13 @@ export default function SuspendedAccount() {
                 transition={{ delay: 0.5 }}
                 className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-center"
               >
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                  El administrador ha reactivado tu cuenta
-                </p>
+                <motion.p 
+                  className="text-sm font-medium text-emerald-700 dark:text-emerald-400"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ repeat: 2, duration: 0.3, delay: 0.6 }}
+                >
+                  ✅ El administrador ha reactivado tu cuenta
+                </motion.p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Por favor, inicia sesión nuevamente para acceder a todas las funcionalidades de la plataforma.
                 </p>
@@ -236,7 +315,7 @@ export default function SuspendedAccount() {
                   disabled={reactivateMutation.isPending}
                 >
                   <Send className="h-4 w-4" />
-                  {reactivateMutation.isPending ? 'Enviando solicitud...' : 'Solicitar reactivación'}
+                  {reactivateMutation.isPending ? 'Verificando estado...' : 'Solicitar reactivación'}
                 </Button>
               ) : (
                 <div className="space-y-3">
@@ -264,7 +343,7 @@ export default function SuspendedAccount() {
                     disabled={reactivateMutation.isPending}
                   >
                     <Send className="h-4 w-4" />
-                    {reactivateMutation.isPending ? 'Enviando...' : 'Enviar otra solicitud'}
+                    {reactivateMutation.isPending ? 'Verificando...' : 'Enviar otra solicitud'}
                   </Button>
                 </div>
               )}
