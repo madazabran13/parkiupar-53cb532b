@@ -278,7 +278,7 @@ export default function Parking() {
             <Button variant="outline" onClick={() => setEntryOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => entryMutation.mutate()}
-              disabled={!plate || !customerName || !customerPhone || entryMutation.isPending}
+              disabled={!plate || entryMutation.isPending}
             >
               {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
             </Button>
