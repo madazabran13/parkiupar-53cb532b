@@ -370,6 +370,19 @@ export default function Capacity() {
         </Card>
       </div>
 
+      {/* Overcapacity Alert */}
+      {occupiedSpaces > totalSpaces && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="font-semibold">Sobrecupo detectado</AlertTitle>
+          <AlertDescription className="text-sm">
+            Hay <strong>{occupiedSpaces}</strong> vehículos estacionados pero tu plan solo permite <strong>{totalSpaces}</strong> espacios.
+            Se excede en <strong>{occupiedSpaces - totalSpaces}</strong> {occupiedSpaces - totalSpaces === 1 ? 'vehículo' : 'vehículos'}.
+            Considera actualizar tu plan o registrar salidas pendientes.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Legend - dynamic from categories */}
       <div className="flex flex-wrap gap-2 sm:gap-3">
         <Badge variant="outline" className="gap-1 text-xs"><div className="h-2.5 w-2.5 rounded bg-green-500" /> Libre</Badge>
