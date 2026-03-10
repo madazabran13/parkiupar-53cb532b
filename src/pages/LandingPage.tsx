@@ -5,11 +5,26 @@ import {
   Car, BarChart3, Clock, Users, Shield, Smartphone,
   ChevronRight, Check, MapPin, CreditCard, Settings2,
   ArrowRight, Star, Zap, Globe, Menu, X, ChevronDown,
-  Play, MousePointerClick
+  Play, MousePointerClick, Sparkles, Crown, Rocket
 } from 'lucide-react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import heroDashboard from '@/assets/hero-dashboard.png';
+import { supabase } from '@/integrations/supabase/client';
 
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  parking: 'Gestión de Vehículos',
+  capacity: 'Control de Aforo',
+  reports: 'Reportes',
+  audit: 'Auditoría',
+  customers: 'Clientes',
+  rates: 'Tarifas',
+  payments: 'Pagos y Facturación',
+  my_plan: 'Mi Plan',
+  theme: 'Color del Tema',
+  map: 'Mapa',
+  team: 'Equipo',
+};
 /* ─── Counter animation hook ─── */
 function useCounter(end: number, duration = 2000, inView: boolean) {
   const [count, setCount] = useState(0);
