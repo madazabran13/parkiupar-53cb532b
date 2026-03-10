@@ -162,6 +162,7 @@ export default function LandingPage() {
   }, []);
 
   const navLinks = [
+    { href: '#inicio', label: 'Inicio' },
     { href: '#features', label: 'Características' },
     { href: '#pricing', label: 'Planes' },
     { href: '#roles', label: 'Cómo Funciona' },
@@ -193,7 +194,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-18">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <img src="/logo.png" alt="ParkiUpar" className="h-9 w-9 transition-transform group-hover:scale-110" />
+              <img  src="/logo.png" alt="ParkiUpar" className="h-9 w-9 transition-transform group-hover:scale-110" />
               <span className="text-xl font-black tracking-tight text-foreground">ParkiUpar</span>
             </Link>
 
@@ -264,7 +265,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <div ref={heroRef} className="relative min-h-[100svh] flex items-center overflow-hidden">
+      <div id="inicio" ref={heroRef} className="relative min-h-[100svh] flex items-center overflow-hidden">
         {/* Animated gradient blobs */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] animate-pulse" />
@@ -294,6 +295,7 @@ export default function LandingPage() {
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
                     <Zap className="h-3.5 w-3.5" />
                     Software de Gestión #1 en Colombia
+                  para Parqueaderos
                   </span>
                 </motion.div>
 
@@ -329,18 +331,18 @@ export default function LandingPage() {
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
                 >
-                  <Button size="lg" asChild className="text-base px-8 h-13 rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
+                    <Button size="lg" asChild className="text-lg px-10 h-12  rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
                     <Link to="/register">
                       Empieza Gratis
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild className="text-base px-8 h-13 rounded-full hover:scale-[1.02] transition-all">
+                    </Button>
+                    <Button size="lg" variant="outline" asChild className="text-lg px-10 h-12 rounded-full hover:scale-[1.02] transition-all">
                     <a href="#features">
                       <Play className="mr-2 h-4 w-4" />
                       Conocer Más
                     </a>
-                  </Button>
+                    </Button>
                 </motion.div>
 
                 <motion.div
@@ -476,7 +478,7 @@ export default function LandingPage() {
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
                   <f.icon className="h-7 w-7 text-foreground" />
                 </div>
-                <h3 className="text-lg font-bold mb-2">{f.title}</h3>
+                <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -638,7 +640,7 @@ export default function LandingPage() {
                     <Settings2 className="h-7 w-7 text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black">Administrador</h3>
+                    <h3 className="text-xl font-semibold">Administrador</h3>
                     <p className="text-sm text-primary font-semibold">Superpoderes para ti</p>
                   </div>
                 </div>
@@ -670,7 +672,7 @@ export default function LandingPage() {
                     <Smartphone className="h-7 w-7 text-secondary-foreground" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black">Operador</h3>
+                    <h3 className="text-xl font-semibold">Operador</h3>
                     <p className="text-sm text-muted-foreground font-semibold">Superpoderes para tu equipo</p>
                   </div>
                 </div>
@@ -718,7 +720,7 @@ export default function LandingPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed mb-6">"{t.text}"</p>
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">{t.name.charAt(0)}</span>
+                    <span className="text-sm font-semibold text-primary">{t.name.charAt(0)}</span>
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{t.name}</p>
@@ -779,10 +781,10 @@ export default function LandingPage() {
                   Únete a los parqueaderos que ya optimizaron su operación con ParkiUpar.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" variant="secondary" asChild className="text-base px-8 h-13 rounded-full font-semibold hover:scale-[1.02] transition-transform">
+                  <Button size="lg" variant="secondary"  asChild className="text-lg px-10 h-12  rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
                     <Link to="/register">Crear Cuenta Gratis <ArrowRight className="ml-2 h-5 w-5" /></Link>
                   </Button>
-                      <Button size="lg" variant="secondary" asChild className="text-base px-8 h-13 rounded-full font-semibold hover:scale-[1.02] transition-transform">
+                      <Button size="lg" variant="secondary" asChild className="text-lg px-10 h-12 rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
                     <Link to="/login">Iniciar Sesión</Link>
                     </Button>
                 </div>
