@@ -163,10 +163,24 @@ export default function LandingPage() {
 
   const navLinks = [
     { href: '#features', label: 'Características' },
+    { href: '#pricing', label: 'Planes' },
     { href: '#roles', label: 'Cómo Funciona' },
     { href: '#testimonials', label: 'Testimonios' },
     { href: '#faq', label: 'FAQ' },
   ];
+
+  // Fetch plans from Supabase
+  const [plans, setPlans] = useState<any[]>([]);
+  useEffect(() => {
+    supabase
+      .from('plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price_monthly', { ascending: true })
+      .then(({ data }) => {
+        if (data) setPlans(data);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
