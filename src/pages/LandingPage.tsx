@@ -484,6 +484,129 @@ export default function LandingPage() {
         </div>
       </Section>
 
+      {/* ═══ PRICING ═══ */}
+      <Section id="pricing" className="py-20 lg:py-28 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Planes y Precios</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
+              Elige el plan ideal para tu{' '}
+              <span className="text-primary">parqueadero</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Planes flexibles que se adaptan al tamaño de tu operación. Sin contratos a largo plazo.
+            </p>
+          </div>
+
+          {plans.length === 0 ? (
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="rounded-2xl border border-border bg-card p-8 animate-pulse">
+                  <div className="h-6 w-24 bg-muted rounded mb-4" />
+                  <div className="h-10 w-32 bg-muted rounded mb-6" />
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map(j => (
+                      <div key={j} className="h-4 bg-muted rounded w-full" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={`grid gap-6 max-w-5xl mx-auto ${
+              plans.length === 1 ? 'md:grid-cols-1 max-w-md' :
+              plans.length === 2 ? 'md:grid-cols-2 max-w-3xl' :
+              'md:grid-cols-3'
+            }`}>
+              {plans.map((plan, i) => {
+                const isPopular = i === 1 && plans.length >= 3;
+                const planIcon = i === 0 ? Sparkles : i === 1 ? Crown : Rocket;
+                const PlanIcon = planIcon;
+                const modules = Array.isArray(plan.modules) ? plan.modules as string[] : [];
+
+                return (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1, duration: 0.5 }}
+                    className={`relative rounded-2xl p-8 md:p-10 transition-all duration-300 hover:shadow-xl ${
+                      isPopular
+                        ? 'border-2 border-primary bg-card shadow-lg shadow-primary/10 scale-[1.02]'
+                        : 'border border-border bg-card hover:border-primary/30'
+                    }`}
+                  >
+                    {isPopular && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <span className="bg-primary text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                          Más Popular
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                        isPopular ? 'bg-primary text-primary-foreground' : 'bg-primary/10'
+                      }`}>
+                        <PlanIcon className={`h-6 w-6 ${isPopular ? '' : 'text-primary'}`} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-black">{plan.name}</h3>
+                        {plan.description && (
+                          <p className="text-xs text-muted-foreground">{plan.description}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mb-8">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black">
+                          ${plan.price_monthly.toLocaleString('es-CO')}
+                        </span>
+                        <span className="text-muted-foreground text-sm font-medium">/mes</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Hasta <span className="font-semibold text-foreground">{plan.max_spaces}</span> espacios
+                      </p>
+                    </div>
+
+                    <ul className="space-y-3 mb-8">
+                      {modules.map((mod: string) => (
+                        <li key={mod} className="flex items-center gap-2.5 text-sm">
+                          <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${
+                            isPopular ? 'bg-primary/15' : 'bg-primary/10'
+                          }`}>
+                            <Check className="h-3 w-3 text-primary" />
+                          </div>
+                          <span className="text-muted-foreground">{MODULE_LABELS[mod] || mod}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      asChild
+                      className={`w-full rounded-xl h-12 font-semibold transition-all ${
+                        isPopular
+                          ? 'shadow-lg shadow-primary/20 hover:shadow-primary/30'
+                          : ''
+                      }`}
+                      variant={isPopular ? 'default' : 'outline'}
+                    >
+                      <Link to="/register">
+                        Empezar Ahora
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Section>
+
       {/* ═══ ROLES ═══ */}
       <Section id="roles" className="py-20 lg:py-28 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
