@@ -782,9 +782,9 @@ export default function LandingPage() {
                   <Button size="lg" variant="secondary" asChild className="text-base px-8 h-13 rounded-full font-semibold hover:scale-[1.02] transition-transform">
                     <Link to="/register">Crear Cuenta Gratis <ArrowRight className="ml-2 h-5 w-5" /></Link>
                   </Button>
-                  <Button size="lg" variant="outline" asChild className="text-base px-8 h-13 rounded-full border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground font-semibold">
+                      <Button size="lg" variant="secondary" asChild className="text-base px-8 h-13 rounded-full font-semibold hover:scale-[1.02] transition-transform">
                     <Link to="/login">Iniciar Sesión</Link>
-                  </Button>
+                    </Button>
                 </div>
               </motion.div>
             </div>
