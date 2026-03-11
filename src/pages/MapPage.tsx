@@ -416,14 +416,20 @@ export default function MapPage() {
       )}
 
       <div className="flex flex-wrap gap-2 text-xs">
-        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#22c55e' }} /> Disponible</Badge>
-        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} /> Casi lleno</Badge>
-        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#ef4444' }} /> Lleno</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#22c55e' }} /> Abierto</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} /> Cierra pronto</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#3b82f6' }} /> Por abrir</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#6b7280' }} /> Cerrado</Badge>
       </div>
       <div className="flex-1 overflow-auto space-y-2">
         {filteredTenants.map((tenant) => {
-          const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+          const tenantScheds = schedulesMap[tenant.id] || [];
+          const schedStatus = getScheduleStatus(tenantScheds);
+          const isClosed = schedStatus.label === 'Cerrado';
+          const color = isClosed ? '#6b7280' : getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
           const rates = ratesMap[tenant.id] || [];
+          const lat = Number(tenant.latitude);
+          const lng = Number(tenant.longitude);
           const lat = Number(tenant.latitude);
           const lng = Number(tenant.longitude);
           return (
