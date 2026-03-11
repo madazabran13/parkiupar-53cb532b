@@ -276,12 +276,17 @@ export default function MapPage() {
       if (!tenant.latitude || !tenant.longitude) return;
       if (!filteredIds.has(tenant.id)) return;
 
-      const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+      const tenantSchedules = schedulesMap[tenant.id] || [];
+      const scheduleStatus = getScheduleStatus(tenantSchedules);
+      const isClosed = scheduleStatus.label === 'Cerrado';
+      const color = isClosed ? '#6b7280' : getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
       const pct = tenant.total_spaces > 0 ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100) : 0;
-      const statusLabel = tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
+      const statusLabel = isClosed ? 'Cerrado' : tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
       const rates = ratesMap[tenant.id] || [];
       const lat = Number(tenant.latitude);
       const lng = Number(tenant.longitude);
+
+      const scheduleHtml = `<div style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:white;background:${scheduleStatus.color};margin-bottom:6px;">${scheduleStatus.label}</div>`;
 
       const ratesHtml = rates.length > 0
         ? `<div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:8px;">
@@ -314,10 +319,11 @@ export default function MapPage() {
 
       marker.bindPopup(`
         <div style="min-width:220px;font-family:system-ui,-apple-system,sans-serif;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
             <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
             <h3 style="font-weight:700;font-size:14px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
           </div>
+          ${scheduleHtml}
           <p style="color:#666;font-size:12px;margin:0 0 10px;padding-left:18px;">📍 ${tenant.address || 'Valledupar'}</p>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px 12px;border-radius:8px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -339,7 +345,7 @@ export default function MapPage() {
 
       markersRef.current.push(marker);
     });
-  }, [tenants, ratesMap, filteredTenants]);
+  }, [tenants, ratesMap, schedulesMap, filteredTenants]);
 
   const focusTenant = (tenant: Tenant) => {
     if (mapInstance.current && tenant.latitude && tenant.longitude) {
