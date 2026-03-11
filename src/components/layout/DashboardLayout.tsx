@@ -27,7 +27,9 @@ export default function DashboardLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <div className="hidden sm:block">
+          <AppSidebar />
+        </div>
         <SidebarInset>
           <header className="flex h-12 sm:h-14 items-center gap-2 border-b bg-background px-2 sm:px-4">
             <SidebarTrigger className="h-8 w-8" />
