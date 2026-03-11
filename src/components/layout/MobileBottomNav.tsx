@@ -131,7 +131,7 @@ export function MobileBottomNav() {
           <DrawerHeader>
             <DrawerTitle>Menú</DrawerTitle>
           </DrawerHeader>
-          <div className="grid grid-cols-3 gap-2 p-4 pb-8">
+          <div className="grid grid-cols-3 gap-2 p-4">
             {overflowItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -151,6 +151,34 @@ export function MobileBottomNav() {
                 </DrawerClose>
               );
             })}
+          </div>
+          {/* Footer actions */}
+          <div className="border-t p-4 pb-8 flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={() => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+              }}
+            >
+              <Sun className="h-4 w-4 dark:hidden" />
+              <Moon className="h-4 w-4 hidden dark:block" />
+              <span className="dark:hidden">Oscuro</span>
+              <span className="hidden dark:block">Claro</span>
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 gap-2"
+              onClick={async () => {
+                setDrawerOpen(false);
+                await signOut();
+                navigate('/');
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar Sesión
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>

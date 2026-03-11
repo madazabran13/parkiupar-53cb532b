@@ -42,6 +42,8 @@ const MENU_ITEMS = {
   map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
   audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
+  schedules: { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
+  spaces: { label: 'Cupos', icon: ParkingCircle, path: '/spaces', roles: ['admin', 'operator'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
   payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
