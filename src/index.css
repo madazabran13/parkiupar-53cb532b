@@ -97,6 +97,21 @@
 
 
 
+/* Mobile-first responsive utilities */
+@layer base {
+  @media (max-width: 639px) {
+    .dialog-content, [role="dialog"] > div {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  }
+}
+
+/* Safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Leaflet custom styles */
 .custom-marker {
   background: transparent !important;
