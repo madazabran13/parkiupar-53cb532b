@@ -289,13 +289,13 @@ export default function Parking() {
   if (loadingActive && loadingHistory) return <TableSkeleton columns={7} rows={6} />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
-          <p className="text-sm text-muted-foreground">Registra entradas y salidas</p>
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Registra entradas y salidas</p>
         </div>
-        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto">
+        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto h-10 sm:h-9 text-sm">
           <Plus className="h-4 w-4 mr-1" /> Registrar Entrada
         </Button>
       </div>
