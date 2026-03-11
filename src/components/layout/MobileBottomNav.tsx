@@ -36,6 +36,8 @@ const ALL_NAV_ITEMS = [
   { label: 'Reportes', icon: BarChart3, path: '/reports', module: 'reports', roles: ['admin'] },
   { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'operator'] },
   { label: 'Tarifas', icon: DollarSign, path: '/rates', module: 'rates', roles: ['admin'] },
+  { label: 'Horarios', icon: Clock, path: '/schedules', module: 'schedules', roles: ['admin'] },
+  { label: 'Cupos', icon: ParkingCircle, path: '/spaces', module: 'spaces', roles: ['admin', 'operator'] },
   { label: 'Equipo', icon: UserCog, path: '/team', module: 'team', roles: ['admin'] },
   { label: 'Auditoría', icon: Shield, path: '/audit', module: 'audit', roles: ['admin'] },
   { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'viewer'] },
