@@ -30,6 +30,8 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/payments': 'payments',
   '/my-plan': 'my_plan',
   '/settings': 'settings',
+  '/schedules': 'schedules',
+  '/spaces': 'spaces',
 };
 
 const MENU_ITEMS = {
