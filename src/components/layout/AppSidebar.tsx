@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
+  Clock, ParkingCircle,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +30,8 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/payments': 'payments',
   '/my-plan': 'my_plan',
   '/settings': 'settings',
+  '/schedules': 'schedules',
+  '/spaces': 'spaces',
 };
 
 const MENU_ITEMS = {
@@ -41,6 +44,8 @@ const MENU_ITEMS = {
   map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
   audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
+  schedules: { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
+  spaces: { label: 'Cupos', icon: ParkingCircle, path: '/spaces', roles: ['admin', 'operator'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
   payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },

@@ -24,6 +24,8 @@ import SuperAdmin from "@/pages/SuperAdmin";
 import MapPage from "@/pages/MapPage";
 import Payments from "@/pages/Payments";
 import AuditLog from "@/pages/AuditLog";
+import Schedules from "@/pages/Schedules";
+import Spaces from "@/pages/Spaces";
 import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
@@ -67,6 +69,8 @@ const App = () => (
               <Route path="/team" element={<TeamUsers />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/payments" element={<Payments />} />
+              <Route path="/schedules" element={<Schedules />} />
+              <Route path="/spaces" element={<Spaces />} />
               
               <Route path="/my-plan" element={<MyPlan />} />
               <Route path="/audit" element={<AuditLog />} />

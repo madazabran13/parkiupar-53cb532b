@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw, LogOut } from 'lucide-react';
-import type { Tenant, VehicleCategory } from '@/types';
+import type { Tenant, VehicleCategory, TenantSchedule } from '@/types';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -24,10 +24,44 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-function getAvailabilityColor(available: number, total: number): string {
+function getAvailabilityColor(available: number, total: number, scheduleStatus?: string): string {
+  if (scheduleStatus === 'closed') return '#6b7280';
   if (available === 0) return '#ef4444';
   if (available / total < 0.2) return '#f59e0b';
   return '#22c55e';
+}
+
+function getScheduleStatus(schedules: TenantSchedule[]): { label: string; color: string } {
+  if (schedules.length === 0) return { label: 'Sin horario', color: '#6b7280' };
+  
+  const now = new Date();
+  const day = now.getDay(); // 0=Sunday
+  let dayGroup: string;
+  if (day === 0) dayGroup = 'sunday';
+  else if (day === 6) dayGroup = 'saturday';
+  else dayGroup = 'weekday';
+  
+  const todaySchedules = schedules.filter(s => s.day_group === dayGroup && s.is_active);
+  if (todaySchedules.length === 0) return { label: 'Cerrado', color: '#ef4444' };
+  
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  
+  for (const s of todaySchedules) {
+    const [oh, om] = s.open_time.split(':').map(Number);
+    const [ch, cm] = s.close_time.split(':').map(Number);
+    const openMin = oh * 60 + om;
+    const closeMin = ch * 60 + cm;
+    
+    if (currentMinutes >= openMin && currentMinutes < closeMin) {
+      if (closeMin - currentMinutes <= 30) return { label: 'Cierra pronto', color: '#f59e0b' };
+      return { label: 'Abierto', color: '#22c55e' };
+    }
+    if (currentMinutes < openMin && openMin - currentMinutes <= 30) {
+      return { label: 'Por abrir', color: '#3b82f6' };
+    }
+  }
+  
+  return { label: 'Cerrado', color: '#ef4444' };
 }
 
 function createColoredIcon(color: string, available: number) {
@@ -71,6 +105,7 @@ export default function MapPage() {
   const [locating, setLocating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
     queryFn: async () => {
@@ -103,7 +138,25 @@ export default function MapPage() {
     },
   });
 
-  // Get all unique category names for filter
+  const { data: schedulesMap = {} } = useQuery({
+    queryKey: ['map-schedules', tenants.map(t => t.id)],
+    enabled: tenants.length > 0,
+    queryFn: async () => {
+      const ids = tenants.map(t => t.id);
+      const { data } = await supabase
+        .from('tenant_schedules')
+        .select('*')
+        .in('tenant_id', ids)
+        .eq('is_active', true);
+      const map: Record<string, TenantSchedule[]> = {};
+      (data || []).forEach((s: any) => {
+        if (!map[s.tenant_id]) map[s.tenant_id] = [];
+        map[s.tenant_id].push(s as unknown as TenantSchedule);
+      });
+      return map;
+    },
+  });
+
   const allCategoryNames = useMemo(() => {
     const names = new Set<string>();
     // Always include standard vehicle types
@@ -223,12 +276,17 @@ export default function MapPage() {
       if (!tenant.latitude || !tenant.longitude) return;
       if (!filteredIds.has(tenant.id)) return;
 
-      const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+      const tenantSchedules = schedulesMap[tenant.id] || [];
+      const scheduleStatus = getScheduleStatus(tenantSchedules);
+      const isClosed = scheduleStatus.label === 'Cerrado';
+      const color = isClosed ? '#6b7280' : getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
       const pct = tenant.total_spaces > 0 ? Math.round(((tenant.total_spaces - tenant.available_spaces) / tenant.total_spaces) * 100) : 0;
-      const statusLabel = tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
+      const statusLabel = isClosed ? 'Cerrado' : tenant.available_spaces === 0 ? 'LLENO' : tenant.available_spaces / tenant.total_spaces < 0.2 ? 'Casi lleno' : 'Disponible';
       const rates = ratesMap[tenant.id] || [];
       const lat = Number(tenant.latitude);
       const lng = Number(tenant.longitude);
+
+      const scheduleHtml = `<div style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:white;background:${scheduleStatus.color};margin-bottom:6px;">${scheduleStatus.label}</div>`;
 
       const ratesHtml = rates.length > 0
         ? `<div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:8px;">
@@ -261,10 +319,11 @@ export default function MapPage() {
 
       marker.bindPopup(`
         <div style="min-width:220px;font-family:system-ui,-apple-system,sans-serif;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
             <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
             <h3 style="font-weight:700;font-size:14px;margin:0;color:#1a1a1a;">${tenant.name}</h3>
           </div>
+          ${scheduleHtml}
           <p style="color:#666;font-size:12px;margin:0 0 10px;padding-left:18px;">📍 ${tenant.address || 'Valledupar'}</p>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px 12px;border-radius:8px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -286,7 +345,7 @@ export default function MapPage() {
 
       markersRef.current.push(marker);
     });
-  }, [tenants, ratesMap, filteredTenants]);
+  }, [tenants, ratesMap, schedulesMap, filteredTenants]);
 
   const focusTenant = (tenant: Tenant) => {
     if (mapInstance.current && tenant.latitude && tenant.longitude) {
@@ -357,13 +416,17 @@ export default function MapPage() {
       )}
 
       <div className="flex flex-wrap gap-2 text-xs">
-        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#22c55e' }} /> Disponible</Badge>
-        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} /> Casi lleno</Badge>
-        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#ef4444' }} /> Lleno</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#22c55e' }} /> Abierto</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} /> Cierra pronto</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#3b82f6' }} /> Por abrir</Badge>
+        <Badge variant="outline" className="gap-1"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: '#6b7280' }} /> Cerrado</Badge>
       </div>
       <div className="flex-1 overflow-auto space-y-2">
         {filteredTenants.map((tenant) => {
-          const color = getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
+          const tenantScheds = schedulesMap[tenant.id] || [];
+          const schedStatus = getScheduleStatus(tenantScheds);
+          const isClosed = schedStatus.label === 'Cerrado';
+          const color = isClosed ? '#6b7280' : getAvailabilityColor(tenant.available_spaces, tenant.total_spaces);
           const rates = ratesMap[tenant.id] || [];
           const lat = Number(tenant.latitude);
           const lng = Number(tenant.longitude);
@@ -372,7 +435,12 @@ export default function MapPage() {
               <CardContent className="p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm truncate">{tenant.name}</h3>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-semibold text-sm truncate">{tenant.name}</h3>
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 flex-shrink-0" style={{ borderColor: schedStatus.color, color: schedStatus.color }}>
+                        {schedStatus.label}
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <MapPin className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{tenant.address || 'Valledupar'}</span>
                     </p>

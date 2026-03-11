@@ -240,6 +240,63 @@ export type Database = {
           },
         ]
       }
+      parking_spaces: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          reservation_expires_at: string | null
+          reserved_at: string | null
+          reserved_by: string | null
+          session_id: string | null
+          space_number: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          reservation_expires_at?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
+          session_id?: string | null
+          space_number: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          reservation_expires_at?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
+          session_id?: string | null
+          space_number?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parking_spaces_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "parking_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parking_spaces_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_history: {
         Row: {
           amount: number
@@ -393,6 +450,113 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      space_reservations: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          expires_at: string
+          id: string
+          plate: string | null
+          reserved_at: string
+          reserved_by: string | null
+          space_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          expires_at: string
+          id?: string
+          plate?: string | null
+          reserved_at?: string
+          reserved_by?: string | null
+          space_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          expires_at?: string
+          id?: string
+          plate?: string | null
+          reserved_at?: string
+          reserved_by?: string | null
+          space_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_reservations_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "parking_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_reservations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_schedules: {
+        Row: {
+          close_time: string
+          created_at: string
+          day_group: string
+          id: string
+          is_active: boolean
+          open_time: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          close_time: string
+          created_at?: string
+          day_group?: string
+          id?: string
+          is_active?: boolean
+          open_time: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          close_time?: string
+          created_at?: string
+          day_group?: string
+          id?: string
+          is_active?: boolean
+          open_time?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenants: {
         Row: {

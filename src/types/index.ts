@@ -1,6 +1,9 @@
 export type AppRole = 'superadmin' | 'admin' | 'operator' | 'viewer';
 export type VehicleType = 'car' | 'motorcycle' | 'truck' | 'bicycle';
 export type SessionStatus = 'active' | 'completed' | 'cancelled';
+export type SpaceStatus = 'available' | 'occupied' | 'reserved';
+export type ReservationStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled';
+export type DayGroup = 'weekday' | 'saturday' | 'sunday';
 
 export interface Plan {
   id: string;
@@ -18,7 +21,6 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
-  
   plan_id: string | null;
   plan_started_at: string | null;
   plan_expires_at: string | null;
@@ -118,6 +120,48 @@ export interface ParkingSession {
   updated_at: string;
 }
 
+export interface TenantSchedule {
+  id: string;
+  tenant_id: string;
+  day_group: DayGroup;
+  open_time: string;
+  close_time: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ParkingSpace {
+  id: string;
+  tenant_id: string;
+  space_number: string;
+  label: string | null;
+  status: SpaceStatus;
+  reserved_by: string | null;
+  reserved_at: string | null;
+  reservation_expires_at: string | null;
+  session_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpaceReservation {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  reserved_by: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  plate: string | null;
+  status: ReservationStatus;
+  reserved_at: string;
+  expires_at: string;
+  confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
   car: 'Carro',
   motorcycle: 'Moto',
@@ -129,4 +173,16 @@ export const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
   active: 'Activo',
   completed: 'Completado',
   cancelled: 'Cancelado',
+};
+
+export const DAY_GROUP_LABELS: Record<DayGroup, string> = {
+  weekday: 'Lunes a Viernes',
+  saturday: 'Sábado',
+  sunday: 'Domingo',
+};
+
+export const SPACE_STATUS_LABELS: Record<SpaceStatus, string> = {
+  available: 'Disponible',
+  occupied: 'Ocupado',
+  reserved: 'Reservado',
 };

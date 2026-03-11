@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Map, Grid3X3, BarChart3, Users, DollarSign,
   UserCog, Shield, Settings, Wallet, CreditCard, MoreHorizontal, Building2,
+  Clock, ParkingCircle, LogOut, Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
@@ -10,15 +11,18 @@ import { cn } from '@/lib/utils';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose,
 } from '@/components/ui/drawer';
+import { Button } from '@/components/ui/button';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
   '/parking': 'parking',
+  '/map': 'map',
+  '/capacity': 'capacity',
+  '/reports': 'reports',
   '/customers': 'customers',
   '/rates': 'rates',
-  '/reports': 'reports',
-  '/capacity': 'capacity',
-  '/map': 'map',
+  '/schedules': 'schedules',
+  '/spaces': 'spaces',
   '/team': 'team',
   '/audit': 'audit',
   '/payments': 'payments',
@@ -34,6 +38,8 @@ const ALL_NAV_ITEMS = [
   { label: 'Reportes', icon: BarChart3, path: '/reports', module: 'reports', roles: ['admin'] },
   { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'operator'] },
   { label: 'Tarifas', icon: DollarSign, path: '/rates', module: 'rates', roles: ['admin'] },
+  { label: 'Horarios', icon: Clock, path: '/schedules', module: 'schedules', roles: ['admin'] },
+  { label: 'Cupos', icon: ParkingCircle, path: '/spaces', module: 'spaces', roles: ['admin', 'operator'] },
   { label: 'Equipo', icon: UserCog, path: '/team', module: 'team', roles: ['admin'] },
   { label: 'Auditoría', icon: Shield, path: '/audit', module: 'audit', roles: ['admin'] },
   { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'viewer'] },
@@ -53,9 +59,10 @@ const SUPERADMIN_NAV_ITEMS = [
 const MAX_VISIBLE = 4; // Show 4 + "More" button
 
 export function MobileBottomNav() {
-  const { role } = useAuth();
+  const { role, signOut } = useAuth();
   const { planModules } = useTenant();
   const location = useLocation();
+  const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   if (!role) return null;
@@ -126,7 +133,7 @@ export function MobileBottomNav() {
           <DrawerHeader>
             <DrawerTitle>Menú</DrawerTitle>
           </DrawerHeader>
-          <div className="grid grid-cols-3 gap-2 p-4 pb-8">
+          <div className="grid grid-cols-3 gap-2 p-4">
             {overflowItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -146,6 +153,34 @@ export function MobileBottomNav() {
                 </DrawerClose>
               );
             })}
+          </div>
+          {/* Footer actions */}
+          <div className="border-t p-4 pb-8 flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={() => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+              }}
+            >
+              <Sun className="h-4 w-4 dark:hidden" />
+              <Moon className="h-4 w-4 hidden dark:block" />
+              <span className="dark:hidden">Oscuro</span>
+              <span className="hidden dark:block">Claro</span>
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 gap-2"
+              onClick={async () => {
+                setDrawerOpen(false);
+                await signOut();
+                navigate('/');
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar Sesión
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>
