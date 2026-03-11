@@ -57,9 +57,10 @@ const SUPERADMIN_NAV_ITEMS = [
 const MAX_VISIBLE = 4; // Show 4 + "More" button
 
 export function MobileBottomNav() {
-  const { role } = useAuth();
+  const { role, signOut } = useAuth();
   const { planModules } = useTenant();
   const location = useLocation();
+  const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   if (!role) return null;
