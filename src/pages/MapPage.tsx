@@ -138,7 +138,25 @@ export default function MapPage() {
     },
   });
 
-  // Get all unique category names for filter
+  const { data: schedulesMap = {} } = useQuery({
+    queryKey: ['map-schedules', tenants.map(t => t.id)],
+    enabled: tenants.length > 0,
+    queryFn: async () => {
+      const ids = tenants.map(t => t.id);
+      const { data } = await supabase
+        .from('tenant_schedules')
+        .select('*')
+        .in('tenant_id', ids)
+        .eq('is_active', true);
+      const map: Record<string, TenantSchedule[]> = {};
+      (data || []).forEach((s: any) => {
+        if (!map[s.tenant_id]) map[s.tenant_id] = [];
+        map[s.tenant_id].push(s as unknown as TenantSchedule);
+      });
+      return map;
+    },
+  });
+
   const allCategoryNames = useMemo(() => {
     const names = new Set<string>();
     // Always include standard vehicle types
