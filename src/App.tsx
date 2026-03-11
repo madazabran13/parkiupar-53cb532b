@@ -24,6 +24,8 @@ import SuperAdmin from "@/pages/SuperAdmin";
 import MapPage from "@/pages/MapPage";
 import Payments from "@/pages/Payments";
 import AuditLog from "@/pages/AuditLog";
+import Schedules from "@/pages/Schedules";
+import Spaces from "@/pages/Spaces";
 import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
