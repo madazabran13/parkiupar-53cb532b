@@ -24,10 +24,44 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-function getAvailabilityColor(available: number, total: number): string {
+function getAvailabilityColor(available: number, total: number, scheduleStatus?: string): string {
+  if (scheduleStatus === 'closed') return '#6b7280';
   if (available === 0) return '#ef4444';
   if (available / total < 0.2) return '#f59e0b';
   return '#22c55e';
+}
+
+function getScheduleStatus(schedules: TenantSchedule[]): { label: string; color: string } {
+  if (schedules.length === 0) return { label: 'Sin horario', color: '#6b7280' };
+  
+  const now = new Date();
+  const day = now.getDay(); // 0=Sunday
+  let dayGroup: string;
+  if (day === 0) dayGroup = 'sunday';
+  else if (day === 6) dayGroup = 'saturday';
+  else dayGroup = 'weekday';
+  
+  const todaySchedules = schedules.filter(s => s.day_group === dayGroup && s.is_active);
+  if (todaySchedules.length === 0) return { label: 'Cerrado', color: '#ef4444' };
+  
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  
+  for (const s of todaySchedules) {
+    const [oh, om] = s.open_time.split(':').map(Number);
+    const [ch, cm] = s.close_time.split(':').map(Number);
+    const openMin = oh * 60 + om;
+    const closeMin = ch * 60 + cm;
+    
+    if (currentMinutes >= openMin && currentMinutes < closeMin) {
+      if (closeMin - currentMinutes <= 30) return { label: 'Cierra pronto', color: '#f59e0b' };
+      return { label: 'Abierto', color: '#22c55e' };
+    }
+    if (currentMinutes < openMin && openMin - currentMinutes <= 30) {
+      return { label: 'Por abrir', color: '#3b82f6' };
+    }
+  }
+  
+  return { label: 'Cerrado', color: '#ef4444' };
 }
 
 function createColoredIcon(color: string, available: number) {
