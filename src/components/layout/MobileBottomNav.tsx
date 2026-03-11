@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Map, Grid3X3, BarChart3, Users, DollarSign,
   UserCog, Shield, Settings, Wallet, CreditCard, MoreHorizontal, Building2,
+  Clock, ParkingCircle, LogOut, Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose,
 } from '@/components/ui/drawer';
+import { Button } from '@/components/ui/button';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
