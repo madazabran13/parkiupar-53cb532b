@@ -435,7 +435,12 @@ export default function MapPage() {
               <CardContent className="p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm truncate">{tenant.name}</h3>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-semibold text-sm truncate">{tenant.name}</h3>
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 flex-shrink-0" style={{ borderColor: schedStatus.color, color: schedStatus.color }}>
+                        {schedStatus.label}
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <MapPin className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{tenant.address || 'Valledupar'}</span>
                     </p>
