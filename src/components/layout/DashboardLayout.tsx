@@ -27,13 +27,21 @@ export default function DashboardLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <div className="hidden sm:block">
+          <AppSidebar />
+        </div>
         <SidebarInset>
           <header className="flex h-12 sm:h-14 items-center gap-2 border-b bg-background px-2 sm:px-4">
-            <SidebarTrigger className="h-8 w-8" />
-            <Separator orientation="vertical" className="h-5 sm:h-6" />
+            <SidebarTrigger className="h-8 w-8 hidden sm:flex" />
+            <Separator orientation="vertical" className="h-5 sm:h-6 hidden sm:block" />
             <div className="flex flex-1 items-center justify-between min-w-0">
-              <h1 className="text-xs sm:text-sm font-semibold text-foreground truncate">
+              <div className="flex items-center gap-2 sm:hidden">
+                <img src="/logo.png" alt="Logo" className="h-6 w-6 rounded object-contain" />
+                <h1 className="text-sm font-semibold text-foreground truncate">
+                  {tenant?.name || 'ParkiUpar'}
+                </h1>
+              </div>
+              <h1 className="text-sm font-semibold text-foreground truncate hidden sm:block">
                 {tenant?.name || 'ParkiUpar'}
               </h1>
               {tenant && role !== 'superadmin' && (

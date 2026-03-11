@@ -253,11 +253,11 @@ export default function Parking() {
   const previewRate = rateMap[vehicleType];
 
   const activeColumns: Column<ParkingSession>[] = [
-    { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono">{r.plate}</Badge> },
+    { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono text-xs">{r.plate}</Badge> },
     { key: 'vehicle_type', label: 'Tipo', render: (r) => VEHICLE_TYPE_LABELS[r.vehicle_type] },
-    { key: 'customer_name', label: 'Cliente' },
-    { key: 'customer_phone', label: 'Teléfono' },
-    { key: 'space_number', label: 'Espacio' },
+    { key: 'customer_name', label: 'Cliente', hideOnMobile: true },
+    { key: 'customer_phone', label: 'Teléfono', hideOnMobile: true },
+    { key: 'space_number', label: 'Espacio', hideOnMobile: true },
     { key: 'entry_time', label: 'Entrada', render: (r) => formatTime(r.entry_time) },
     { key: 'duration', label: 'Tiempo', sortable: false, filterable: false, render: (r) => formatDuration(r.entry_time) },
     {
@@ -270,14 +270,14 @@ export default function Parking() {
   ];
 
   const historyColumns: Column<ParkingSession>[] = [
-    { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono">{r.plate}</Badge> },
-    { key: 'vehicle_type', label: 'Tipo', render: (r) => VEHICLE_TYPE_LABELS[r.vehicle_type] },
-    { key: 'customer_name', label: 'Cliente' },
-    { key: 'entry_time', label: 'Entrada', render: (r) => formatDateTime(r.entry_time) },
-    { key: 'exit_time', label: 'Salida', render: (r) => r.exit_time ? formatDateTime(r.exit_time) : '—' },
+    { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono text-xs">{r.plate}</Badge> },
+    { key: 'vehicle_type', label: 'Tipo', render: (r) => VEHICLE_TYPE_LABELS[r.vehicle_type], hideOnMobile: true },
+    { key: 'customer_name', label: 'Cliente', hideOnMobile: true },
+    { key: 'entry_time', label: 'Entrada', render: (r) => formatDateTime(r.entry_time), hideOnMobile: true },
+    { key: 'exit_time', label: 'Salida', render: (r) => r.exit_time ? formatDateTime(r.exit_time) : '—', hideOnMobile: true },
     { key: 'hours_parked', label: 'Duración', render: (r) => r.exit_time ? formatDuration(r.entry_time, r.exit_time) : '—' },
     { key: 'total_amount', label: 'Total', render: (r) => r.total_amount != null ? formatCurrency(r.total_amount) : '—' },
-    { key: 'status', label: 'Estado', render: (r) => <Badge variant={r.status === 'completed' ? 'default' : 'destructive'}>{SESSION_STATUS_LABELS[r.status]}</Badge> },
+    { key: 'status', label: 'Estado', render: (r) => <Badge variant={r.status === 'completed' ? 'default' : 'destructive'} className="text-[10px]">{SESSION_STATUS_LABELS[r.status]}</Badge> },
   ];
 
   // Exit confirmation data
@@ -289,13 +289,13 @@ export default function Parking() {
   if (loadingActive && loadingHistory) return <TableSkeleton columns={7} rows={6} />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
-          <p className="text-sm text-muted-foreground">Registra entradas y salidas</p>
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Registra entradas y salidas</p>
         </div>
-        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto">
+        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto h-10 sm:h-9 text-sm">
           <Plus className="h-4 w-4 mr-1" /> Registrar Entrada
         </Button>
       </div>
