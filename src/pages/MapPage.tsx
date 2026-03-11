@@ -430,8 +430,6 @@ export default function MapPage() {
           const rates = ratesMap[tenant.id] || [];
           const lat = Number(tenant.latitude);
           const lng = Number(tenant.longitude);
-          const lat = Number(tenant.latitude);
-          const lng = Number(tenant.longitude);
           return (
             <Card key={tenant.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => focusTenant(tenant)}>
               <CardContent className="p-3">
