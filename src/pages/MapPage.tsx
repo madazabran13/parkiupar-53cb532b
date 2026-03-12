@@ -106,7 +106,77 @@ export default function MapPage() {
   const [maxPrice, setMaxPrice] = useState<number>(50000);
   const [locating, setLocating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [reserveDialogOpen, setReserveDialogOpen] = useState(false);
+  const [reserveTenant, setReserveTenant] = useState<Tenant | null>(null);
+  const [reservePlate, setReservePlate] = useState('');
+  const [reservePhone, setReservePhone] = useState('');
+  const [reserveName, setReserveName] = useState('');
 
+  // Fetch available spaces for reservation
+  const { data: availableSpaces = [] } = useQuery({
+    queryKey: ['public-spaces', reserveTenant?.id],
+    enabled: !!reserveTenant,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('parking_spaces')
+        .select('*')
+        .eq('tenant_id', reserveTenant!.id)
+        .eq('status', 'available')
+        .order('space_number')
+        .limit(50);
+      return (data || []) as unknown as ParkingSpace[];
+    },
+  });
+
+  const openReserveDialog = (tenant: Tenant) => {
+    setReserveTenant(tenant);
+    setReservePlate('');
+    setReservePhone('');
+    setReserveName('');
+    setReserveDialogOpen(true);
+  };
+
+  const reserveMutation = useMutation({
+    mutationFn: async () => {
+      if (!reserveTenant || availableSpaces.length === 0) throw new Error('No hay cupos disponibles');
+      if (!reservePlate.trim()) throw new Error('La placa es obligatoria');
+      if (!reservePhone.trim()) throw new Error('El teléfono es obligatorio');
+      
+      const space = availableSpaces[0]; // First available
+      const tenantSettings = (reserveTenant.settings || {}) as Record<string, unknown>;
+      const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
+      const expiresAt = new Date(Date.now() + timeoutMins * 60 * 1000).toISOString();
+
+      // Create reservation
+      const { error: resError } = await supabase.from('space_reservations').insert({
+        tenant_id: reserveTenant.id,
+        space_id: space.id,
+        customer_name: reserveName || null,
+        customer_phone: reservePhone,
+        plate: reservePlate.toUpperCase(),
+        status: 'pending',
+        expires_at: expiresAt,
+      });
+      if (resError) throw resError;
+
+      // Update space status
+      const { error } = await supabase.from('parking_spaces').update({
+        status: 'reserved',
+        reserved_at: new Date().toISOString(),
+        reservation_expires_at: expiresAt,
+      }).eq('id', space.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      const tenantSettings = (reserveTenant?.settings || {}) as Record<string, unknown>;
+      const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
+      toast.success(`¡Cupo reservado! Tienes ${timeoutMins} minutos para llegar`, { duration: 8000 });
+      setReserveDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error al reservar'),
+  });
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
