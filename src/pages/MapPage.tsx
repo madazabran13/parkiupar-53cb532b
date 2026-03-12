@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw, LogOut } from 'lucide-react';
-import type { Tenant, VehicleCategory, TenantSchedule } from '@/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw, LogOut, BookmarkCheck, Timer } from 'lucide-react';
+import type { Tenant, VehicleCategory, TenantSchedule, ParkingSpace } from '@/types';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
+import { toast } from 'sonner';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -104,7 +106,77 @@ export default function MapPage() {
   const [maxPrice, setMaxPrice] = useState<number>(50000);
   const [locating, setLocating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [reserveDialogOpen, setReserveDialogOpen] = useState(false);
+  const [reserveTenant, setReserveTenant] = useState<Tenant | null>(null);
+  const [reservePlate, setReservePlate] = useState('');
+  const [reservePhone, setReservePhone] = useState('');
+  const [reserveName, setReserveName] = useState('');
 
+  // Fetch available spaces for reservation
+  const { data: availableSpaces = [] } = useQuery({
+    queryKey: ['public-spaces', reserveTenant?.id],
+    enabled: !!reserveTenant,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('parking_spaces')
+        .select('*')
+        .eq('tenant_id', reserveTenant!.id)
+        .eq('status', 'available')
+        .order('space_number')
+        .limit(50);
+      return (data || []) as unknown as ParkingSpace[];
+    },
+  });
+
+  const openReserveDialog = (tenant: Tenant) => {
+    setReserveTenant(tenant);
+    setReservePlate('');
+    setReservePhone('');
+    setReserveName('');
+    setReserveDialogOpen(true);
+  };
+
+  const reserveMutation = useMutation({
+    mutationFn: async () => {
+      if (!reserveTenant || availableSpaces.length === 0) throw new Error('No hay cupos disponibles');
+      if (!reservePlate.trim()) throw new Error('La placa es obligatoria');
+      if (!reservePhone.trim()) throw new Error('El teléfono es obligatorio');
+      
+      const space = availableSpaces[0]; // First available
+      const tenantSettings = (reserveTenant.settings || {}) as Record<string, unknown>;
+      const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
+      const expiresAt = new Date(Date.now() + timeoutMins * 60 * 1000).toISOString();
+
+      // Create reservation
+      const { error: resError } = await supabase.from('space_reservations').insert({
+        tenant_id: reserveTenant.id,
+        space_id: space.id,
+        customer_name: reserveName || null,
+        customer_phone: reservePhone,
+        plate: reservePlate.toUpperCase(),
+        status: 'pending',
+        expires_at: expiresAt,
+      });
+      if (resError) throw resError;
+
+      // Update space status
+      const { error } = await supabase.from('parking_spaces').update({
+        status: 'reserved',
+        reserved_at: new Date().toISOString(),
+        reservation_expires_at: expiresAt,
+      }).eq('id', space.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      const tenantSettings = (reserveTenant?.settings || {}) as Record<string, unknown>;
+      const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
+      toast.success(`¡Cupo reservado! Tienes ${timeoutMins} minutos para llegar`, { duration: 8000 });
+      setReserveDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error al reservar'),
+  });
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
     queryKey: ['map-tenants'],
@@ -498,6 +570,18 @@ export default function MapPage() {
                     </a>
                   </div>
                 )}
+                {/* Reserve button */}
+                {tenant.available_spaces > 0 && !isClosed && (
+                  <div className="mt-2">
+                    <Button
+                      size="sm"
+                      className="w-full text-xs h-8 gap-1"
+                      onClick={(e) => { e.stopPropagation(); openReserveDialog(tenant); }}
+                    >
+                      <BookmarkCheck className="h-3.5 w-3.5" /> Reservar Cupo
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
@@ -584,6 +668,46 @@ export default function MapPage() {
           </Button>
         </div>
       </div>
+
+      {/* Public Reservation Dialog */}
+      <Dialog open={reserveDialogOpen} onOpenChange={setReserveDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reservar Cupo</DialogTitle>
+            <DialogDescription>
+              {reserveTenant?.name} — {availableSpaces.length} cupos disponibles
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Placa del vehículo *</Label>
+              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" />
+            </div>
+            <div className="space-y-2">
+              <Label>Teléfono *</Label>
+              <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre (opcional)</Label>
+              <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} />
+            </div>
+            <div className="rounded-lg border bg-muted/50 p-3 text-sm flex items-center gap-2">
+              <Timer className="h-4 w-4 text-amber-600 flex-shrink-0" />
+              <span>Tu cupo se reserva por <strong>{((reserveTenant?.settings as any)?.reservation_timeout_minutes || 15)} min</strong>. Si no llegas, se libera automáticamente.</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReserveDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => reserveMutation.mutate()}
+              disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
+            >
+              <BookmarkCheck className="h-4 w-4 mr-1" />
+              {reserveMutation.isPending ? 'Reservando...' : 'Reservar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

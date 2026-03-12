@@ -66,6 +66,8 @@ export default function SuperAdmin() {
     { key: 'reports_download', label: 'Reportes (descargar PDF)' },
     { key: 'map', label: 'Mapa' },
     { key: 'team', label: 'Gestión de Usuarios' },
+    { key: 'schedules', label: 'Horarios' },
+    { key: 'spaces', label: 'Cupos / Reservas' },
     { key: 'settings', label: 'Configuración' },
     { key: 'audit', label: 'Auditoría' },
     { key: 'payments', label: 'Pagos y Facturación' },

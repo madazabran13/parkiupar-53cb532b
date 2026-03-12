@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -289,13 +290,14 @@ export default function Parking() {
   if (loadingActive && loadingHistory) return <TableSkeleton columns={7} rows={6} />;
 
   return (
+    <PullToRefresh queryKeys={[['sessions-active', tenantId || ''], ['sessions-history', tenantId || '']]}>
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-foreground">Gestión de Vehículos</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Registra entradas y salidas</p>
         </div>
-        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto h-10 sm:h-9 text-sm">
+        <Button onClick={() => setEntryOpen(true)} className="w-full sm:w-auto h-10 sm:h-9 text-sm hidden sm:flex">
           <Plus className="h-4 w-4 mr-1" /> Registrar Entrada
         </Button>
       </div>
@@ -514,5 +516,14 @@ export default function Parking() {
         </DialogContent>
       </Dialog>
     </div>
+
+      {/* FAB for mobile */}
+      <button
+        onClick={() => setEntryOpen(true)}
+        className="fixed bottom-20 right-4 z-40 sm:hidden h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+    </PullToRefresh>
   );
 }
