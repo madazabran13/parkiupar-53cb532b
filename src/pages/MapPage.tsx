@@ -570,6 +570,18 @@ export default function MapPage() {
                     </a>
                   </div>
                 )}
+                {/* Reserve button */}
+                {tenant.available_spaces > 0 && !isClosed && (
+                  <div className="mt-2">
+                    <Button
+                      size="sm"
+                      className="w-full text-xs h-8 gap-1"
+                      onClick={(e) => { e.stopPropagation(); openReserveDialog(tenant); }}
+                    >
+                      <BookmarkCheck className="h-3.5 w-3.5" /> Reservar Cupo
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
