@@ -668,6 +668,46 @@ export default function MapPage() {
           </Button>
         </div>
       </div>
+
+      {/* Public Reservation Dialog */}
+      <Dialog open={reserveDialogOpen} onOpenChange={setReserveDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reservar Cupo</DialogTitle>
+            <DialogDescription>
+              {reserveTenant?.name} — {availableSpaces.length} cupos disponibles
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Placa del vehículo *</Label>
+              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" />
+            </div>
+            <div className="space-y-2">
+              <Label>Teléfono *</Label>
+              <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre (opcional)</Label>
+              <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} />
+            </div>
+            <div className="rounded-lg border bg-muted/50 p-3 text-sm flex items-center gap-2">
+              <Timer className="h-4 w-4 text-amber-600 flex-shrink-0" />
+              <span>Tu cupo se reserva por <strong>{((reserveTenant?.settings as any)?.reservation_timeout_minutes || 15)} min</strong>. Si no llegas, se libera automáticamente.</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReserveDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => reserveMutation.mutate()}
+              disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
+            >
+              <BookmarkCheck className="h-4 w-4 mr-1" />
+              {reserveMutation.isPending ? 'Reservando...' : 'Reservar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
