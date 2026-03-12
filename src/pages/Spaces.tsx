@@ -367,5 +367,6 @@ export default function Spaces() {
         </DialogContent>
       </Dialog>
     </div>
+    </PullToRefresh>
   );
 }
