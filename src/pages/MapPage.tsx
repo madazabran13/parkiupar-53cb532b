@@ -148,6 +148,7 @@ export default function MapPage() {
 
   const openReserveDialog = (tenant: Tenant) => {
     setReserveTenant(tenant);
+    setDetailTenant(tenant);
     setReservePlate('');
     setReservePhone('');
     setReserveName('');
