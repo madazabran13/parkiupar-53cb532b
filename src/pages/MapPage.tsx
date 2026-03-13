@@ -112,10 +112,11 @@ export default function MapPage() {
   const [reservePhone, setReservePhone] = useState('');
   const [reserveName, setReserveName] = useState('');
 
-  // Fetch available spaces for reservation
+  // Fetch available spaces for reservation - with realtime
   const { data: availableSpaces = [] } = useQuery({
     queryKey: ['public-spaces', reserveTenant?.id],
     enabled: !!reserveTenant,
+    refetchInterval: 5000,
     queryFn: async () => {
       const { data } = await supabase
         .from('parking_spaces')
@@ -123,7 +124,24 @@ export default function MapPage() {
         .eq('tenant_id', reserveTenant!.id)
         .eq('status', 'available')
         .order('space_number')
-        .limit(50);
+        .limit(100);
+      return (data || []) as unknown as ParkingSpace[];
+    },
+  });
+
+  // Fetch all spaces for a tenant to show in map detail
+  const [detailTenant, setDetailTenant] = useState<Tenant | null>(null);
+  const { data: detailSpaces = [] } = useQuery({
+    queryKey: ['detail-spaces', detailTenant?.id],
+    enabled: !!detailTenant,
+    refetchInterval: 3000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('parking_spaces')
+        .select('*')
+        .eq('tenant_id', detailTenant!.id)
+        .order('space_number')
+        .limit(200);
       return (data || []) as unknown as ParkingSpace[];
     },
   });
