@@ -485,6 +485,7 @@ export default function SuperAdmin() {
     { key: 'description', label: 'Descripción' },
     { key: 'price_monthly', label: 'Precio Mensual', render: (r) => formatCurrency(r.price_monthly) },
     { key: 'max_spaces', label: 'Max Espacios' },
+    { key: 'max_users' as any, label: 'Max Usuarios', render: (r: any) => r.max_users || 10 },
     { key: 'modules', label: 'Módulos', render: (r) => (
       <div className="flex flex-wrap gap-1">{(Array.isArray(r.modules) ? r.modules : []).map((m: string) => <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>)}</div>
     )},
