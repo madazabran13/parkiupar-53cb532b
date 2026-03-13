@@ -825,9 +825,10 @@ export default function SuperAdmin() {
           <div className="space-y-4">
             <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
             <div className="space-y-2"><Label>Descripción</Label><Input value={pDesc} onChange={(e) => setPDesc(e.target.value)} /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
               <div className="space-y-2"><Label>Max espacios</Label><Input type="number" value={pMaxSpaces} onChange={(e) => setPMaxSpaces(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Max usuarios (portero/cajero)</Label><Input type="number" value={pMaxUsers} onChange={(e) => setPMaxUsers(e.target.value)} /></div>
             </div>
             <div className="space-y-2">
               <Label>Módulos incluidos</Label>
