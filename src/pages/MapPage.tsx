@@ -173,7 +173,7 @@ export default function MapPage() {
       // Create reservation
       const { error: resError } = await supabase.from('space_reservations').insert({
         tenant_id: reserveTenant.id,
-        space_id: space.id,
+        space_id: targetSpace.id,
         customer_name: reserveName || null,
         customer_phone: reservePhone,
         plate: reservePlate.toUpperCase(),
@@ -187,7 +187,7 @@ export default function MapPage() {
         status: 'reserved',
         reserved_at: new Date().toISOString(),
         reservation_expires_at: expiresAt,
-      }).eq('id', space.id);
+      }).eq('id', targetSpace.id);
       if (error) throw error;
     },
     onSuccess: () => {
