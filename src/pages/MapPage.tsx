@@ -155,13 +155,17 @@ export default function MapPage() {
     setReserveDialogOpen(true);
   };
 
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+
   const reserveMutation = useMutation({
     mutationFn: async () => {
-      if (!reserveTenant || availableSpaces.length === 0) throw new Error('No hay cupos disponibles');
+      if (!reserveTenant) throw new Error('No hay parqueadero seleccionado');
+      const targetSpace = selectedSpaceId 
+        ? availableSpaces.find(s => s.id === selectedSpaceId) 
+        : availableSpaces[0];
+      if (!targetSpace) throw new Error('No hay cupos disponibles');
       if (!reservePlate.trim()) throw new Error('La placa es obligatoria');
       if (!reservePhone.trim()) throw new Error('El teléfono es obligatorio');
-      
-      const space = availableSpaces[0]; // First available
       const tenantSettings = (reserveTenant.settings || {}) as Record<string, unknown>;
       const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
       const expiresAt = new Date(Date.now() + timeoutMins * 60 * 1000).toISOString();
