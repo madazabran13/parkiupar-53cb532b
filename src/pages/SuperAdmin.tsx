@@ -54,6 +54,7 @@ export default function SuperAdmin() {
   const [pDesc, setPDesc] = useState('');
   const [pPrice, setPPrice] = useState('');
   const [pMaxSpaces, setPMaxSpaces] = useState('50');
+  const [pMaxUsers, setPMaxUsers] = useState('10');
   const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
 
   const ALL_MODULES = [
@@ -61,13 +62,12 @@ export default function SuperAdmin() {
     { key: 'parking', label: 'Vehículos' },
     { key: 'customers', label: 'Clientes' },
     { key: 'rates', label: 'Tarifas' },
-    { key: 'capacity', label: 'Aforo' },
+    { key: 'capacity', label: 'Aforo y Reservas' },
     { key: 'reports', label: 'Reportes (solo ver)' },
     { key: 'reports_download', label: 'Reportes (descargar PDF)' },
     { key: 'map', label: 'Mapa' },
     { key: 'team', label: 'Gestión de Usuarios' },
     { key: 'schedules', label: 'Horarios' },
-    { key: 'spaces', label: 'Cupos / Reservas' },
     { key: 'settings', label: 'Configuración' },
     { key: 'audit', label: 'Auditoría' },
     { key: 'payments', label: 'Pagos y Facturación' },
