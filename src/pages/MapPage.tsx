@@ -195,6 +195,8 @@ export default function MapPage() {
       const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
       toast.success(`¡Cupo reservado! Tienes ${timeoutMins} minutos para llegar`, { duration: 8000 });
       setReserveDialogOpen(false);
+      setSelectedSpaceId(null);
+      setDetailTenant(null);
       queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
       queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
     },
