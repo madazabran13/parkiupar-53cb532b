@@ -11,10 +11,13 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, UserPlus } from 'lucide-react';
+import { UserPlus, AlertTriangle } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils/formatters';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { AppRole } from '@/types';
+import { ROLE_LABELS } from '@/types';
+import { useTenant } from '@/hooks/useTenant';
 
 interface TeamUser {
   id: string;
@@ -25,26 +28,21 @@ interface TeamUser {
   created_at: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  operator: 'Operador',
-  viewer: 'Visor',
-  superadmin: 'Super Admin',
-};
-
 const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
-  { value: 'operator', label: 'Operador' },
-  { value: 'viewer', label: 'Visor' },
+  { value: 'portero', label: 'Portero' },
+  { value: 'cajero', label: 'Cajero' },
+  { value: 'viewer', label: 'Cliente' },
 ];
 
 export default function TeamUsers() {
   const { session } = useAuth();
+  const { tenant, planModules } = useTenant();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState('operator');
+  const [newRole, setNewRole] = useState('portero');
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['team-users'],
@@ -58,6 +56,20 @@ export default function TeamUsers() {
     },
   });
 
+  // Get plan's max_users
+  const { data: planData } = useQuery({
+    queryKey: ['plan-max-users', tenant?.plan_id],
+    enabled: !!tenant?.plan_id,
+    queryFn: async () => {
+      const { data } = await supabase.from('plans').select('max_users').eq('id', tenant!.plan_id!).single();
+      return data;
+    },
+  });
+
+  const maxUsers = planData?.max_users || 10;
+  const staffUsers = users.filter(u => ['portero', 'cajero', 'operator'].includes(u.role) && u.is_active);
+  const isAtLimit = staffUsers.length >= maxUsers;
+
   const createUserMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('manage-users', {
@@ -69,7 +81,7 @@ export default function TeamUsers() {
     onSuccess: () => {
       toast.success('Usuario creado exitosamente');
       setDialogOpen(false);
-      setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('operator');
+      setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('portero');
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -101,16 +113,23 @@ export default function TeamUsers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-users'] }),
   });
 
+  const getRoleLabel = (role: string) => {
+    // Handle legacy role names
+    if (role === 'operator') return 'Portero';
+    if (role === 'viewer') return 'Cliente';
+    return ROLE_LABELS[role as AppRole] || role;
+  };
+
   const columns: Column<TeamUser>[] = [
     { key: 'full_name', label: 'Nombre', render: (r) => r.full_name || '—' },
     { key: 'email', label: 'Email', render: (r) => r.email || '—' },
     {
       key: 'role', label: 'Rol', render: (r) => {
-        if (r.role === 'admin') return <Badge>{ROLE_LABELS[r.role]}</Badge>;
+        if (r.role === 'admin') return <Badge>{getRoleLabel(r.role)}</Badge>;
         return (
           <Select value={r.role} onValueChange={(v) => updateRoleMutation.mutate({ user_id: r.id, role: v })}>
             <SelectTrigger className="h-7 w-28 text-xs">
-              <SelectValue />
+              <SelectValue>{getRoleLabel(r.role)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {ASSIGNABLE_ROLES.map((ar) => (
@@ -137,12 +156,23 @@ export default function TeamUsers() {
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Equipo</h1>
-          <p className="text-sm text-muted-foreground">Gestiona los usuarios de tu parqueadero</p>
+          <p className="text-sm text-muted-foreground">
+            Personal del parqueadero · {staffUsers.length}/{maxUsers} usuarios
+          </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button onClick={() => setDialogOpen(true)} disabled={isAtLimit}>
           <UserPlus className="h-4 w-4 mr-1" /> Nuevo Usuario
         </Button>
       </div>
+
+      {isAtLimit && (
+        <Alert className="border-amber-500/50 bg-amber-500/10">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm">
+            Has alcanzado el límite de <strong>{maxUsers}</strong> usuarios del personal para tu plan. Contacta al administrador para ampliar.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <DataTable columns={columns} data={users} searchPlaceholder="Buscar usuarios..." />
 
@@ -150,7 +180,7 @@ export default function TeamUsers() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nuevo Usuario</DialogTitle>
-            <DialogDescription>Crea un usuario para tu equipo</DialogDescription>
+            <DialogDescription>Crea un usuario para tu equipo ({staffUsers.length}/{maxUsers})</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
