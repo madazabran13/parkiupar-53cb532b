@@ -45,6 +45,44 @@ Deno.serve(async (req) => {
         throw new Error("No puedes crear usuarios con ese rol");
       }
 
+      // Admin can only create portero, cajero roles
+      const allowedAdminRoles = ["portero", "cajero", "operator", "viewer"];
+      if (callerProfile.role === "admin" && !allowedAdminRoles.includes(role)) {
+        throw new Error("No puedes crear usuarios con ese rol");
+      }
+
+      // Check max_users limit for admin creating users
+      if (callerProfile.role === "admin" && targetTenant) {
+        // Get tenant's plan max_users
+        const { data: tenantData } = await supabaseAdmin
+          .from("tenants")
+          .select("plan_id")
+          .eq("id", targetTenant)
+          .single();
+        
+        if (tenantData?.plan_id) {
+          const { data: planData } = await supabaseAdmin
+            .from("plans")
+            .select("max_users")
+            .eq("id", tenantData.plan_id)
+            .single();
+          
+          if (planData?.max_users) {
+            // Count current staff users (portero + cajero + operator)
+            const { count } = await supabaseAdmin
+              .from("user_profiles")
+              .select("id", { count: "exact", head: true })
+              .eq("tenant_id", targetTenant)
+              .in("role", ["portero", "cajero", "operator"])
+              .eq("is_active", true);
+            
+            if ((count || 0) >= planData.max_users) {
+              throw new Error(`Has alcanzado el límite de ${planData.max_users} usuarios del personal para tu plan. Contacta al administrador para ampliar tu plan.`);
+            }
+          }
+        }
+      }
+
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -67,7 +105,7 @@ Deno.serve(async (req) => {
     if (action === "update_role") {
       const { user_id, role } = payload;
 
-      // Admin cannot set superadmin role
+      // Admin cannot set superadmin or admin role
       if (callerProfile.role === "admin" && ["superadmin", "admin"].includes(role)) {
         throw new Error("No puedes asignar ese rol");
       }
@@ -158,6 +196,22 @@ Deno.serve(async (req) => {
       }));
 
       return new Response(JSON.stringify({ users: enriched }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "get_staff_count") {
+      // Get current staff count for a tenant
+      const tenantId = callerProfile.role === "superadmin" ? payload.tenant_id : callerProfile.tenant_id;
+      
+      const { count } = await supabaseAdmin
+        .from("user_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .in("role", ["portero", "cajero", "operator"])
+        .eq("is_active", true);
+
+      return new Response(JSON.stringify({ count: count || 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

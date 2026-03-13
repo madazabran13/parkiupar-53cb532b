@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock, ParkingCircle,
+  Clock,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +16,7 @@ import { useTenant } from '@/hooks/useTenant';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ROLE_LABELS } from '@/types';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -31,21 +32,19 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/my-plan': 'my_plan',
   '/settings': 'settings',
   '/schedules': 'schedules',
-  '/spaces': 'spaces',
 };
 
 const MENU_ITEMS = {
-  dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'operator'] },
-  parking: { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'operator'] },
-  customers: { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'operator'] },
+  dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
+  parking: { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'portero', 'cajero'] },
+  customers: { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'portero', 'cajero'] },
   rates: { label: 'Tarifas', icon: DollarSign, path: '/rates', roles: ['admin'] },
   reports: { label: 'Reportes', icon: BarChart3, path: '/reports', roles: ['admin'] },
-  capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'operator'] },
-  map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'operator', 'viewer'] },
+  capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'portero', 'cajero'] },
+  map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'portero', 'cajero', 'viewer'] },
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
   audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
   schedules: { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
-  spaces: { label: 'Cupos', icon: ParkingCircle, path: '/spaces', roles: ['admin', 'operator'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
   payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
@@ -79,10 +78,13 @@ export function AppSidebar() {
   };
 
   const isSuperadmin = role === 'superadmin';
+  // Map old role values for backward compatibility
+  const effectiveRole = role === 'operator' ? 'portero' : role;
+  
   const menuItems = isSuperadmin
     ? SUPERADMIN_ITEMS
     : Object.values(MENU_ITEMS).filter((item) => {
-        if (!role || !(item.roles as readonly string[]).includes(role)) return false;
+        if (!effectiveRole || !(item.roles as readonly string[]).includes(effectiveRole)) return false;
         if (planModules.length > 0) {
           const moduleKey = MODULE_KEY_MAP[item.path];
           if (moduleKey && moduleKey !== '_always_' && !planModules.includes(moduleKey)) return false;

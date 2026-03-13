@@ -25,7 +25,6 @@ import MapPage from "@/pages/MapPage";
 import Payments from "@/pages/Payments";
 import AuditLog from "@/pages/AuditLog";
 import Schedules from "@/pages/Schedules";
-import Spaces from "@/pages/Spaces";
 import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
@@ -55,7 +54,7 @@ const App = () => (
             {/* Protected dashboard routes */}
             <Route
               element={
-                <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer']}>
+                <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer', 'cajero', 'portero']}>
                   <DashboardLayout />
                 </ProtectedRoute>
               }
@@ -70,7 +69,6 @@ const App = () => (
               <Route path="/map" element={<MapPage />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/schedules" element={<Schedules />} />
-              <Route path="/spaces" element={<Spaces />} />
               
               <Route path="/my-plan" element={<MyPlan />} />
               <Route path="/audit" element={<AuditLog />} />
@@ -93,6 +91,8 @@ const App = () => (
 
             <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/suspended" element={<SuspendedAccount />} />
+            {/* Redirect old /spaces route to /capacity */}
+            <Route path="/spaces" element={<Navigate to="/capacity" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

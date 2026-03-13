@@ -422,6 +422,7 @@ export type Database = {
           id: string
           is_active: boolean
           max_spaces: number
+          max_users: number
           modules: Json
           name: string
           price_monthly: number
@@ -433,6 +434,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_spaces?: number
+          max_users?: number
           modules?: Json
           name: string
           price_monthly?: number
@@ -444,6 +446,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_spaces?: number
+          max_users?: number
           modules?: Json
           name?: string
           price_monthly?: number
@@ -849,7 +852,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "superadmin" | "admin" | "operator" | "viewer"
+      app_role:
+        | "superadmin"
+        | "admin"
+        | "operator"
+        | "viewer"
+        | "cajero"
+        | "portero"
       license_type: "basic" | "pro" | "enterprise"
       session_status: "active" | "completed" | "cancelled"
       vehicle_type: "car" | "motorcycle" | "truck" | "bicycle"
@@ -980,7 +989,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["superadmin", "admin", "operator", "viewer"],
+      app_role: [
+        "superadmin",
+        "admin",
+        "operator",
+        "viewer",
+        "cajero",
+        "portero",
+      ],
       license_type: ["basic", "pro", "enterprise"],
       session_status: ["active", "completed", "cancelled"],
       vehicle_type: ["car", "motorcycle", "truck", "bicycle"],

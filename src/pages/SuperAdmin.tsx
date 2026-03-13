@@ -54,6 +54,7 @@ export default function SuperAdmin() {
   const [pDesc, setPDesc] = useState('');
   const [pPrice, setPPrice] = useState('');
   const [pMaxSpaces, setPMaxSpaces] = useState('50');
+  const [pMaxUsers, setPMaxUsers] = useState('10');
   const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
 
   const ALL_MODULES = [
@@ -61,13 +62,12 @@ export default function SuperAdmin() {
     { key: 'parking', label: 'Vehículos' },
     { key: 'customers', label: 'Clientes' },
     { key: 'rates', label: 'Tarifas' },
-    { key: 'capacity', label: 'Aforo' },
+    { key: 'capacity', label: 'Aforo y Reservas' },
     { key: 'reports', label: 'Reportes (solo ver)' },
     { key: 'reports_download', label: 'Reportes (descargar PDF)' },
     { key: 'map', label: 'Mapa' },
     { key: 'team', label: 'Gestión de Usuarios' },
     { key: 'schedules', label: 'Horarios' },
-    { key: 'spaces', label: 'Cupos / Reservas' },
     { key: 'settings', label: 'Configuración' },
     { key: 'audit', label: 'Auditoría' },
     { key: 'payments', label: 'Pagos y Facturación' },
@@ -411,9 +411,10 @@ export default function SuperAdmin() {
   });
 
   // Plans CRUD
-  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
+  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPMaxUsers('10'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
   const openEditPlan = (p: Plan) => {
     setEditingPlan(p); setPName(p.name); setPDesc(p.description || ''); setPPrice(String(p.price_monthly)); setPMaxSpaces(String(p.max_spaces));
+    setPMaxUsers(String((p as any).max_users || 10));
     setPModules(Array.isArray(p.modules) ? p.modules : ['dashboard', 'parking', 'customers', 'rates', 'capacity']);
     setPlanDialogOpen(true);
   };
@@ -422,7 +423,7 @@ export default function SuperAdmin() {
     mutationFn: async () => {
       const finalModules = pModules.includes('reports_download') && !pModules.includes('reports')
         ? [...pModules, 'reports'] : pModules;
-      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces), modules: finalModules };
+      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces), max_users: parseInt(pMaxUsers) || 10, modules: finalModules };
       if (editingPlan) {
         const { error } = await supabase.from('plans').update(planData).eq('id', editingPlan.id);
         if (error) throw error;
@@ -484,6 +485,7 @@ export default function SuperAdmin() {
     { key: 'description', label: 'Descripción' },
     { key: 'price_monthly', label: 'Precio Mensual', render: (r) => formatCurrency(r.price_monthly) },
     { key: 'max_spaces', label: 'Max Espacios' },
+    { key: 'max_users' as any, label: 'Max Usuarios', render: (r: any) => r.max_users || 10 },
     { key: 'modules', label: 'Módulos', render: (r) => (
       <div className="flex flex-wrap gap-1">{(Array.isArray(r.modules) ? r.modules : []).map((m: string) => <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>)}</div>
     )},
@@ -823,9 +825,10 @@ export default function SuperAdmin() {
           <div className="space-y-4">
             <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
             <div className="space-y-2"><Label>Descripción</Label><Input value={pDesc} onChange={(e) => setPDesc(e.target.value)} /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
               <div className="space-y-2"><Label>Max espacios</Label><Input type="number" value={pMaxSpaces} onChange={(e) => setPMaxSpaces(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Max usuarios (portero/cajero)</Label><Input type="number" value={pMaxUsers} onChange={(e) => setPMaxUsers(e.target.value)} /></div>
             </div>
             <div className="space-y-2">
               <Label>Módulos incluidos</Label>
@@ -879,8 +882,9 @@ function SuperAdminUsers({ tenants }: { tenants: Tenant[] }) {
   const ALL_ROLES = [
     { value: 'superadmin', label: 'Super Admin' },
     { value: 'admin', label: 'Administrador' },
-    { value: 'operator', label: 'Operador' },
-    { value: 'viewer', label: 'Visor' },
+    { value: 'portero', label: 'Portero' },
+    { value: 'cajero', label: 'Cajero' },
+    { value: 'viewer', label: 'Cliente' },
   ];
 
   const { data: users = [], isLoading } = useQuery({

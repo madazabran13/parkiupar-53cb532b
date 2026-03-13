@@ -1,9 +1,18 @@
-export type AppRole = 'superadmin' | 'admin' | 'operator' | 'viewer';
+export type AppRole = 'superadmin' | 'admin' | 'operator' | 'viewer' | 'cajero' | 'portero';
 export type VehicleType = 'car' | 'motorcycle' | 'truck' | 'bicycle';
 export type SessionStatus = 'active' | 'completed' | 'cancelled';
 export type SpaceStatus = 'available' | 'occupied' | 'reserved';
 export type ReservationStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled';
 export type DayGroup = 'weekday' | 'saturday' | 'sunday';
+
+export const ROLE_LABELS: Record<AppRole, string> = {
+  superadmin: 'Super Admin',
+  admin: 'Administrador',
+  operator: 'Portero',
+  viewer: 'Cliente',
+  cajero: 'Cajero',
+  portero: 'Portero',
+};
 
 export interface Plan {
   id: string;
@@ -11,6 +20,7 @@ export interface Plan {
   description: string | null;
   price_monthly: number;
   max_spaces: number;
+  max_users: number;
   modules: string[];
   is_active: boolean;
   created_at: string;

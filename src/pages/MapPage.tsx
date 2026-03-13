@@ -112,10 +112,11 @@ export default function MapPage() {
   const [reservePhone, setReservePhone] = useState('');
   const [reserveName, setReserveName] = useState('');
 
-  // Fetch available spaces for reservation
+  // Fetch available spaces for reservation - with realtime
   const { data: availableSpaces = [] } = useQuery({
     queryKey: ['public-spaces', reserveTenant?.id],
     enabled: !!reserveTenant,
+    refetchInterval: 5000,
     queryFn: async () => {
       const { data } = await supabase
         .from('parking_spaces')
@@ -123,26 +124,48 @@ export default function MapPage() {
         .eq('tenant_id', reserveTenant!.id)
         .eq('status', 'available')
         .order('space_number')
-        .limit(50);
+        .limit(100);
+      return (data || []) as unknown as ParkingSpace[];
+    },
+  });
+
+  // Fetch all spaces for a tenant to show in map detail
+  const [detailTenant, setDetailTenant] = useState<Tenant | null>(null);
+  const { data: detailSpaces = [] } = useQuery({
+    queryKey: ['detail-spaces', detailTenant?.id],
+    enabled: !!detailTenant,
+    refetchInterval: 3000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('parking_spaces')
+        .select('*')
+        .eq('tenant_id', detailTenant!.id)
+        .order('space_number')
+        .limit(200);
       return (data || []) as unknown as ParkingSpace[];
     },
   });
 
   const openReserveDialog = (tenant: Tenant) => {
     setReserveTenant(tenant);
+    setDetailTenant(tenant);
     setReservePlate('');
     setReservePhone('');
     setReserveName('');
     setReserveDialogOpen(true);
   };
 
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+
   const reserveMutation = useMutation({
     mutationFn: async () => {
-      if (!reserveTenant || availableSpaces.length === 0) throw new Error('No hay cupos disponibles');
+      if (!reserveTenant) throw new Error('No hay parqueadero seleccionado');
+      const targetSpace = selectedSpaceId 
+        ? availableSpaces.find(s => s.id === selectedSpaceId) 
+        : availableSpaces[0];
+      if (!targetSpace) throw new Error('No hay cupos disponibles');
       if (!reservePlate.trim()) throw new Error('La placa es obligatoria');
       if (!reservePhone.trim()) throw new Error('El teléfono es obligatorio');
-      
-      const space = availableSpaces[0]; // First available
       const tenantSettings = (reserveTenant.settings || {}) as Record<string, unknown>;
       const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
       const expiresAt = new Date(Date.now() + timeoutMins * 60 * 1000).toISOString();
@@ -150,7 +173,7 @@ export default function MapPage() {
       // Create reservation
       const { error: resError } = await supabase.from('space_reservations').insert({
         tenant_id: reserveTenant.id,
-        space_id: space.id,
+        space_id: targetSpace.id,
         customer_name: reserveName || null,
         customer_phone: reservePhone,
         plate: reservePlate.toUpperCase(),
@@ -164,7 +187,7 @@ export default function MapPage() {
         status: 'reserved',
         reserved_at: new Date().toISOString(),
         reservation_expires_at: expiresAt,
-      }).eq('id', space.id);
+      }).eq('id', targetSpace.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -172,6 +195,8 @@ export default function MapPage() {
       const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
       toast.success(`¡Cupo reservado! Tienes ${timeoutMins} minutos para llegar`, { duration: 8000 });
       setReserveDialogOpen(false);
+      setSelectedSpaceId(null);
+      setDetailTenant(null);
       queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
       queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
     },
@@ -670,8 +695,8 @@ export default function MapPage() {
       </div>
 
       {/* Public Reservation Dialog */}
-      <Dialog open={reserveDialogOpen} onOpenChange={setReserveDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
+      <Dialog open={reserveDialogOpen} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Reservar Cupo</DialogTitle>
             <DialogDescription>
@@ -679,6 +704,38 @@ export default function MapPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Space grid for selection */}
+            {detailSpaces.length > 0 && (
+              <div className="space-y-2">
+                <Label>Selecciona un espacio</Label>
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-40 overflow-auto rounded-lg border p-2">
+                  {detailSpaces.map((sp) => {
+                    const isAvail = sp.status === 'available';
+                    const isSelected = selectedSpaceId === sp.id;
+                    return (
+                      <button
+                        key={sp.id}
+                        disabled={!isAvail}
+                        onClick={() => isAvail && setSelectedSpaceId(isSelected ? null : sp.id)}
+                        className={`rounded-md border p-1.5 text-xs font-medium transition-all ${
+                          isSelected ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/30' :
+                          isAvail ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 cursor-pointer' :
+                          sp.status === 'reserved' ? 'bg-amber-100 text-amber-600 border-amber-300 dark:bg-amber-900/30 cursor-not-allowed opacity-60' :
+                          'bg-destructive/10 text-destructive border-destructive/30 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        {sp.space_number}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-green-500" /> Libre</span>
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-amber-500" /> Reservado</span>
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-destructive" /> Ocupado</span>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Placa del vehículo *</Label>
               <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" />
@@ -697,7 +754,7 @@ export default function MapPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReserveDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setReserveDialogOpen(false); setSelectedSpaceId(null); setDetailTenant(null); }}>Cancelar</Button>
             <Button
               onClick={() => reserveMutation.mutate()}
               disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
