@@ -695,8 +695,8 @@ export default function MapPage() {
       </div>
 
       {/* Public Reservation Dialog */}
-      <Dialog open={reserveDialogOpen} onOpenChange={setReserveDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
+      <Dialog open={reserveDialogOpen} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Reservar Cupo</DialogTitle>
             <DialogDescription>
@@ -704,6 +704,38 @@ export default function MapPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Space grid for selection */}
+            {detailSpaces.length > 0 && (
+              <div className="space-y-2">
+                <Label>Selecciona un espacio</Label>
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-40 overflow-auto rounded-lg border p-2">
+                  {detailSpaces.map((sp) => {
+                    const isAvail = sp.status === 'available';
+                    const isSelected = selectedSpaceId === sp.id;
+                    return (
+                      <button
+                        key={sp.id}
+                        disabled={!isAvail}
+                        onClick={() => isAvail && setSelectedSpaceId(isSelected ? null : sp.id)}
+                        className={`rounded-md border p-1.5 text-xs font-medium transition-all ${
+                          isSelected ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/30' :
+                          isAvail ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 cursor-pointer' :
+                          sp.status === 'reserved' ? 'bg-amber-100 text-amber-600 border-amber-300 dark:bg-amber-900/30 cursor-not-allowed opacity-60' :
+                          'bg-destructive/10 text-destructive border-destructive/30 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        {sp.space_number}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-green-500" /> Libre</span>
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-amber-500" /> Reservado</span>
+                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-destructive" /> Ocupado</span>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Placa del vehículo *</Label>
               <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" />
@@ -722,7 +754,7 @@ export default function MapPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReserveDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setReserveDialogOpen(false); setSelectedSpaceId(null); setDetailTenant(null); }}>Cancelar</Button>
             <Button
               onClick={() => reserveMutation.mutate()}
               disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
