@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Map, Grid3X3, BarChart3, Users, DollarSign,
   UserCog, Shield, Settings, Wallet, CreditCard, MoreHorizontal, Building2,
-  Clock, ParkingCircle, LogOut, Moon, Sun,
+  Clock, LogOut, Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
@@ -22,7 +22,6 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/customers': 'customers',
   '/rates': 'rates',
   '/schedules': 'schedules',
-  '/spaces': 'spaces',
   '/team': 'team',
   '/audit': 'audit',
   '/payments': 'payments',
@@ -31,15 +30,14 @@ const MODULE_KEY_MAP: Record<string, string> = {
 };
 
 const ALL_NAV_ITEMS = [
-  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin', 'admin', 'operator'] },
-  { label: 'Vehículos', icon: Car, path: '/parking', module: 'parking', roles: ['admin', 'operator'] },
-  { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'operator', 'viewer'] },
-  { label: 'Aforo', icon: Grid3X3, path: '/capacity', module: 'capacity', roles: ['admin', 'operator'] },
+  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
+  { label: 'Vehículos', icon: Car, path: '/parking', module: 'parking', roles: ['admin', 'portero', 'cajero'] },
+  { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+  { label: 'Aforo', icon: Grid3X3, path: '/capacity', module: 'capacity', roles: ['admin', 'portero', 'cajero'] },
   { label: 'Reportes', icon: BarChart3, path: '/reports', module: 'reports', roles: ['admin'] },
-  { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'operator'] },
+  { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'portero', 'cajero'] },
   { label: 'Tarifas', icon: DollarSign, path: '/rates', module: 'rates', roles: ['admin'] },
   { label: 'Horarios', icon: Clock, path: '/schedules', module: 'schedules', roles: ['admin'] },
-  { label: 'Cupos', icon: ParkingCircle, path: '/spaces', module: 'spaces', roles: ['admin', 'operator'] },
   { label: 'Equipo', icon: UserCog, path: '/team', module: 'team', roles: ['admin'] },
   { label: 'Auditoría', icon: Shield, path: '/audit', module: 'audit', roles: ['admin'] },
   { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'viewer'] },
@@ -56,7 +54,7 @@ const SUPERADMIN_NAV_ITEMS = [
   { label: 'Config', icon: Settings, path: '/superadmin/settings', module: 'dashboard', roles: ['superadmin'] },
 ];
 
-const MAX_VISIBLE = 4; // Show 4 + "More" button
+const MAX_VISIBLE = 4;
 
 export function MobileBottomNav() {
   const { role, signOut } = useAuth();
@@ -68,10 +66,11 @@ export function MobileBottomNav() {
   if (!role) return null;
 
   const isSuperadmin = role === 'superadmin';
+  const effectiveRole = role === 'operator' ? 'portero' : role;
   const itemSource = isSuperadmin ? SUPERADMIN_NAV_ITEMS : ALL_NAV_ITEMS;
 
   const visibleItems = itemSource.filter((item) => {
-    if (!item.roles.includes(role)) return false;
+    if (!item.roles.includes(effectiveRole)) return false;
     if (!isSuperadmin && planModules.length > 0) {
       const moduleKey = MODULE_KEY_MAP[item.path];
       if (moduleKey && !planModules.includes(moduleKey)) return false;
@@ -127,7 +126,6 @@ export function MobileBottomNav() {
         </div>
       </nav>
 
-      {/* Overflow Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent>
           <DrawerHeader>
@@ -154,7 +152,6 @@ export function MobileBottomNav() {
               );
             })}
           </div>
-          {/* Footer actions */}
           <div className="border-t p-4 pb-8 flex gap-2">
             <Button
               variant="outline"
