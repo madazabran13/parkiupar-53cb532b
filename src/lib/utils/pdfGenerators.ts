@@ -260,19 +260,15 @@ type HistoryRow = {
 
 export function generatePaymentHistoryPDF(rows: HistoryRow[]) {
   const doc = new jsPDF();
-
   addHeader(doc, 'Historial de Pagos y Renovaciones', `Total transacciones: ${rows.length}`);
-
   const body = rows.map(r => [
     format(new Date(r.date), 'dd/MM/yyyy HH:mm'),
-    r.tenantName,
-    r.planName,
+    r.tenantName, r.planName,
     `${r.months} mes${r.months > 1 ? 'es' : ''}`,
     formatCurrency(r.amount),
     r.previousExpires ? format(new Date(r.previousExpires), 'dd/MM/yy') : '—',
     format(new Date(r.newExpires), 'dd/MM/yy'),
   ]);
-
   autoTable(doc, {
     startY: 46,
     head: [['Fecha', 'Parqueadero', 'Plan', 'Duración', 'Monto', 'Venc. anterior', 'Nuevo venc.']],
@@ -280,17 +276,118 @@ export function generatePaymentHistoryPDF(rows: HistoryRow[]) {
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [17, 24, 39], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [245, 245, 245] },
-    columnStyles: {
-      4: { halign: 'right' },
-    },
+    columnStyles: { 4: { halign: 'right' } },
   });
-
   const total = rows.reduce((s, r) => s + r.amount, 0);
   const finalY = (doc as any).lastAutoTable?.finalY || 100;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text(`Total recaudado: ${formatCurrency(total)}`, 14, finalY + 12);
-
   addFooter(doc);
   doc.save(`historial-pagos-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+}
+
+// ─── 4. PARKING EXIT RECEIPT ─────────────────────────────
+
+type ExitReceiptData = {
+  tenantName: string;
+  tenantAddress?: string | null;
+  tenantPhone?: string | null;
+  plate: string;
+  vehicleType: string;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  spaceNumber?: string | null;
+  entryTime: string;
+  exitTime: string;
+  totalMinutes: number;
+  fractions: number;
+  costPerFraction: number;
+  ratePerHour: number;
+  fractionMinutes: number;
+  total: number;
+};
+
+export function generateExitReceiptPDF(data: ExitReceiptData) {
+  const doc = new jsPDF({ format: [80, 200], unit: 'mm' });
+  const pw = 80;
+  let y = 8;
+
+  // Header
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(data.tenantName, pw / 2, y, { align: 'center' });
+  y += 5;
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  if (data.tenantAddress) { doc.text(data.tenantAddress, pw / 2, y, { align: 'center' }); y += 3.5; }
+  if (data.tenantPhone) { doc.text(`Tel: ${data.tenantPhone}`, pw / 2, y, { align: 'center' }); y += 3.5; }
+
+  // Separator
+  y += 2;
+  doc.setDrawColor(0);
+  doc.setLineDashPattern([1, 1], 0);
+  doc.line(4, y, pw - 4, y);
+  y += 4;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('RECIBO DE SALIDA', pw / 2, y, { align: 'center' });
+  y += 6;
+
+  doc.setLineDashPattern([1, 1], 0);
+  doc.line(4, y, pw - 4, y);
+  y += 4;
+
+  // Details
+  doc.setFontSize(8);
+  const addLine = (label: string, value: string) => {
+    doc.setFont('helvetica', 'normal');
+    doc.text(label, 6, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text(value, pw - 6, y, { align: 'right' });
+    y += 4;
+  };
+
+  addLine('Placa:', data.plate);
+  addLine('Tipo:', data.vehicleType);
+  if (data.customerName) addLine('Cliente:', data.customerName);
+  if (data.spaceNumber) addLine('Espacio:', `#${data.spaceNumber}`);
+  addLine('Entrada:', format(new Date(data.entryTime), 'dd/MM/yy HH:mm'));
+  addLine('Salida:', format(new Date(data.exitTime), 'dd/MM/yy HH:mm'));
+  addLine('Duración:', `${Math.floor(data.totalMinutes / 60)}h ${data.totalMinutes % 60}m`);
+
+  y += 2;
+  doc.setLineDashPattern([1, 1], 0);
+  doc.line(4, y, pw - 4, y);
+  y += 4;
+
+  addLine('Tarifa/hora:', formatCurrency(data.ratePerHour));
+  addLine(`Fracción (${data.fractionMinutes} min):`, formatCurrency(data.costPerFraction));
+  addLine('Fracciones:', String(data.fractions));
+
+  y += 2;
+  doc.setLineDashPattern([], 0);
+  doc.line(4, y, pw - 4, y);
+  y += 5;
+
+  // Total
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TOTAL', 6, y);
+  doc.text(formatCurrency(data.total), pw - 6, y, { align: 'right' });
+  y += 6;
+
+  doc.setLineDashPattern([], 0);
+  doc.line(4, y, pw - 4, y);
+  y += 5;
+
+  // Footer
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text(format(new Date(), "dd/MM/yyyy HH:mm:ss"), pw / 2, y, { align: 'center' });
+  y += 4;
+  doc.text('¡Gracias por su visita!', pw / 2, y, { align: 'center' });
+
+  doc.save(`recibo-${data.plate}-${format(new Date(), 'yyyyMMdd-HHmmss')}.pdf`);
 }
