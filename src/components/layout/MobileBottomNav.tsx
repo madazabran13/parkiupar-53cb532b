@@ -3,11 +3,12 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Map, Grid3X3, BarChart3, Users, DollarSign,
   UserCog, Shield, Settings, Wallet, CreditCard, MoreHorizontal, Building2,
-  Clock, LogOut, Moon, Sun,
+  Clock, LogOut, Moon, Sun, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { cn } from '@/lib/utils';
+import { ROLE_LABELS } from '@/types';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose,
 } from '@/components/ui/drawer';
@@ -27,6 +28,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/payments': 'payments',
   '/my-plan': 'my_plan',
   '/settings': 'settings',
+  '/monthly-subscriptions': 'monthly_subscriptions',
 };
 
 const ALL_NAV_ITEMS = [
@@ -38,6 +40,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'portero', 'cajero'] },
   { label: 'Tarifas', icon: DollarSign, path: '/rates', module: 'rates', roles: ['admin'] },
   { label: 'Horarios', icon: Clock, path: '/schedules', module: 'schedules', roles: ['admin'] },
+  { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', module: 'monthly_subscriptions', roles: ['admin', 'portero', 'cajero'] },
   { label: 'Equipo', icon: UserCog, path: '/team', module: 'team', roles: ['admin'] },
   { label: 'Auditoría', icon: Shield, path: '/audit', module: 'audit', roles: ['admin'] },
   { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'viewer'] },
@@ -57,7 +60,7 @@ const SUPERADMIN_NAV_ITEMS = [
 const MAX_VISIBLE = 4;
 
 export function MobileBottomNav() {
-  const { role, signOut } = useAuth();
+  const { role, profile, signOut } = useAuth();
   const { planModules } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
@@ -84,6 +87,13 @@ export function MobileBottomNav() {
   const overflowItems = visibleItems.slice(MAX_VISIBLE);
   const hasOverflow = overflowItems.length > 0;
   const isOverflowActive = overflowItems.some((i) => location.pathname === i.path);
+
+  const getRoleDisplay = (r: string | null) => {
+    if (!r) return '';
+    if (r === 'operator') return 'Portero';
+    if (r === 'viewer') return 'Cliente';
+    return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
+  };
 
   return (
     <>
@@ -131,6 +141,16 @@ export function MobileBottomNav() {
           <DrawerHeader>
             <DrawerTitle>Menú</DrawerTitle>
           </DrawerHeader>
+          {/* User info */}
+          <div className="px-4 pb-3 flex items-center gap-3 border-b">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-medium text-accent-foreground">
+              {profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{profile?.full_name || 'Usuario'}</p>
+              <p className="text-[10px] text-muted-foreground">{getRoleDisplay(role)}</p>
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-2 p-4">
             {overflowItems.map((item) => {
               const isActive = location.pathname === item.path;

@@ -58,21 +58,23 @@ export default function SuperAdmin() {
   const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
 
   const ALL_MODULES = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'parking', label: 'Vehículos' },
+    { key: 'dashboard', label: 'Panel Principal' },
+    { key: 'parking', label: 'Gestión de Vehículos' },
     { key: 'customers', label: 'Clientes' },
     { key: 'rates', label: 'Tarifas' },
-    { key: 'capacity', label: 'Aforo y Reservas' },
+    { key: 'capacity', label: 'Control de Aforo y Reservas' },
     { key: 'reports', label: 'Reportes (solo ver)' },
-    { key: 'reports_download', label: 'Reportes (descargar PDF)' },
-    { key: 'map', label: 'Mapa' },
+    { key: 'reports_download', label: 'Descarga de Reportes PDF' },
+    { key: 'map', label: 'Mapa en Tiempo Real' },
     { key: 'team', label: 'Gestión de Usuarios' },
-    { key: 'schedules', label: 'Horarios' },
+    { key: 'schedules', label: 'Horarios de Operación' },
     { key: 'settings', label: 'Configuración' },
     { key: 'audit', label: 'Auditoría' },
     { key: 'payments', label: 'Pagos y Facturación' },
     { key: 'my_plan', label: 'Mi Plan' },
-    { key: 'theme_color', label: 'Color del Tema' },
+    { key: 'theme_color', label: 'Personalización del Tema' },
+    { key: 'printing', label: 'Impresión de Recibos' },
+    { key: 'monthly_subscriptions', label: 'Mensualidades' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({

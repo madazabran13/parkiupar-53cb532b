@@ -302,8 +302,18 @@ export default function MapPage() {
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tenants' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tenants' }, () => {
         queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parking_spaces' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+        queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
+        queryClient.invalidateQueries({ queryKey: ['detail-spaces'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'space_reservations' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+        queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
+        queryClient.invalidateQueries({ queryKey: ['detail-spaces'] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -694,9 +704,9 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Public Reservation Dialog */}
+      {/* Public Reservation Dialog - full screen overlay to hide map */}
       <Dialog open={reserveDialogOpen} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto z-[9999]">
           <DialogHeader>
             <DialogTitle>Reservar Cupo</DialogTitle>
             <DialogDescription>

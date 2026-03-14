@@ -25,6 +25,7 @@ import MapPage from "@/pages/MapPage";
 import Payments from "@/pages/Payments";
 import AuditLog from "@/pages/AuditLog";
 import Schedules from "@/pages/Schedules";
+import MonthlySubscriptions from "@/pages/MonthlySubscriptions";
 import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
@@ -40,18 +41,13 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Landing page */}
             <Route path="/" element={<LandingPage />} />
-            
-            {/* Public routes */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-            {/* Map without auth */}
             <Route path="/map-public" element={<MapPage />} />
 
-            {/* Protected dashboard routes */}
             <Route
               element={
                 <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer', 'cajero', 'portero']}>
@@ -69,13 +65,12 @@ const App = () => (
               <Route path="/map" element={<MapPage />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/schedules" element={<Schedules />} />
-              
+              <Route path="/monthly-subscriptions" element={<MonthlySubscriptions />} />
               <Route path="/my-plan" element={<MyPlan />} />
               <Route path="/audit" element={<AuditLog />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
-            {/* Superadmin routes */}
             <Route
               element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
@@ -91,7 +86,6 @@ const App = () => (
 
             <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/suspended" element={<SuspendedAccount />} />
-            {/* Redirect old /spaces route to /capacity */}
             <Route path="/spaces" element={<Navigate to="/capacity" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
