@@ -14,6 +14,26 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   portero: 'Portero',
 };
 
+export const MODULE_LABELS_ES: Record<string, string> = {
+  dashboard: 'Panel Principal',
+  parking: 'Gestión de Vehículos',
+  customers: 'Clientes',
+  rates: 'Tarifas',
+  capacity: 'Control de Aforo y Reservas',
+  reports: 'Reportes (solo ver)',
+  reports_download: 'Descarga de Reportes PDF',
+  map: 'Mapa en Tiempo Real',
+  team: 'Gestión de Usuarios',
+  settings: 'Configuración',
+  audit: 'Auditoría',
+  payments: 'Pagos y Facturación',
+  my_plan: 'Mi Plan',
+  theme_color: 'Personalización del Tema',
+  schedules: 'Horarios de Operación',
+  printing: 'Impresión de Recibos',
+  monthly_subscriptions: 'Mensualidades',
+};
+
 export interface Plan {
   id: string;
   name: string;
@@ -170,6 +190,22 @@ export interface SpaceReservation {
   confirmed_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface MonthlySubscription {
+  id: string;
+  tenant_id: string;
+  customer_id: string | null;
+  vehicle_id: string | null;
+  plate: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  amount: number;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
 }
 
 export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
