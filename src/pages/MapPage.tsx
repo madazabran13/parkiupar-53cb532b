@@ -694,9 +694,9 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Public Reservation Dialog */}
+      {/* Public Reservation Dialog - full screen overlay to hide map */}
       <Dialog open={reserveDialogOpen} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto z-[9999]">
           <DialogHeader>
             <DialogTitle>Reservar Cupo</DialogTitle>
             <DialogDescription>
