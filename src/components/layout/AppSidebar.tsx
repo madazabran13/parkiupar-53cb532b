@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock,
+  Clock, CalendarDays,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/my-plan': 'my_plan',
   '/settings': 'settings',
   '/schedules': 'schedules',
+  '/monthly-subscriptions': 'monthly_subscriptions',
 };
 
 const MENU_ITEMS = {
@@ -45,6 +46,7 @@ const MENU_ITEMS = {
   team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
   audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
   schedules: { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
+  monthly_subscriptions: { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', roles: ['admin', 'portero', 'cajero'] },
   settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
   payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
   myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
@@ -78,7 +80,6 @@ export function AppSidebar() {
   };
 
   const isSuperadmin = role === 'superadmin';
-  // Map old role values for backward compatibility
   const effectiveRole = role === 'operator' ? 'portero' : role;
   
   const menuItems = isSuperadmin
@@ -95,6 +96,13 @@ export function AppSidebar() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const getRoleDisplay = (r: string | null) => {
+    if (!r) return '';
+    if (r === 'operator') return 'Portero';
+    if (r === 'viewer') return 'Cliente';
+    return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
   };
 
   return (
@@ -151,7 +159,7 @@ export function AppSidebar() {
               {profile?.full_name || 'Usuario'}
             </span>
             <span className="text-[10px] text-muted-foreground truncate">
-              {tenant?.name || (role === 'superadmin' ? 'Super Admin' : 'Sin asignar')}
+              {getRoleDisplay(role)} {tenant?.name ? `· ${tenant.name}` : role === 'superadmin' ? '' : '· Sin asignar'}
             </span>
           </div>
           <Button
