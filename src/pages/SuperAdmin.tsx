@@ -418,6 +418,7 @@ export default function SuperAdmin() {
   const openEditPlan = (p: Plan) => {
     setEditingPlan(p); setPName(p.name); setPDesc(p.description || ''); setPPrice(String(p.price_monthly)); setPMaxSpaces(String(p.max_spaces));
     setPMaxUsers(String((p as any).max_users || 10));
+    setPCategory((p as any).category || 'general');
     setPModules(Array.isArray(p.modules) ? p.modules : ['dashboard', 'parking', 'customers', 'rates', 'capacity']);
     setPlanDialogOpen(true);
   };
