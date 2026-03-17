@@ -34,6 +34,7 @@ export default function Parking() {
   const [now, setNow] = useState(Date.now());
   const [confirmExit, setConfirmExit] = useState(false);
   const [confirmEntry, setConfirmEntry] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   const hasPrinting = planModules.includes('printing');
 
