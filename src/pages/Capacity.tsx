@@ -12,21 +12,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon, AlertTriangle, BookmarkCheck, Timer, X, RefreshCw } from 'lucide-react';
+import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon, AlertTriangle, BookmarkCheck, Timer, RefreshCw, Printer, Eye, X, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { formatCurrency, formatDuration, formatTime } from '@/lib/utils/formatters';
+import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
+import { generateExitReceiptPDF } from '@/lib/utils/pdfGenerators';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import type { ParkingSession, VehicleCategory, Vehicle, ParkingSpace, SpaceStatus } from '@/types';
 import { SPACE_STATUS_LABELS } from '@/types';
 import { CapacitySkeleton } from '@/components/ui/PageSkeletons';
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  car: Car,
-  motorcycle: Bike,
-  truck: Truck,
-  bicycle: Bike,
+  car: Car, motorcycle: Bike, truck: Truck, bicycle: Bike,
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -43,19 +41,16 @@ const STATUS_COLORS: Record<SpaceStatus, string> = {
 };
 
 const STATUS_DOT: Record<SpaceStatus, string> = {
-  available: 'bg-green-500',
-  occupied: 'bg-destructive',
-  reserved: 'bg-amber-500',
+  available: 'bg-green-500', occupied: 'bg-destructive', reserved: 'bg-amber-500',
 };
 
 export default function Capacity() {
   const { tenantId, user } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
   const queryClient = useQueryClient();
 
   const [configOpen, setConfigOpen] = useState(false);
   const [newCapacity, setNewCapacity] = useState('');
-  const [activeTab, setActiveTab] = useState('grid');
 
   // Entry dialog
   const [entryOpen, setEntryOpen] = useState(false);
@@ -81,11 +76,23 @@ export default function Capacity() {
   const [reserveCustomerName, setReserveCustomerName] = useState('');
   const [reserveCustomerPhone, setReserveCustomerPhone] = useState('');
 
-  // Setup dialog (for parking_spaces)
+  // Reservation detail dialog
+  const [reservationDetailSpace, setReservationDetailSpace] = useState<ParkingSpace | null>(null);
+  const [reservationDetail, setReservationDetail] = useState<any>(null);
+
+  // Confirm dialogs
+  const [confirmEntry, setConfirmEntry] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
+  const [confirmReserve, setConfirmReserve] = useState(false);
+  const [confirmCancelReserve, setConfirmCancelReserve] = useState<ParkingSpace | null>(null);
+  const [confirmReserveFromDetail, setConfirmReserveFromDetail] = useState(false);
+
+  // Setup dialog
   const [setupOpen, setSetupOpen] = useState(false);
   const [spaceCount, setSpaceCount] = useState('');
 
-  // Live price refresh every 1s
+  const hasPrinting = planModules.includes('printing');
+
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
@@ -103,6 +110,12 @@ export default function Capacity() {
     queryKeys: [['parking-spaces', tenantId || '']],
   });
 
+  useRealtime({
+    table: 'space_reservations',
+    filter: tenantId ? `tenant_id=eq.${tenantId}` : undefined,
+    queryKeys: [['parking-spaces', tenantId || ''], ['space-reservations', tenantId || '']],
+  });
+
   const { data: activeSessions = [], isLoading: loadingCapacity } = useQuery({
     queryKey: ['capacity-sessions', tenantId],
     enabled: !!tenantId,
@@ -116,11 +129,7 @@ export default function Capacity() {
     queryKey: ['parking-spaces', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('parking_spaces')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .order('space_number');
+      const { data } = await supabase.from('parking_spaces').select('*').eq('tenant_id', tenantId!).order('space_number');
       return (data || []) as unknown as ParkingSpace[];
     },
   });
@@ -151,10 +160,7 @@ export default function Capacity() {
   }, [categories, selectedCategoryId]);
 
   const searchPlate = useCallback(async (plateVal: string) => {
-    if (!tenantId || plateVal.length < 3) {
-      setFoundVehicle(null);
-      return;
-    }
+    if (!tenantId || plateVal.length < 3) { setFoundVehicle(null); return; }
     setSearchingPlate(true);
     const { data } = await supabase
       .from('vehicles')
@@ -162,7 +168,6 @@ export default function Capacity() {
       .eq('tenant_id', tenantId)
       .eq('plate', plateVal.toUpperCase())
       .single();
-
     if (data) {
       const v = data as any;
       setFoundVehicle(v as Vehicle);
@@ -172,16 +177,12 @@ export default function Capacity() {
         setCustomerName(v.customers.full_name || '');
         setCustomerPhone(v.customers.phone || '');
       }
-    } else {
-      setFoundVehicle(null);
-    }
+    } else { setFoundVehicle(null); }
     setSearchingPlate(false);
   }, [tenantId, categories]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (plate.length >= 3) searchPlate(plate);
-    }, 400);
+    const timeout = setTimeout(() => { if (plate.length >= 3) searchPlate(plate); }, 400);
     return () => clearTimeout(timeout);
   }, [plate, searchPlate]);
 
@@ -203,40 +204,22 @@ export default function Capacity() {
       if (cap > maxSpaces) throw new Error(`El máximo de espacios según tu plan es ${maxSpaces}`);
       const occupied = tenant ? tenant.total_spaces - tenant.available_spaces : 0;
       const { error } = await supabase.from('tenants').update({
-        total_spaces: cap,
-        available_spaces: Math.max(0, cap - occupied),
+        total_spaces: cap, available_spaces: Math.max(0, cap - occupied),
       }).eq('id', tenantId!);
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast.success('Capacidad actualizada');
-      setConfigOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['tenant'] });
-    },
+    onSuccess: () => { toast.success('Capacidad actualizada'); setConfigOpen(false); queryClient.invalidateQueries({ queryKey: ['tenant'] }); },
     onError: (e) => toast.error(e.message || 'Error al actualizar'),
   });
 
   const entryMutation = useMutation({
     mutationFn: async () => {
       if (!tenantId || !plate) throw new Error('Faltan datos');
-
-      const { data: activeSession } = await supabase
-        .from('parking_sessions')
-        .select('id, tenant_id')
-        .eq('plate', plate.toUpperCase())
-        .eq('status', 'active')
-        .maybeSingle();
-
+      const { data: activeSession } = await supabase.from('parking_sessions').select('id, tenant_id').eq('plate', plate.toUpperCase()).eq('status', 'active').maybeSingle();
       if (activeSession) {
-        if (activeSession.tenant_id === tenantId) {
-          throw new Error('Este vehículo ya se encuentra dentro del parqueadero');
-        } else {
-          throw new Error('Este vehículo se encuentra activo en otro parqueadero de la red');
-        }
+        throw new Error(activeSession.tenant_id === tenantId ? 'Este vehículo ya se encuentra dentro del parqueadero' : 'Este vehículo se encuentra activo en otro parqueadero de la red');
       }
-
       const category = categoryMap[selectedCategoryId];
-
       let customerId: string | undefined;
       if (customerPhone) {
         const { data: existingCustomer } = await supabase.from('customers').select('id').eq('tenant_id', tenantId).eq('phone', customerPhone).single();
@@ -248,7 +231,6 @@ export default function Capacity() {
           await supabase.from('customers').update({ full_name: customerName }).eq('id', customerId);
         }
       }
-
       const vehicleType = (category?.icon || 'car') as 'car' | 'motorcycle' | 'truck' | 'bicycle';
       const { data: existingVehicle } = await supabase.from('vehicles').select('id').eq('tenant_id', tenantId).eq('plate', plate.toUpperCase()).single();
       let vehicleId = existingVehicle?.id;
@@ -256,32 +238,18 @@ export default function Capacity() {
         const { data: newVehicle } = await supabase.from('vehicles').insert({ tenant_id: tenantId, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_id: customerId || null }).select('id').single();
         vehicleId = newVehicle?.id;
       }
-
       const { error } = await supabase.from('parking_sessions').insert({
-        tenant_id: tenantId,
-        vehicle_id: vehicleId,
-        customer_id: customerId || null,
-        plate: plate.toUpperCase(),
-        vehicle_type: vehicleType,
-        customer_name: customerName || null,
-        customer_phone: customerPhone || null,
-        space_number: selectedSpace ? String(selectedSpace) : null,
-        rate_per_hour: category?.rate_per_hour || 0,
-        notes: notes || null,
-        status: 'active',
+        tenant_id: tenantId, vehicle_id: vehicleId, customer_id: customerId || null,
+        plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_name: customerName || null,
+        customer_phone: customerPhone || null, space_number: selectedSpace ? String(selectedSpace) : null,
+        rate_per_hour: category?.rate_per_hour || 0, notes: notes || null, status: 'active',
       });
       if (error) throw error;
-
-      // If there's a parking_space for this number, mark it occupied
       if (selectedSpace) {
         const matchSpace = parkingSpaces.find(s => s.space_number === String(selectedSpace));
         if (matchSpace) {
           await supabase.from('parking_spaces').update({ status: 'occupied' }).eq('id', matchSpace.id);
-          // Cancel pending reservation if exists
-          await supabase.from('space_reservations')
-            .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
-            .eq('space_id', matchSpace.id)
-            .eq('status', 'pending');
+          await supabase.from('space_reservations').update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).eq('space_id', matchSpace.id).eq('status', 'pending');
         }
       }
     },
@@ -303,30 +271,32 @@ export default function Capacity() {
       const fractionMin = category?.fraction_minutes || 15;
       const fee = calculateParkingFee(session.entry_time, exitTime, ratePerHour, fractionMin);
       const { error } = await supabase.from('parking_sessions').update({
-        exit_time: exitTime,
-        hours_parked: Math.round(fee.totalMinutes / 60 * 100) / 100,
-        total_amount: fee.total,
-        status: 'completed' as const,
+        exit_time: exitTime, hours_parked: Math.round(fee.totalMinutes / 60 * 100) / 100,
+        total_amount: fee.total, status: 'completed' as const,
       }).eq('id', session.id);
       if (error) throw error;
-
-      // Release parking space
       if (session.space_number) {
         const matchSpace = parkingSpaces.find(s => s.space_number === session.space_number);
         if (matchSpace) {
-          await supabase.from('parking_spaces').update({
-            status: 'available',
-            reserved_by: null,
-            reserved_at: null,
-            reservation_expires_at: null,
-          }).eq('id', matchSpace.id);
+          await supabase.from('parking_spaces').update({ status: 'available', reserved_by: null, reserved_at: null, reservation_expires_at: null }).eq('id', matchSpace.id);
         }
       }
+      return { session, exitTime, fee, ratePerHour, fractionMin };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success('Salida registrada');
-      setExitSession(null);
-      setExitSpace(null);
+      if (hasPrinting && result) {
+        const { session, exitTime, fee, ratePerHour, fractionMin } = result;
+        generateExitReceiptPDF({
+          tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
+          plate: session.plate, vehicleType: session.vehicle_type, customerName: session.customer_name,
+          customerPhone: session.customer_phone, spaceNumber: session.space_number,
+          entryTime: session.entry_time, exitTime, totalMinutes: fee.totalMinutes,
+          fractions: fee.fractions, costPerFraction: fee.costPerFraction,
+          ratePerHour, fractionMinutes: fractionMin, total: fee.total,
+        });
+      }
+      setExitSession(null); setExitSpace(null);
       queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
       queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
@@ -335,29 +305,19 @@ export default function Capacity() {
     onError: () => toast.error('Error al registrar salida'),
   });
 
-  // Reserve space mutation
   const reserveMutation = useMutation({
     mutationFn: async () => {
       if (!reserveSpaceId) throw new Error('Sin espacio');
       const expiresAt = new Date(Date.now() + reservationTimeout * 60 * 1000).toISOString();
-      
       const { error: resError } = await supabase.from('space_reservations').insert({
-        tenant_id: tenantId!,
-        space_id: reserveSpaceId,
-        reserved_by: user?.id || null,
-        customer_name: reserveCustomerName || null,
-        customer_phone: reserveCustomerPhone || null,
-        plate: reservePlate?.toUpperCase() || null,
-        status: 'pending',
-        expires_at: expiresAt,
+        tenant_id: tenantId!, space_id: reserveSpaceId, reserved_by: user?.id || null,
+        customer_name: reserveCustomerName || null, customer_phone: reserveCustomerPhone || null,
+        plate: reservePlate?.toUpperCase() || null, status: 'pending', expires_at: expiresAt,
       });
       if (resError) throw resError;
-
       const { error } = await supabase.from('parking_spaces').update({
-        status: 'reserved',
-        reserved_by: user?.id || null,
-        reserved_at: new Date().toISOString(),
-        reservation_expires_at: expiresAt,
+        status: 'reserved', reserved_by: user?.id || null,
+        reserved_at: new Date().toISOString(), reservation_expires_at: expiresAt,
       }).eq('id', reserveSpaceId);
       if (error) throw error;
     },
@@ -369,80 +329,77 @@ export default function Capacity() {
     onError: (e: any) => toast.error(e.message || 'Error al reservar'),
   });
 
-  // Cancel reservation
   const cancelReservation = useMutation({
     mutationFn: async (space: ParkingSpace) => {
       const { error } = await supabase.from('parking_spaces').update({
-        status: 'available',
-        reserved_by: null,
-        reserved_at: null,
-        reservation_expires_at: null,
+        status: 'available', reserved_by: null, reserved_at: null, reservation_expires_at: null,
       }).eq('id', space.id);
       if (error) throw error;
-      
-      await supabase.from('space_reservations')
-        .update({ status: 'cancelled' })
-        .eq('space_id', space.id)
-        .eq('status', 'pending');
+      await supabase.from('space_reservations').update({ status: 'cancelled' }).eq('space_id', space.id).eq('status', 'pending');
     },
     onSuccess: () => {
       toast.success('Reserva cancelada');
+      setReservationDetailSpace(null); setReservationDetail(null);
+      setConfirmCancelReserve(null);
       queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
     },
     onError: () => toast.error('Error al cancelar'),
   });
 
-  // Setup spaces mutation
+  // Confirm reservation (transition to entry)
+  const confirmReservationMutation = useMutation({
+    mutationFn: async (space: ParkingSpace) => {
+      // Just open entry dialog with the space pre-selected and reservation data pre-filled
+      return space;
+    },
+    onSuccess: (space) => {
+      const spaceNum = parseInt(space.space_number);
+      setSelectedSpace(spaceNum);
+      if (reservationDetail) {
+        setPlate(reservationDetail.plate || '');
+        setCustomerName(reservationDetail.customer_name || '');
+        setCustomerPhone(reservationDetail.customer_phone || '');
+      }
+      setReservationDetailSpace(null);
+      setReservationDetail(null);
+      setEntryOpen(true);
+    },
+  });
+
   const setupMutation = useMutation({
     mutationFn: async () => {
       const count = parseInt(spaceCount);
       if (isNaN(count) || count < 1 || count > 500) throw new Error('Ingresa entre 1 y 500 espacios');
-      
       await supabase.from('parking_spaces').delete().eq('tenant_id', tenantId!);
-      
       const spacesToInsert = Array.from({ length: count }, (_, i) => ({
-        tenant_id: tenantId!,
-        space_number: String(i + 1),
-        label: `Espacio ${i + 1}`,
-        status: 'available' as const,
+        tenant_id: tenantId!, space_number: String(i + 1), label: `Espacio ${i + 1}`, status: 'available' as const,
       }));
-
       for (let i = 0; i < spacesToInsert.length; i += 50) {
         const batch = spacesToInsert.slice(i, i + 50);
         const { error } = await supabase.from('parking_spaces').insert(batch);
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      toast.success('Espacios creados');
-      setSetupOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
-    },
+    onSuccess: () => { toast.success('Espacios creados'); setSetupOpen(false); queryClient.invalidateQueries({ queryKey: ['parking-spaces'] }); },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
   const closeEntryDialog = () => {
-    setEntryOpen(false);
-    setSelectedSpace(null);
-    setPlate('');
+    setEntryOpen(false); setSelectedSpace(null); setPlate('');
     setSelectedCategoryId(categories.length > 0 ? categories[0].id : '');
-    setCustomerName('');
-    setCustomerPhone('');
-    setNotes('');
-    setFoundVehicle(null);
+    setCustomerName(''); setCustomerPhone(''); setNotes(''); setFoundVehicle(null);
   };
 
   const closeReserveDialog = () => {
-    setReserveOpen(false);
-    setReserveSpaceId(null);
-    setReserveSpaceNum('');
-    setReservePlate('');
-    setReserveCustomerName('');
-    setReserveCustomerPhone('');
+    setReserveOpen(false); setReserveSpaceId(null); setReserveSpaceNum('');
+    setReservePlate(''); setReserveCustomerName(''); setReserveCustomerPhone('');
   };
 
   const handleGridSpaceClick = (space: typeof finalSpaces[0]) => {
-    if (space.occupied && space.session) {
+    if (space.status === 'reserved' && space.parkingSpace) {
+      // Show reservation detail
+      loadReservationDetail(space.parkingSpace);
+    } else if (space.occupied && space.session) {
       setExitSession(space.session);
       setExitSpace(space.num);
     } else if (!space.occupied) {
@@ -451,9 +408,32 @@ export default function Capacity() {
     }
   };
 
-  const handleReservedSpaceClick = (space: ParkingSpace) => {
-    // Show cancel dialog for reserved spaces is handled inline
+  const loadReservationDetail = async (space: ParkingSpace) => {
+    setReservationDetailSpace(space);
+    const { data } = await supabase
+      .from('space_reservations')
+      .select('*')
+      .eq('space_id', space.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setReservationDetail(data);
   };
+
+  // Auto-expire reservations client-side check
+  useEffect(() => {
+    const expiredSpaces = parkingSpaces.filter(
+      s => s.status === 'reserved' && s.reservation_expires_at && new Date(s.reservation_expires_at).getTime() < Date.now()
+    );
+    expiredSpaces.forEach(async (space) => {
+      await supabase.from('parking_spaces').update({
+        status: 'available', reserved_by: null, reserved_at: null, reservation_expires_at: null,
+      }).eq('id', space.id).eq('status', 'reserved');
+      await supabase.from('space_reservations').update({ status: 'expired' }).eq('space_id', space.id).eq('status', 'pending');
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+    });
+  }, [now, parkingSpaces]);
 
   const totalSpaces = tenant?.total_spaces || 20;
   const occupiedSpaces = activeSessions.length;
@@ -461,9 +441,7 @@ export default function Capacity() {
   const reservedCount = parkingSpaces.filter(s => s.status === 'reserved').length;
 
   const occupiedMap = new Map<string, ParkingSession>();
-  activeSessions.forEach((s) => {
-    if (s.space_number) occupiedMap.set(s.space_number, s);
-  });
+  activeSessions.forEach((s) => { if (s.space_number) occupiedMap.set(s.space_number, s); });
 
   const sessionsWithoutSpace = [...activeSessions.filter((s) => !s.space_number)];
   const explicitOccupied = new Set([...occupiedMap.keys()].map(Number));
@@ -472,7 +450,6 @@ export default function Capacity() {
     const num = i + 1;
     const key = String(num);
     const parkingSpace = parkingSpaces.find(s => s.space_number === key);
-    
     if (occupiedMap.has(key)) {
       return { num, occupied: true, session: occupiedMap.get(key)!, vehicleType: occupiedMap.get(key)!.vehicle_type, parkingSpace, status: 'occupied' as SpaceStatus };
     }
@@ -530,33 +507,24 @@ export default function Capacity() {
 
       {/* Summary */}
       <div className="grid gap-3 grid-cols-4">
-        <Card>
-          <CardContent className="pt-3 sm:pt-6 text-center">
-            <div className="text-xl sm:text-3xl font-bold text-green-600">{availableSpaces - reservedCount}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Disponibles</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-3 sm:pt-6 text-center">
-            <div className="text-xl sm:text-3xl font-bold text-destructive">{occupiedSpaces}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Ocupados</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-3 sm:pt-6 text-center">
-            <div className="text-xl sm:text-3xl font-bold text-amber-600">{reservedCount}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Reservados</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-3 sm:pt-6 text-center">
-            <div className="text-xl sm:text-3xl font-bold">{totalSpaces}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Total</p>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="pt-3 sm:pt-6 text-center">
+          <div className="text-xl sm:text-3xl font-bold text-green-600">{availableSpaces - reservedCount}</div>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Disponibles</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-3 sm:pt-6 text-center">
+          <div className="text-xl sm:text-3xl font-bold text-destructive">{occupiedSpaces}</div>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Ocupados</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-3 sm:pt-6 text-center">
+          <div className="text-xl sm:text-3xl font-bold text-amber-600">{reservedCount}</div>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Reservados</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-3 sm:pt-6 text-center">
+          <div className="text-xl sm:text-3xl font-bold">{totalSpaces}</div>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Total</p>
+        </CardContent></Card>
       </div>
 
-      {/* Overcapacity Alert */}
       {occupiedSpaces > totalSpaces && (
         <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
@@ -595,30 +563,21 @@ export default function Capacity() {
             <div className="py-12 text-center">
               <ParkingCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground mb-4">No hay espacios configurados</p>
-              <Button onClick={() => { setSpaceCount(String(totalSpaces)); setSetupOpen(true); }}>
-                Crear Espacios
-              </Button>
+              <Button onClick={() => { setSpaceCount(String(totalSpaces)); setSetupOpen(true); }}>Crear Espacios</Button>
             </div>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5 sm:gap-2">
               {finalSpaces.map((space) => {
                 const spaceRate = space.session ? findRateForSession(space.session) : null;
                 const spaceLiveFee = space.session && spaceRate
-                  ? calculateLiveFee(space.session.entry_time, spaceRate.rate_per_hour, spaceRate.fraction_minutes)
-                  : 0;
+                  ? calculateLiveFee(space.session.entry_time, spaceRate.rate_per_hour, spaceRate.fraction_minutes) : 0;
 
                 if (space.status === 'reserved' && space.parkingSpace) {
                   const remaining = getRemainingTime(space.parkingSpace.reservation_expires_at);
                   return (
-                    <button
-                      key={space.num}
-                      onClick={() => {
-                        if (space.parkingSpace) {
-                          cancelReservation.mutate(space.parkingSpace);
-                        }
-                      }}
+                    <button key={space.num} onClick={() => handleGridSpaceClick(space)}
                       className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-1.5 sm:p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 min-h-[52px] sm:min-h-[64px] ${STATUS_COLORS.reserved}`}
-                      title={`Reservado - ${remaining} restantes - Click para cancelar`}
+                      title={`Reservado - ${remaining} - Click para ver detalle`}
                     >
                       <span className="font-bold text-sm sm:text-base">#{space.num}</span>
                       <span className="text-[9px] sm:text-[10px] font-mono mt-0.5">{remaining}</span>
@@ -628,9 +587,7 @@ export default function Capacity() {
 
                 if (space.status === 'available') {
                   return (
-                    <button
-                      key={space.num}
-                      onClick={() => handleGridSpaceClick(space)}
+                    <button key={space.num} onClick={() => handleGridSpaceClick(space)}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         if (space.parkingSpace) {
@@ -639,7 +596,7 @@ export default function Capacity() {
                           setReserveOpen(true);
                         }
                       }}
-                      className={`relative flex flex-col items-center justify-center rounded-lg border p-1.5 sm:p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 min-h-[52px] sm:min-h-[64px] bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50`}
+                      className="relative flex flex-col items-center justify-center rounded-lg border p-1.5 sm:p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 min-h-[52px] sm:min-h-[64px] bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
                       title={`Espacio #${space.num} - Click para registrar, mantener para reservar`}
                     >
                       <span className="font-bold text-sm sm:text-base">{space.num}</span>
@@ -648,9 +605,7 @@ export default function Capacity() {
                 }
 
                 return (
-                  <button
-                    key={space.num}
-                    onClick={() => handleGridSpaceClick(space)}
+                  <button key={space.num} onClick={() => handleGridSpaceClick(space)}
                     className={`relative flex flex-col items-center justify-center rounded-lg border p-1.5 sm:p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 min-h-[52px] sm:min-h-[64px] ${
                       space.occupied
                         ? `${TYPE_COLORS[space.vehicleType || 'car'] || 'bg-blue-500 hover:bg-blue-600'} text-white border-transparent shadow-sm`
@@ -671,9 +626,9 @@ export default function Capacity() {
 
       {/* Entry Dialog */}
       <Dialog open={entryOpen} onOpenChange={(open) => { if (!open) closeEntryDialog(); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Registrar Entrada</DialogTitle>
+            <DialogTitle>Registrar Entrada {selectedSpace ? `- Espacio #${selectedSpace}` : ''}</DialogTitle>
             <DialogDescription>Busca por placa si el vehículo ya está registrado</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -685,24 +640,16 @@ export default function Capacity() {
               </div>
               {searchingPlate && <p className="text-xs text-muted-foreground animate-pulse">Buscando vehículo...</p>}
               {foundVehicle && (
-                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm space-y-1">
-                  <p className="font-medium text-primary">✓ Vehículo encontrado</p>
-                </div>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><p className="font-medium text-primary">✓ Vehículo encontrado</p></div>
               )}
             </div>
-
             <div className="space-y-2">
               <Label>Espacio *</Label>
               <Select value={selectedSpace ? String(selectedSpace) : ''} onValueChange={(v) => setSelectedSpace(Number(v))}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar espacio" /></SelectTrigger>
-                <SelectContent>
-                  {availableSpacesList.map((num) => (
-                    <SelectItem key={num} value={String(num)}>Espacio #{num}</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{availableSpacesList.map((num) => (<SelectItem key={num} value={String(num)}>Espacio #{num}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
               <Label>Categoría *</Label>
               {categories.length > 0 ? (
@@ -711,37 +658,17 @@ export default function Capacity() {
                   <SelectContent>
                     {categories.map((cat) => {
                       const Icon = ICON_MAP[cat.icon] || Car;
-                      return (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          <span className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" /> {cat.name} — {formatCurrency(cat.rate_per_hour)}/h
-                          </span>
-                        </SelectItem>
-                      );
+                      return (<SelectItem key={cat.id} value={cat.id}><span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {cat.name} — {formatCurrency(cat.rate_per_hour)}/h</span></SelectItem>);
                     })}
                   </SelectContent>
                 </Select>
-              ) : (
-                <p className="text-sm text-muted-foreground">Crea categorías en Tarifas.</p>
-              )}
+              ) : <p className="text-sm text-muted-foreground">Crea categorías en Tarifas.</p>}
             </div>
-
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Nombre</Label>
-                <Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Teléfono</Label>
-                <Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-              </div>
+              <div className="space-y-2"><Label>Nombre</Label><Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Teléfono</Label><Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
             </div>
-
-            <div className="space-y-2">
-              <Label>Notas</Label>
-              <Textarea placeholder="Observaciones..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-            </div>
-
+            <div className="space-y-2"><Label>Notas</Label><Textarea placeholder="Observaciones..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
             {selectedCategory && (
               <div className="rounded-lg border bg-muted p-3 text-sm">
                 <span className="font-medium">{selectedCategory.name}:</span> {formatCurrency(selectedCategory.rate_per_hour)}/hora · Fracción {selectedCategory.fraction_minutes} min
@@ -750,7 +677,7 @@ export default function Capacity() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeEntryDialog}>Cancelar</Button>
-            <Button onClick={() => entryMutation.mutate()} disabled={!plate || !selectedCategoryId || !selectedSpace || entryMutation.isPending}>
+            <Button onClick={() => setConfirmEntry(true)} disabled={!plate || !selectedCategoryId || !selectedSpace || entryMutation.isPending}>
               {entryMutation.isPending ? 'Registrando...' : 'Registrar'}
             </Button>
           </DialogFooter>
@@ -762,8 +689,7 @@ export default function Capacity() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              Registrar Salida
-              <Badge variant="secondary" className="font-mono">Espacio #{exitSpace}</Badge>
+              Registrar Salida <Badge variant="secondary" className="font-mono">Espacio #{exitSpace}</Badge>
             </DialogTitle>
             <DialogDescription>Confirma la salida del vehículo</DialogDescription>
           </DialogHeader>
@@ -788,11 +714,64 @@ export default function Capacity() {
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => { setExitSession(null); setExitSpace(null); }}>Cancelar</Button>
-            <Button onClick={() => exitSession && exitMutation.mutate(exitSession)} disabled={exitMutation.isPending} variant="destructive">
+            {hasPrinting && (
+              <Button variant="secondary" onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending}>
+                <Printer className="h-4 w-4 mr-1" /> Salida + Recibo
+              </Button>
+            )}
+            <Button onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending} variant="destructive">
               <ExitIcon className="h-4 w-4 mr-1" />
               {exitMutation.isPending ? 'Procesando...' : 'Confirmar Salida'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reservation Detail Dialog */}
+      <Dialog open={!!reservationDetailSpace} onOpenChange={() => { setReservationDetailSpace(null); setReservationDetail(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookmarkCheck className="h-5 w-5 text-amber-500" />
+              Reserva - Espacio #{reservationDetailSpace?.space_number}
+            </DialogTitle>
+            <DialogDescription>Detalle de la reserva activa</DialogDescription>
+          </DialogHeader>
+          {reservationDetailSpace && (
+            <div className="space-y-4">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Estado:</span><Badge variant="secondary" className="text-amber-600">Reservado</Badge></div>
+                {reservationDetail && (
+                  <>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Placa:</span><strong className="font-mono">{reservationDetail.plate || '—'}</strong></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Cliente:</span><strong>{reservationDetail.customer_name || '—'}</strong></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Teléfono:</span><strong>{reservationDetail.customer_phone || '—'}</strong></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Reservado el:</span><strong>{formatDateTime(reservationDetail.reserved_at)}</strong></div>
+                  </>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Tiempo restante:</span>
+                  <span className="font-mono font-bold text-amber-600 text-lg">
+                    {getRemainingTime(reservationDetailSpace.reservation_expires_at)}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-lg border bg-muted/50 p-3 text-sm flex items-center gap-2">
+                <Timer className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <span>Si el cliente no llega a tiempo, el espacio se libera automáticamente</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => { setReservationDetailSpace(null); setReservationDetail(null); }}>Cerrar</Button>
+            <Button variant="destructive" size="sm" onClick={() => setConfirmCancelReserve(reservationDetailSpace)}
+              disabled={cancelReservation.isPending}>
+              <X className="h-4 w-4 mr-1" /> Cancelar Reserva
+            </Button>
+            <Button size="sm" onClick={() => reservationDetailSpace && confirmReservationMutation.mutate(reservationDetailSpace)}>
+              <Check className="h-4 w-4 mr-1" /> Confirmar Llegada
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -806,18 +785,9 @@ export default function Capacity() {
             <DialogDescription>La reserva expirará en {reservationTimeout} minutos</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Placa</Label>
-              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" />
-            </div>
-            <div className="space-y-2">
-              <Label>Nombre</Label>
-              <Input placeholder="Juan Pérez" value={reserveCustomerName} onChange={(e) => setReserveCustomerName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Teléfono</Label>
-              <Input placeholder="3001234567" value={reserveCustomerPhone} onChange={(e) => setReserveCustomerPhone(e.target.value)} />
-            </div>
+            <div className="space-y-2"><Label>Placa</Label><Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" /></div>
+            <div className="space-y-2"><Label>Nombre</Label><Input placeholder="Juan Pérez" value={reserveCustomerName} onChange={(e) => setReserveCustomerName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Teléfono</Label><Input placeholder="3001234567" value={reserveCustomerPhone} onChange={(e) => setReserveCustomerPhone(e.target.value)} /></div>
             <div className="rounded-lg border bg-muted/50 p-3 text-sm flex items-center gap-2">
               <Timer className="h-4 w-4 text-amber-600" />
               <span>Se libera en <strong>{reservationTimeout} min</strong> si no llega</span>
@@ -825,7 +795,7 @@ export default function Capacity() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeReserveDialog}>Cancelar</Button>
-            <Button onClick={() => reserveMutation.mutate()} disabled={reserveMutation.isPending}>
+            <Button onClick={() => setConfirmReserve(true)} disabled={reserveMutation.isPending}>
               <BookmarkCheck className="h-4 w-4 mr-1" />
               {reserveMutation.isPending ? 'Reservando...' : 'Reservar'}
             </Button>
@@ -836,40 +806,37 @@ export default function Capacity() {
       {/* Config dialog */}
       <Dialog open={configOpen} onOpenChange={setConfigOpen}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Configurar Capacidad</DialogTitle>
-            <DialogDescription>Total de espacios del parqueadero</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>Total de espacios (máx. {maxSpaces})</Label>
-            <Input type="number" min="1" max={maxSpaces} value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfigOpen(false)}>Cancelar</Button>
-            <Button onClick={() => updateCapacity.mutate()} disabled={updateCapacity.isPending}>Guardar</Button>
-          </DialogFooter>
+          <DialogHeader><DialogTitle>Configurar Capacidad</DialogTitle><DialogDescription>Total de espacios del parqueadero</DialogDescription></DialogHeader>
+          <div className="space-y-2"><Label>Total de espacios (máx. {maxSpaces})</Label><Input type="number" min="1" max={maxSpaces} value={newCapacity} onChange={(e) => setNewCapacity(e.target.value)} /></div>
+          <DialogFooter><Button variant="outline" onClick={() => setConfigOpen(false)}>Cancelar</Button><Button onClick={() => updateCapacity.mutate()} disabled={updateCapacity.isPending}>Guardar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Setup Spaces Dialog */}
       <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Configurar Cupos</DialogTitle>
-            <DialogDescription>Se crearán espacios individuales para gestión de reservas</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>Cantidad de espacios</Label>
-            <Input type="number" min={1} max={500} value={spaceCount} onChange={(e) => setSpaceCount(e.target.value)} />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSetupOpen(false)}>Cancelar</Button>
-            <Button onClick={() => setupMutation.mutate()} disabled={setupMutation.isPending}>
-              {setupMutation.isPending ? 'Creando...' : 'Crear Espacios'}
-            </Button>
-          </DialogFooter>
+          <DialogHeader><DialogTitle>Configurar Cupos</DialogTitle><DialogDescription>Se crearán espacios individuales para gestión de reservas</DialogDescription></DialogHeader>
+          <div className="space-y-2"><Label>Cantidad de espacios</Label><Input type="number" min={1} max={500} value={spaceCount} onChange={(e) => setSpaceCount(e.target.value)} /></div>
+          <DialogFooter><Button variant="outline" onClick={() => setSetupOpen(false)}>Cancelar</Button><Button onClick={() => setupMutation.mutate()} disabled={setupMutation.isPending}>{setupMutation.isPending ? 'Creando...' : 'Crear Espacios'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm dialogs */}
+      <ConfirmDialog open={confirmEntry} onOpenChange={setConfirmEntry} title="Confirmar Entrada"
+        description={`¿Registrar entrada del vehículo ${plate} en espacio #${selectedSpace}?`}
+        onConfirm={() => { setConfirmEntry(false); entryMutation.mutate(); }} loading={entryMutation.isPending} />
+
+      <ConfirmDialog open={confirmExit} onOpenChange={setConfirmExit} title="Confirmar Salida"
+        description={`¿Registrar salida del vehículo ${exitSession?.plate || ''}? Total: ${exitFee ? formatCurrency(exitFee.total) : '$0'}`}
+        onConfirm={() => { setConfirmExit(false); if (exitSession) exitMutation.mutate(exitSession); }} variant="destructive" loading={exitMutation.isPending} />
+
+      <ConfirmDialog open={confirmReserve} onOpenChange={setConfirmReserve} title="Confirmar Reserva"
+        description={`¿Reservar espacio #${reserveSpaceNum} por ${reservationTimeout} minutos?`}
+        onConfirm={() => { setConfirmReserve(false); reserveMutation.mutate(); }} loading={reserveMutation.isPending} />
+
+      <ConfirmDialog open={!!confirmCancelReserve} onOpenChange={() => setConfirmCancelReserve(null)} title="Cancelar Reserva"
+        description={`¿Cancelar la reserva del espacio #${confirmCancelReserve?.space_number || ''}?`}
+        onConfirm={() => { if (confirmCancelReserve) cancelReservation.mutate(confirmCancelReserve); }} variant="destructive" loading={cancelReservation.isPending} />
     </div>
   );
 }
