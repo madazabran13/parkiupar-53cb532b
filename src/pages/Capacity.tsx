@@ -285,9 +285,15 @@ export default function Capacity() {
     },
     onSuccess: (result) => {
       toast.success('Salida registrada');
+      setExitSession(null); setExitSpace(null);
+      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      // Show receipt dialog
       if (hasPrinting && result) {
         const { session, exitTime, fee, ratePerHour, fractionMin } = result;
-        generateExitReceiptPDF({
+        setReceiptData({
           tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
           plate: session.plate, vehicleType: session.vehicle_type, customerName: session.customer_name,
           customerPhone: session.customer_phone, spaceNumber: session.space_number,
@@ -296,11 +302,6 @@ export default function Capacity() {
           ratePerHour, fractionMinutes: fractionMin, total: fee.total,
         });
       }
-      setExitSession(null); setExitSpace(null);
-      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
-      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
-      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
     },
     onError: () => toast.error('Error al registrar salida'),
   });
