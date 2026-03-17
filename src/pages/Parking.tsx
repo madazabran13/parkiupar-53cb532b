@@ -314,6 +314,36 @@ export default function Parking() {
       <ConfirmDialog open={confirmExit} onOpenChange={setConfirmExit} title="Confirmar Salida"
         description={`¿Registrar salida del vehículo ${exitSession?.plate || ''}? Total: ${exitFee ? formatCurrency(exitFee.total) : '$0'}`}
         onConfirm={() => { setConfirmExit(false); if (exitSession) exitMutation.mutate(exitSession); }} variant="destructive" loading={exitMutation.isPending} />
+
+      {/* Receipt Dialog */}
+      <Dialog open={!!receiptData} onOpenChange={() => setReceiptData(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Recibo de Salida</DialogTitle>
+            <DialogDescription>La salida ha sido registrada exitosamente</DialogDescription>
+          </DialogHeader>
+          {receiptData && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                <div className="flex justify-between"><span className="text-muted-foreground">Placa:</span><strong className="font-mono">{receiptData.plate}</strong></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tipo:</span><strong>{receiptData.vehicleType}</strong></div>
+                {receiptData.customerName && <div className="flex justify-between"><span className="text-muted-foreground">Cliente:</span><strong>{receiptData.customerName}</strong></div>}
+                <div className="flex justify-between"><span className="text-muted-foreground">Duración:</span><strong>{Math.floor(receiptData.totalMinutes / 60)}h {receiptData.totalMinutes % 60}m</strong></div>
+              </div>
+              <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
+                <p className="text-xs text-muted-foreground uppercase">Total cobrado</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(receiptData.total)}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setReceiptData(null)}>Cerrar</Button>
+            <Button onClick={() => { generateExitReceiptPDF(receiptData); }}>
+              <Printer className="h-4 w-4 mr-1" /> Imprimir Recibo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
 
       <button onClick={() => setEntryOpen(true)}
