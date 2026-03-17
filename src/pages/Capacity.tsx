@@ -86,6 +86,7 @@ export default function Capacity() {
   const [confirmReserve, setConfirmReserve] = useState(false);
   const [confirmCancelReserve, setConfirmCancelReserve] = useState<ParkingSpace | null>(null);
   const [confirmReserveFromDetail, setConfirmReserveFromDetail] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   // Setup dialog
   const [setupOpen, setSetupOpen] = useState(false);
