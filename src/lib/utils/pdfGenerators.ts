@@ -389,5 +389,20 @@ export function generateExitReceiptPDF(data: ExitReceiptData) {
   y += 4;
   doc.text('¡Gracias por su visita!', pw / 2, y, { align: 'center' });
 
-  doc.save(`recibo-${data.plate}-${format(new Date(), 'yyyyMMdd-HHmmss')}.pdf`);
+  if (autoDownload) {
+    doc.save(`recibo-${data.plate}-${format(new Date(), 'yyyyMMdd-HHmmss')}.pdf`);
+  } else {
+    // Open in new window for printing
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    } else {
+      // Fallback: download
+      doc.save(`recibo-${data.plate}-${format(new Date(), 'yyyyMMdd-HHmmss')}.pdf`);
+    }
+  }
 }
