@@ -414,7 +414,7 @@ export default function SuperAdmin() {
   });
 
   // Plans CRUD
-  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPMaxUsers('10'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
+  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPMaxUsers('10'); setPCategory('general'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
   const openEditPlan = (p: Plan) => {
     setEditingPlan(p); setPName(p.name); setPDesc(p.description || ''); setPPrice(String(p.price_monthly)); setPMaxSpaces(String(p.max_spaces));
     setPMaxUsers(String((p as any).max_users || 10));
