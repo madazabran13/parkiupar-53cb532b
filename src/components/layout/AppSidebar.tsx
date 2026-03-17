@@ -82,6 +82,7 @@ export function AppSidebar() {
   const isSuperadmin = role === 'superadmin';
   const effectiveRole = role === 'operator' ? 'portero' : role;
   
+  const userModules = profile && (profile as any).user_modules;
   const menuItems = isSuperadmin
     ? SUPERADMIN_ITEMS
     : Object.values(MENU_ITEMS).filter((item) => {
@@ -89,6 +90,8 @@ export function AppSidebar() {
         if (planModules.length > 0) {
           const moduleKey = MODULE_KEY_MAP[item.path];
           if (moduleKey && moduleKey !== '_always_' && !planModules.includes(moduleKey)) return false;
+          // Per-user module restriction
+          if (moduleKey && Array.isArray(userModules) && userModules.length > 0 && !userModules.includes(moduleKey) && !['dashboard', 'settings'].includes(moduleKey)) return false;
         }
         return true;
       });

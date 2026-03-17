@@ -72,11 +72,13 @@ export function MobileBottomNav() {
   const effectiveRole = role === 'operator' ? 'portero' : role;
   const itemSource = isSuperadmin ? SUPERADMIN_NAV_ITEMS : ALL_NAV_ITEMS;
 
+  const userModules = profile && (profile as any).user_modules;
   const visibleItems = itemSource.filter((item) => {
     if (!item.roles.includes(effectiveRole)) return false;
     if (!isSuperadmin && planModules.length > 0) {
       const moduleKey = MODULE_KEY_MAP[item.path];
       if (moduleKey && !planModules.includes(moduleKey)) return false;
+      if (moduleKey && Array.isArray(userModules) && userModules.length > 0 && !userModules.includes(moduleKey) && !['dashboard', 'settings'].includes(moduleKey)) return false;
     }
     return true;
   });

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -16,8 +17,9 @@ import { formatDateTime } from '@/lib/utils/formatters';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { AppRole } from '@/types';
-import { ROLE_LABELS } from '@/types';
+import { ROLE_LABELS, MODULE_LABELS_ES } from '@/types';
 import { useTenant } from '@/hooks/useTenant';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface TeamUser {
   id: string;
@@ -26,6 +28,7 @@ interface TeamUser {
   role: AppRole;
   is_active: boolean;
   created_at: string;
+  user_modules: string[] | null;
 }
 
 const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
@@ -43,45 +46,47 @@ export default function TeamUsers() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('portero');
+  const [newModules, setNewModules] = useState<string[]>([]);
+
+  // Module edit dialog
+  const [moduleEditUser, setModuleEditUser] = useState<TeamUser | null>(null);
+  const [editModules, setEditModules] = useState<string[]>([]);
+  const [confirmRoleChange, setConfirmRoleChange] = useState<{ user_id: string; role: string } | null>(null);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['team-users'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'list' },
-      });
+      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'list' } });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       return (data.users || []) as TeamUser[];
     },
   });
 
-  // Get plan's max_users
   const { data: planData } = useQuery({
     queryKey: ['plan-max-users', tenant?.plan_id],
     enabled: !!tenant?.plan_id,
-    queryFn: async () => {
-      const { data } = await supabase.from('plans').select('max_users').eq('id', tenant!.plan_id!).single();
-      return data;
-    },
+    queryFn: async () => { const { data } = await supabase.from('plans').select('max_users').eq('id', tenant!.plan_id!).single(); return data; },
   });
 
   const maxUsers = planData?.max_users || 10;
   const staffUsers = users.filter(u => ['portero', 'cajero', 'operator'].includes(u.role) && u.is_active);
   const isAtLimit = staffUsers.length >= maxUsers;
 
+  // Modules available from the plan
+  const availableModules = planModules.filter(m => !['dashboard', 'settings', 'my_plan'].includes(m));
+
   const createUserMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'create', email: newEmail, password: newPassword, full_name: newName, role: newRole },
+        body: { action: 'create', email: newEmail, password: newPassword, full_name: newName, role: newRole, modules: newModules.length > 0 ? newModules : null },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
     },
     onSuccess: () => {
       toast.success('Usuario creado exitosamente');
-      setDialogOpen(false);
-      setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('portero');
+      setDialogOpen(false); setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('portero'); setNewModules([]);
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -89,24 +94,29 @@ export default function TeamUsers() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ user_id, role }: { user_id: string; role: string }) => {
+      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'update_role', user_id, role } });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+    },
+    onSuccess: () => { toast.success('Rol actualizado'); setConfirmRoleChange(null); queryClient.invalidateQueries({ queryKey: ['team-users'] }); },
+    onError: (e) => { toast.error(`Error: ${e.message}`); setConfirmRoleChange(null); },
+  });
+
+  const updateModulesMutation = useMutation({
+    mutationFn: async ({ user_id, modules }: { user_id: string; modules: string[] | null }) => {
       const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'update_role', user_id, role },
+        body: { action: 'update_modules', user_id, modules },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
     },
-    onSuccess: () => {
-      toast.success('Rol actualizado');
-      queryClient.invalidateQueries({ queryKey: ['team-users'] });
-    },
+    onSuccess: () => { toast.success('Módulos actualizados'); setModuleEditUser(null); queryClient.invalidateQueries({ queryKey: ['team-users'] }); },
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ user_id, is_active }: { user_id: string; is_active: boolean }) => {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'toggle_active', user_id, is_active },
-      });
+      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'toggle_active', user_id, is_active } });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
     },
@@ -114,28 +124,26 @@ export default function TeamUsers() {
   });
 
   const getRoleLabel = (role: string) => {
-    // Handle legacy role names
     if (role === 'operator') return 'Portero';
     if (role === 'viewer') return 'Cliente';
     return ROLE_LABELS[role as AppRole] || role;
   };
 
+  const openModuleEdit = (user: TeamUser) => {
+    setModuleEditUser(user);
+    setEditModules(user.user_modules || [...availableModules]);
+  };
+
   const columns: Column<TeamUser>[] = [
     { key: 'full_name', label: 'Nombre', render: (r) => r.full_name || '—' },
-    { key: 'email', label: 'Email', render: (r) => r.email || '—' },
+    { key: 'email', label: 'Email', render: (r) => r.email || '—', hideOnMobile: true },
     {
       key: 'role', label: 'Rol', render: (r) => {
         if (r.role === 'admin') return <Badge>{getRoleLabel(r.role)}</Badge>;
         return (
-          <Select value={r.role} onValueChange={(v) => updateRoleMutation.mutate({ user_id: r.id, role: v })}>
-            <SelectTrigger className="h-7 w-28 text-xs">
-              <SelectValue>{getRoleLabel(r.role)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {ASSIGNABLE_ROLES.map((ar) => (
-                <SelectItem key={ar.value} value={ar.value}>{ar.label}</SelectItem>
-              ))}
-            </SelectContent>
+          <Select value={r.role} onValueChange={(v) => setConfirmRoleChange({ user_id: r.id, role: v })}>
+            <SelectTrigger className="h-7 w-28 text-xs"><SelectValue>{getRoleLabel(r.role)}</SelectValue></SelectTrigger>
+            <SelectContent>{ASSIGNABLE_ROLES.map((ar) => <SelectItem key={ar.value} value={ar.value}>{ar.label}</SelectItem>)}</SelectContent>
           </Select>
         );
       },
@@ -146,21 +154,19 @@ export default function TeamUsers() {
         <Switch checked={r.is_active} onCheckedChange={(checked) => toggleActiveMutation.mutate({ user_id: r.id, is_active: checked })} />
       ),
     },
-    { key: 'created_at', label: 'Creado', render: (r) => formatDateTime(r.created_at) },
+    { key: 'created_at', label: 'Creado', render: (r) => formatDateTime(r.created_at), hideOnMobile: true },
   ];
 
   if (isLoading) return <TableSkeleton columns={5} rows={5} />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Equipo</h1>
-          <p className="text-sm text-muted-foreground">
-            Personal del parqueadero · {staffUsers.length}/{maxUsers} usuarios
-          </p>
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground">Equipo</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Personal del parqueadero · {staffUsers.length}/{maxUsers} usuarios</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} disabled={isAtLimit}>
+        <Button onClick={() => setDialogOpen(true)} disabled={isAtLimit} className="w-full sm:w-auto">
           <UserPlus className="h-4 w-4 mr-1" /> Nuevo Usuario
         </Button>
       </div>
@@ -168,44 +174,45 @@ export default function TeamUsers() {
       {isAtLimit && (
         <Alert className="border-amber-500/50 bg-amber-500/10">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm">
-            Has alcanzado el límite de <strong>{maxUsers}</strong> usuarios del personal para tu plan. Contacta al administrador para ampliar.
-          </AlertDescription>
+          <AlertDescription className="text-sm">Has alcanzado el límite de <strong>{maxUsers}</strong> usuarios para tu plan.</AlertDescription>
         </Alert>
       )}
 
-      <DataTable columns={columns} data={users} searchPlaceholder="Buscar usuarios..." />
+      <DataTable columns={columns} data={users} searchPlaceholder="Buscar usuarios..."
+        actions={(row) => row.role !== 'admin' ? (
+          <Button size="sm" variant="ghost" onClick={() => openModuleEdit(row)} className="text-xs">Módulos</Button>
+        ) : null}
+      />
 
+      {/* Create User Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nuevo Usuario</DialogTitle>
-            <DialogDescription>Crea un usuario para tu equipo ({staffUsers.length}/{maxUsers})</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto">
+          <DialogHeader><DialogTitle>Nuevo Usuario</DialogTitle><DialogDescription>Crea un usuario para tu equipo ({staffUsers.length}/{maxUsers})</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nombre completo</Label>
-              <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Contraseña</Label>
-              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Rol</Label>
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ASSIGNABLE_ROLES.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
+            <div className="space-y-2"><Label>Nombre completo</Label><Input value={newName} onChange={(e) => setNewName(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Email</Label><Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Contraseña</Label><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Rol</Label>
+              <Select value={newRole} onValueChange={setNewRole}><SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{ASSIGNABLE_ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            {availableModules.length > 0 && (
+              <div className="space-y-2">
+                <Label>Módulos permitidos</Label>
+                <p className="text-xs text-muted-foreground">Selecciona los módulos que este usuario podrá ver</p>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {availableModules.map(mod => (
+                    <label key={mod} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={newModules.includes(mod)} onCheckedChange={(c) => {
+                        setNewModules(prev => c ? [...prev, mod] : prev.filter(m => m !== mod));
+                      }} />
+                      <span className="truncate">{MODULE_LABELS_ES[mod] || mod}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
@@ -215,6 +222,38 @@ export default function TeamUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Module Edit Dialog */}
+      <Dialog open={!!moduleEditUser} onOpenChange={() => setModuleEditUser(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Módulos de {moduleEditUser?.full_name || 'Usuario'}</DialogTitle>
+            <DialogDescription>Selecciona los módulos que puede acceder</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[50vh] overflow-auto">
+            {availableModules.map(mod => (
+              <label key={mod} className="flex items-center gap-2 text-sm p-2 rounded hover:bg-muted cursor-pointer">
+                <Checkbox checked={editModules.includes(mod)} onCheckedChange={(c) => {
+                  setEditModules(prev => c ? [...prev, mod] : prev.filter(m => m !== mod));
+                }} />
+                <span>{MODULE_LABELS_ES[mod] || mod}</span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModuleEditUser(null)}>Cancelar</Button>
+            <Button onClick={() => moduleEditUser && updateModulesMutation.mutate({ user_id: moduleEditUser.id, modules: editModules.length > 0 ? editModules : null })}
+              disabled={updateModulesMutation.isPending}>
+              {updateModulesMutation.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog open={!!confirmRoleChange} onOpenChange={() => setConfirmRoleChange(null)} title="Cambiar Rol"
+        description={`¿Cambiar el rol de este usuario a ${confirmRoleChange ? getRoleLabel(confirmRoleChange.role) : ''}?`}
+        onConfirm={() => { if (confirmRoleChange) updateRoleMutation.mutate(confirmRoleChange); }}
+        loading={updateRoleMutation.isPending} />
     </div>
   );
 }

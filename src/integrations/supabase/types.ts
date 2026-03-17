@@ -716,6 +716,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           tenant_id: string | null
           updated_at: string
+          user_modules: Json | null
         }
         Insert: {
           avatar_url?: string | null
@@ -727,6 +728,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           tenant_id?: string | null
           updated_at?: string
+          user_modules?: Json | null
         }
         Update: {
           avatar_url?: string | null
@@ -738,6 +740,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           tenant_id?: string | null
           updated_at?: string
+          user_modules?: Json | null
         }
         Relationships: [
           {
