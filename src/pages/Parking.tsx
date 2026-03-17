@@ -134,8 +134,12 @@ export default function Parking() {
     },
     onSuccess: (result) => {
       toast.success('Salida registrada');
+      setExitSession(null);
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
+      // Show receipt dialog after exit
       if (hasPrinting && result?.rate) {
-        generateExitReceiptPDF({
+        setReceiptData({
           tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
           plate: result.session.plate, vehicleType: VEHICLE_TYPE_LABELS[result.session.vehicle_type],
           customerName: result.session.customer_name, spaceNumber: result.session.space_number,
@@ -145,9 +149,6 @@ export default function Parking() {
           fractionMinutes: result.rate.fraction_minutes, total: result.fee.total,
         });
       }
-      setExitSession(null);
-      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
-      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
     },
     onError: () => toast.error('Error al registrar salida'),
   });
