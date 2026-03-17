@@ -827,7 +827,21 @@ export default function SuperAdmin() {
             <DialogDescription>Configura el plan de licencia</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Categoría</Label>
+                <Select value={pCategory} onValueChange={setPCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="basico">Básico</SelectItem>
+                    <SelectItem value="profesional">Profesional</SelectItem>
+                    <SelectItem value="empresarial">Empresarial</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2"><Label>Descripción</Label><Input value={pDesc} onChange={(e) => setPDesc(e.target.value)} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
