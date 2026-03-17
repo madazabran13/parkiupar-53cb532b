@@ -55,6 +55,7 @@ export default function SuperAdmin() {
   const [pPrice, setPPrice] = useState('');
   const [pMaxSpaces, setPMaxSpaces] = useState('50');
   const [pMaxUsers, setPMaxUsers] = useState('10');
+  const [pCategory, setPCategory] = useState('general');
   const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
 
   const ALL_MODULES = [
