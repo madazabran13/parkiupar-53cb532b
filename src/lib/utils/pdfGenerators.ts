@@ -308,7 +308,7 @@ type ExitReceiptData = {
   total: number;
 };
 
-export function generateExitReceiptPDF(data: ExitReceiptData) {
+export function generateExitReceiptPDF(data: ExitReceiptData, autoDownload = false) {
   const doc = new jsPDF({ format: [80, 200], unit: 'mm' });
   const pw = 80;
   let y = 8;
