@@ -99,8 +99,8 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md sm:hidden">
-        <div className="flex items-center justify-around h-14 px-1 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/95 backdrop-blur-md sm:hidden safe-bottom">
+        <div className="flex items-center justify-around h-16 px-2 pb-[env(safe-area-inset-bottom)]">
           {primaryItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -108,14 +108,19 @@ export function MobileBottomNav() {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 flex-1 h-full rounded-lg transition-colors',
+                  'flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl transition-all',
                   isActive
                     ? 'text-primary'
-                    : 'text-muted-foreground active:text-foreground'
+                    : 'text-muted-foreground active:text-foreground active:scale-95'
                 )}
               >
-                <item.icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
-                <span className={cn('text-[10px] leading-tight', isActive ? 'font-semibold' : 'font-normal')}>
+                <div className={cn(
+                  'flex items-center justify-center rounded-xl transition-all',
+                  isActive ? 'bg-primary/10 w-12 h-8' : 'w-10 h-7'
+                )}>
+                  <item.icon className={cn('h-6 w-6', isActive && 'stroke-[2.5]')} />
+                </div>
+                <span className={cn('text-[10px] leading-none', isActive ? 'font-bold' : 'font-medium')}>
                   {item.label}
                 </span>
               </Link>
@@ -125,12 +130,17 @@ export function MobileBottomNav() {
             <button
               onClick={() => setDrawerOpen(true)}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 flex-1 h-full rounded-lg transition-colors',
-                isOverflowActive ? 'text-primary' : 'text-muted-foreground active:text-foreground'
+                'flex flex-col items-center justify-center gap-1 flex-1 h-full rounded-xl transition-all',
+                isOverflowActive ? 'text-primary' : 'text-muted-foreground active:text-foreground active:scale-95'
               )}
             >
-              <MoreHorizontal className={cn('h-5 w-5', isOverflowActive && 'stroke-[2.5]')} />
-              <span className={cn('text-[10px] leading-tight', isOverflowActive ? 'font-semibold' : 'font-normal')}>
+              <div className={cn(
+                'flex items-center justify-center rounded-xl transition-all',
+                isOverflowActive ? 'bg-primary/10 w-12 h-8' : 'w-10 h-7'
+              )}>
+                <MoreHorizontal className={cn('h-6 w-6', isOverflowActive && 'stroke-[2.5]')} />
+              </div>
+              <span className={cn('text-[10px] leading-none', isOverflowActive ? 'font-bold' : 'font-medium')}>
                 Más
               </span>
             </button>
@@ -140,20 +150,20 @@ export function MobileBottomNav() {
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Menú</DrawerTitle>
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="text-base">Menú</DrawerTitle>
           </DrawerHeader>
           {/* User info */}
-          <div className="px-4 pb-3 flex items-center gap-3 border-b">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-medium text-accent-foreground">
+          <div className="px-4 pb-3 flex items-center gap-3 border-b border-border/50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
               {profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{profile?.full_name || 'Usuario'}</p>
-              <p className="text-[10px] text-muted-foreground">{getRoleDisplay(role)}</p>
+              <p className="text-sm font-semibold truncate">{profile?.full_name || 'Usuario'}</p>
+              <p className="text-xs text-muted-foreground">{getRoleDisplay(role)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 p-4">
+          <div className="grid grid-cols-3 gap-3 p-4">
             {overflowItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -161,44 +171,44 @@ export function MobileBottomNav() {
                   <Link
                     to={item.path}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-colors',
+                      'flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all',
                       isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-muted active:bg-muted'
+                        ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                        : 'text-muted-foreground hover:bg-muted active:bg-muted active:scale-95'
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span className="text-xs font-medium">{item.label}</span>
+                    <item.icon className="h-6 w-6" />
+                    <span className="text-xs font-medium text-center leading-tight">{item.label}</span>
                   </Link>
                 </DrawerClose>
               );
             })}
           </div>
-          <div className="border-t p-4 pb-8 flex gap-2">
+          <div className="border-t border-border/50 p-4 pb-8 flex gap-3">
             <Button
               variant="outline"
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 h-11 rounded-xl"
               onClick={() => {
                 const isDark = document.documentElement.classList.toggle('dark');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
               }}
             >
-              <Sun className="h-4 w-4 dark:hidden" />
-              <Moon className="h-4 w-4 hidden dark:block" />
+              <Sun className="h-5 w-5 dark:hidden" />
+              <Moon className="h-5 w-5 hidden dark:block" />
               <span className="dark:hidden">Oscuro</span>
               <span className="hidden dark:block">Claro</span>
             </Button>
             <Button
               variant="destructive"
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 h-11 rounded-xl"
               onClick={async () => {
                 setDrawerOpen(false);
                 await signOut();
                 navigate('/');
               }}
             >
-              <LogOut className="h-4 w-4" />
-              Cerrar Sesión
+              <LogOut className="h-5 w-5" />
+              Salir
             </Button>
           </div>
         </DrawerContent>

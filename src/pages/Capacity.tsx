@@ -86,6 +86,7 @@ export default function Capacity() {
   const [confirmReserve, setConfirmReserve] = useState(false);
   const [confirmCancelReserve, setConfirmCancelReserve] = useState<ParkingSpace | null>(null);
   const [confirmReserveFromDetail, setConfirmReserveFromDetail] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   // Setup dialog
   const [setupOpen, setSetupOpen] = useState(false);
@@ -285,9 +286,15 @@ export default function Capacity() {
     },
     onSuccess: (result) => {
       toast.success('Salida registrada');
+      setExitSession(null); setExitSpace(null);
+      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      // Show receipt dialog
       if (hasPrinting && result) {
         const { session, exitTime, fee, ratePerHour, fractionMin } = result;
-        generateExitReceiptPDF({
+        setReceiptData({
           tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
           plate: session.plate, vehicleType: session.vehicle_type, customerName: session.customer_name,
           customerPhone: session.customer_phone, spaceNumber: session.space_number,
@@ -296,11 +303,6 @@ export default function Capacity() {
           ratePerHour, fractionMinutes: fractionMin, total: fee.total,
         });
       }
-      setExitSession(null); setExitSpace(null);
-      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
-      queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
-      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
     },
     onError: () => toast.error('Error al registrar salida'),
   });
@@ -837,6 +839,38 @@ export default function Capacity() {
       <ConfirmDialog open={!!confirmCancelReserve} onOpenChange={() => setConfirmCancelReserve(null)} title="Cancelar Reserva"
         description={`¿Cancelar la reserva del espacio #${confirmCancelReserve?.space_number || ''}?`}
         onConfirm={() => { if (confirmCancelReserve) cancelReservation.mutate(confirmCancelReserve); }} variant="destructive" loading={cancelReservation.isPending} />
+
+      {/* Receipt Dialog */}
+      <Dialog open={!!receiptData} onOpenChange={() => setReceiptData(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Recibo de Salida</DialogTitle>
+            <DialogDescription>La salida ha sido registrada exitosamente</DialogDescription>
+          </DialogHeader>
+          {receiptData && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                <div className="flex justify-between"><span className="text-muted-foreground">Placa:</span><strong className="font-mono">{receiptData.plate}</strong></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tipo:</span><strong>{receiptData.vehicleType}</strong></div>
+                {receiptData.customerName && <div className="flex justify-between"><span className="text-muted-foreground">Cliente:</span><strong>{receiptData.customerName}</strong></div>}
+                {receiptData.spaceNumber && <div className="flex justify-between"><span className="text-muted-foreground">Espacio:</span><strong>#{receiptData.spaceNumber}</strong></div>}
+                <div className="flex justify-between"><span className="text-muted-foreground">Duración:</span><strong>{Math.floor(receiptData.totalMinutes / 60)}h {receiptData.totalMinutes % 60}m</strong></div>
+              </div>
+              <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
+                <p className="text-xs text-muted-foreground uppercase">Total cobrado</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(receiptData.total)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{receiptData.fractions} fracciones × {formatCurrency(receiptData.costPerFraction)}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setReceiptData(null)}>Cerrar</Button>
+            <Button onClick={() => { generateExitReceiptPDF(receiptData); }}>
+              <Printer className="h-4 w-4 mr-1" /> Imprimir Recibo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

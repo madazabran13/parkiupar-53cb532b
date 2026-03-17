@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock, CalendarDays,
+  Clock, CalendarDays, Printer,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ROLE_LABELS } from '@/types';
+import { Separator } from '@/components/ui/separator';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -35,29 +36,67 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/monthly-subscriptions': 'monthly_subscriptions',
 };
 
-const MENU_ITEMS = {
-  dashboard: { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
-  parking: { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'portero', 'cajero'] },
-  customers: { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'portero', 'cajero'] },
-  rates: { label: 'Tarifas', icon: DollarSign, path: '/rates', roles: ['admin'] },
-  reports: { label: 'Reportes', icon: BarChart3, path: '/reports', roles: ['admin'] },
-  capacity: { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'portero', 'cajero'] },
-  map: { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'portero', 'cajero', 'viewer'] },
-  team: { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
-  audit: { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
-  schedules: { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
-  monthly_subscriptions: { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', roles: ['admin', 'portero', 'cajero'] },
-  settings: { label: 'Configuración', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
-  payments: { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
-  myPlan: { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
-} as const;
+type MenuItem = {
+  label: string;
+  icon: React.ElementType;
+  path: string;
+  roles: readonly string[];
+};
 
-const SUPERADMIN_ITEMS = [
-  { label: 'Parqueaderos', icon: Building2, path: '/superadmin' },
-  { label: 'Planes', icon: CreditCard, path: '/superadmin/plans' },
-  { label: 'Pagos', icon: Wallet, path: '/payments' },
-  { label: 'Usuarios', icon: Users, path: '/superadmin/users' },
-  { label: 'Configuración', icon: Settings, path: '/superadmin/settings' },
+const SECTIONS: { label: string; items: MenuItem[] }[] = [
+  {
+    label: 'Principal',
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
+      { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+    ],
+  },
+  {
+    label: 'Operaciones',
+    items: [
+      { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'portero', 'cajero'] },
+      { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'portero', 'cajero'] },
+      { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'portero', 'cajero'] },
+      { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', roles: ['admin', 'portero', 'cajero'] },
+    ],
+  },
+  {
+    label: 'Configuración',
+    items: [
+      { label: 'Tarifas', icon: DollarSign, path: '/rates', roles: ['admin'] },
+      { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
+      { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
+      { label: 'Ajustes', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
+    ],
+  },
+  {
+    label: 'Administración',
+    items: [
+      { label: 'Reportes', icon: BarChart3, path: '/reports', roles: ['admin'] },
+      { label: 'Auditoría', icon: Shield, path: '/audit', roles: ['admin'] },
+      { label: 'Pagos', icon: Wallet, path: '/payments', roles: ['admin'] },
+      { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
+    ],
+  },
+];
+
+const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.ElementType; path: string }[] }[] = [
+  {
+    label: 'Gestión Global',
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'Parqueaderos', icon: Building2, path: '/superadmin' },
+      { label: 'Planes', icon: CreditCard, path: '/superadmin/plans' },
+    ],
+  },
+  {
+    label: 'Sistema',
+    items: [
+      { label: 'Pagos', icon: Wallet, path: '/payments' },
+      { label: 'Usuarios', icon: Users, path: '/superadmin/users' },
+      { label: 'Configuración', icon: Settings, path: '/superadmin/settings' },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -81,20 +120,7 @@ export function AppSidebar() {
 
   const isSuperadmin = role === 'superadmin';
   const effectiveRole = role === 'operator' ? 'portero' : role;
-  
   const userModules = profile && (profile as any).user_modules;
-  const menuItems = isSuperadmin
-    ? SUPERADMIN_ITEMS
-    : Object.values(MENU_ITEMS).filter((item) => {
-        if (!effectiveRole || !(item.roles as readonly string[]).includes(effectiveRole)) return false;
-        if (planModules.length > 0) {
-          const moduleKey = MODULE_KEY_MAP[item.path];
-          if (moduleKey && moduleKey !== '_always_' && !planModules.includes(moduleKey)) return false;
-          // Per-user module restriction
-          if (moduleKey && Array.isArray(userModules) && userModules.length > 0 && !userModules.includes(moduleKey) && !['dashboard', 'settings'].includes(moduleKey)) return false;
-        }
-        return true;
-      });
 
   const handleSignOut = async () => {
     await signOut();
@@ -106,6 +132,16 @@ export function AppSidebar() {
     if (r === 'operator') return 'Portero';
     if (r === 'viewer') return 'Cliente';
     return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
+  };
+
+  const filterItem = (item: MenuItem) => {
+    if (!effectiveRole || !item.roles.includes(effectiveRole)) return false;
+    if (planModules.length > 0) {
+      const moduleKey = MODULE_KEY_MAP[item.path];
+      if (moduleKey && !planModules.includes(moduleKey)) return false;
+      if (moduleKey && Array.isArray(userModules) && userModules.length > 0 && !userModules.includes(moduleKey) && !['dashboard', 'settings'].includes(moduleKey)) return false;
+    }
+    return true;
   };
 
   return (
@@ -131,30 +167,51 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>{isSuperadmin ? 'Administración' : 'Menú'}</SidebarGroupLabel>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.path}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={location.pathname === item.path}
-                  tooltip={item.label}
-                >
-                  <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        {isSuperadmin
+          ? SUPERADMIN_SECTIONS.map((section, idx) => (
+              <SidebarGroup key={section.label}>
+                <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+                <SidebarMenu>
+                  {section.items.map((item) => (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.label}>
+                        <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+            ))
+          : SECTIONS.map((section) => {
+              const filtered = section.items.filter(filterItem);
+              if (filtered.length === 0) return null;
+              return (
+                <SidebarGroup key={section.label}>
+                  <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+                  <SidebarMenu>
+                    {filtered.map((item) => (
+                      <SidebarMenuItem key={item.path}>
+                        <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.label}>
+                          <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroup>
+              );
+            })
+        }
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground flex-shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary flex-shrink-0">
             {profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
           </div>
           <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">

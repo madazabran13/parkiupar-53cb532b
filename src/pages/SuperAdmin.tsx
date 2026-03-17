@@ -55,6 +55,7 @@ export default function SuperAdmin() {
   const [pPrice, setPPrice] = useState('');
   const [pMaxSpaces, setPMaxSpaces] = useState('50');
   const [pMaxUsers, setPMaxUsers] = useState('10');
+  const [pCategory, setPCategory] = useState('general');
   const [pModules, setPModules] = useState<string[]>(['dashboard', 'parking', 'customers', 'rates', 'capacity']);
 
   const ALL_MODULES = [
@@ -413,10 +414,11 @@ export default function SuperAdmin() {
   });
 
   // Plans CRUD
-  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPMaxUsers('10'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
+  const resetPlanForm = () => { setPName(''); setPDesc(''); setPPrice(''); setPMaxSpaces('50'); setPMaxUsers('10'); setPCategory('general'); setPModules(['dashboard', 'parking', 'customers', 'rates', 'capacity']); setEditingPlan(null); };
   const openEditPlan = (p: Plan) => {
     setEditingPlan(p); setPName(p.name); setPDesc(p.description || ''); setPPrice(String(p.price_monthly)); setPMaxSpaces(String(p.max_spaces));
     setPMaxUsers(String((p as any).max_users || 10));
+    setPCategory((p as any).category || 'general');
     setPModules(Array.isArray(p.modules) ? p.modules : ['dashboard', 'parking', 'customers', 'rates', 'capacity']);
     setPlanDialogOpen(true);
   };
@@ -425,7 +427,7 @@ export default function SuperAdmin() {
     mutationFn: async () => {
       const finalModules = pModules.includes('reports_download') && !pModules.includes('reports')
         ? [...pModules, 'reports'] : pModules;
-      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces), max_users: parseInt(pMaxUsers) || 10, modules: finalModules };
+      const planData = { name: pName, description: pDesc || null, price_monthly: parseFloat(pPrice), max_spaces: parseInt(pMaxSpaces), max_users: parseInt(pMaxUsers) || 10, category: pCategory, modules: finalModules };
       if (editingPlan) {
         const { error } = await supabase.from('plans').update(planData).eq('id', editingPlan.id);
         if (error) throw error;
@@ -825,7 +827,21 @@ export default function SuperAdmin() {
             <DialogDescription>Configura el plan de licencia</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Nombre *</Label><Input value={pName} onChange={(e) => setPName(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Categoría</Label>
+                <Select value={pCategory} onValueChange={setPCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="basico">Básico</SelectItem>
+                    <SelectItem value="profesional">Profesional</SelectItem>
+                    <SelectItem value="empresarial">Empresarial</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2"><Label>Descripción</Label><Input value={pDesc} onChange={(e) => setPDesc(e.target.value)} /></div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>

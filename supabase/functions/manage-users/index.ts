@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -74,9 +81,7 @@ Deno.serve(async (req) => {
         .from("user_profiles").update(updateData).eq("id", authData.user.id);
       if (profileError) throw profileError;
 
-      return new Response(JSON.stringify({ success: true, user_id: authData.user.id }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true, user_id: authData.user.id });
     }
 
     if (action === "update_role") {
@@ -97,9 +102,7 @@ Deno.serve(async (req) => {
       const { error } = await supabaseAdmin.from("user_profiles").update({ role }).eq("id", user_id);
       if (error) throw error;
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (action === "update_modules") {
@@ -115,9 +118,7 @@ Deno.serve(async (req) => {
       const { error } = await supabaseAdmin.from("user_profiles").update({ user_modules: modules }).eq("id", user_id);
       if (error) throw error;
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (action === "update_tenant") {
@@ -127,9 +128,7 @@ Deno.serve(async (req) => {
       if (role) updateData.role = role;
       const { error } = await supabaseAdmin.from("user_profiles").update(updateData).eq("id", user_id);
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (action === "toggle_active") {
@@ -142,9 +141,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabaseAdmin.from("user_profiles").update({ is_active }).eq("id", user_id);
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ success: true });
     }
 
     if (action === "list") {
@@ -160,25 +157,19 @@ Deno.serve(async (req) => {
 
       const enriched = (data || []).map(p => ({ ...p, email: emailMap.get(p.id) || null }));
 
-      return new Response(JSON.stringify({ users: enriched }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ users: enriched });
     }
 
     if (action === "get_staff_count") {
       const tenantId = callerProfile.role === "superadmin" ? payload.tenant_id : callerProfile.tenant_id;
       const { count } = await supabaseAdmin.from("user_profiles").select("id", { count: "exact", head: true })
         .eq("tenant_id", tenantId).in("role", ["portero", "cajero", "operator"]).eq("is_active", true);
-      return new Response(JSON.stringify({ count: count || 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ count: count || 0 });
     }
 
     throw new Error("Acción no válida");
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Always return 200 with error in body to avoid Edge Function non-2xx status code issues
+    return jsonResponse({ error: (error as Error).message });
   }
 });
