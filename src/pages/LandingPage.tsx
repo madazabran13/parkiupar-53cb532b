@@ -22,8 +22,14 @@ const MODULE_LABELS: Record<string, string> = {
   payments: 'Pagos y Facturación',
   my_plan: 'Mi Plan',
   theme: 'Color del Tema',
+  theme_color: 'Personalización del Tema',
   map: 'Mapa',
   team: 'Equipo',
+  schedules: 'Horarios de Operación',
+  printing: 'Impresión de Recibos',
+  monthly_subscriptions: 'Mensualidades',
+  reports_download: 'Descarga de Reportes PDF',
+  settings: 'Configuración',
 };
 /* ─── Counter animation hook ─── */
 function useCounter(end: number, duration = 2000, inView: boolean) {
@@ -70,18 +76,7 @@ const operatorBenefits = [
   'Gestión simplificada sin complicaciones',
 ];
 
-const faqs = [
-  { q: '¿Qué necesito para empezar a usar ParkiUpar?', a: 'Solo necesitas un dispositivo con acceso a internet (computador, tablet o celular) y crear tu cuenta. No requiere instalación.' },
-  { q: '¿Quiénes son los clientes habituales?', a: 'Parqueaderos pequeños, medianos y grandes que buscan digitalizar y optimizar su operación diaria.' },
-  { q: '¿Qué tipo de planes ofrece ParkiUpar?', a: 'Ofrecemos planes con suscripción mensual adaptados a la cantidad de espacios y funcionalidades que necesites.' },
-  { q: '¿Es compatible con dispositivos móviles?', a: 'Sí, ParkiUpar es 100% responsive y funciona en cualquier navegador desde celular, tablet o computador.' },
-];
-
-const testimonials = [
-  { name: 'Carlos M.', business: 'Parqueadero Centro', text: 'ParkiUpar nos permitió controlar los ingresos diarios de forma transparente. Ya no hay filtraciones de dinero.', rating: 5 },
-  { name: 'María L.', business: 'Parqueadero La Terminal', text: 'Excelente herramienta. Su servicio es satisfactorio y siempre están atentos a nuestras solicitudes.', rating: 5 },
-  { name: 'Andrés R.', business: 'Parqueadero Los Ángeles', text: 'Facilita el control de entradas y salidas, generando confianza al cobrar el valor real. Altamente recomendada.', rating: 5 },
-];
+// FAQs and testimonials are now loaded from the database
 
 /* ─── Animated section wrapper ─── */
 function Section({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) {
