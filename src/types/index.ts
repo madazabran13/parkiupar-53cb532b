@@ -32,6 +32,7 @@ export const MODULE_LABELS_ES: Record<string, string> = {
   schedules: 'Horarios de Operación',
   printing: 'Impresión de Recibos',
   monthly_subscriptions: 'Mensualidades',
+  testimonials: 'Testimonios',
 };
 
 export interface Plan {
