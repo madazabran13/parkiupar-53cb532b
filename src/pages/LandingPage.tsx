@@ -167,15 +167,31 @@ export default function LandingPage() {
 
   // Fetch plans from Supabase
   const [plans, setPlans] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [faqs, setFaqs] = useState<any[]>([]);
+
   useEffect(() => {
     supabase
       .from('plans')
       .select('*')
       .eq('is_active', true)
       .order('price_monthly', { ascending: true })
-      .then(({ data }) => {
-        if (data) setPlans(data);
-      });
+      .then(({ data }) => { if (data) setPlans(data); });
+
+    supabase
+      .from('testimonials')
+      .select('*')
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setTestimonials(data); });
+
+    supabase
+      .from('faqs')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order')
+      .then(({ data }) => { if (data) setFaqs(data); });
   }, []);
 
   return (
