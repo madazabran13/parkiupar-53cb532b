@@ -76,6 +76,7 @@ export default function SuperAdmin() {
     { key: 'theme_color', label: 'Personalización del Tema' },
     { key: 'printing', label: 'Impresión de Recibos' },
     { key: 'monthly_subscriptions', label: 'Mensualidades' },
+    { key: 'testimonials', label: 'Testimonios' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
