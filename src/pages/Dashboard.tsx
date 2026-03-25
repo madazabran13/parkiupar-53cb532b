@@ -10,13 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, LogOut, AlertTriangle } from 'lucide-react';
+import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, LogOut, AlertTriangle, Printer } from 'lucide-react';
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateLiveFee, calculateParkingFee } from '@/lib/utils/pricing';
+import { generateExitReceiptPDF } from '@/lib/utils/pdfGenerators';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate, VehicleCategory } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
@@ -28,10 +30,13 @@ const VEHICLE_ICONS: Record<string, React.ElementType> = {
 
 export default function Dashboard() {
   const { profile, tenantId } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(Date.now());
   const [selectedSession, setSelectedSession] = useState<ParkingSession | null>(null);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [confirmExit, setConfirmExit] = useState(false);
+  const hasPrinting = planModules.includes('printing');
 
   // Refresh live fees every 1s
   useEffect(() => {
@@ -139,7 +144,7 @@ export default function Dashboard() {
       const rate = getSessionRate(session);
       const fee = rate
         ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
-        : { total: 0, totalMinutes: 0 };
+        : { total: 0, totalMinutes: 0, fractions: 0, costPerFraction: 0 };
 
       const { error } = await supabase.from('parking_sessions').update({
         exit_time: exitTime,
@@ -148,12 +153,24 @@ export default function Dashboard() {
         status: 'completed' as const,
       }).eq('id', session.id);
       if (error) throw error;
+      return { session, exitTime, fee, rate };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success('Salida registrada');
       setSelectedSession(null);
       queryClient.invalidateQueries({ queryKey: ['active-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['today-completed'] });
+      if (hasPrinting && result?.rate) {
+        setReceiptData({
+          tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
+          plate: result.session.plate, vehicleType: VEHICLE_TYPE_LABELS[result.session.vehicle_type],
+          customerName: result.session.customer_name, spaceNumber: result.session.space_number,
+          entryTime: result.session.entry_time, exitTime: result.exitTime,
+          totalMinutes: result.fee.totalMinutes, fractions: result.fee.fractions,
+          costPerFraction: result.fee.costPerFraction, ratePerHour: result.rate.rate_per_hour,
+          fractionMinutes: result.rate.fraction_minutes, total: result.fee.total,
+        });
+      }
     },
     onError: () => toast.error('Error al registrar salida'),
   });
@@ -445,12 +462,46 @@ export default function Dashboard() {
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setSelectedSession(null)}>Cerrar</Button>
             <Button
-              onClick={() => selectedSession && exitMutation.mutate(selectedSession)}
+              onClick={() => setConfirmExit(true)}
               disabled={exitMutation.isPending}
               className="gap-2"
             >
               <LogOut className="h-4 w-4" />
               {exitMutation.isPending ? 'Procesando...' : 'Registrar Salida'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog open={confirmExit} onOpenChange={setConfirmExit} title="Confirmar Salida"
+        description={`¿Registrar salida del vehículo ${selectedSession?.plate || ''}? Total: ${exitFee ? formatCurrency(exitFee.total) : '$0'}`}
+        onConfirm={() => { setConfirmExit(false); if (selectedSession) exitMutation.mutate(selectedSession); }} variant="destructive" loading={exitMutation.isPending} />
+
+      {/* Receipt Dialog */}
+      <Dialog open={!!receiptData} onOpenChange={() => setReceiptData(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Recibo de Salida</DialogTitle>
+            <DialogDescription>La salida ha sido registrada exitosamente</DialogDescription>
+          </DialogHeader>
+          {receiptData && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                <div className="flex justify-between"><span className="text-muted-foreground">Placa:</span><strong className="font-mono">{receiptData.plate}</strong></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tipo:</span><strong>{receiptData.vehicleType}</strong></div>
+                {receiptData.customerName && <div className="flex justify-between"><span className="text-muted-foreground">Cliente:</span><strong>{receiptData.customerName}</strong></div>}
+                <div className="flex justify-between"><span className="text-muted-foreground">Duración:</span><strong>{Math.floor(receiptData.totalMinutes / 60)}h {receiptData.totalMinutes % 60}m</strong></div>
+              </div>
+              <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
+                <p className="text-xs text-muted-foreground uppercase">Total cobrado</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(receiptData.total)}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setReceiptData(null)}>Cerrar</Button>
+            <Button onClick={() => { generateExitReceiptPDF(receiptData); }}>
+              <Printer className="h-4 w-4 mr-1" /> Imprimir Recibo
             </Button>
           </DialogFooter>
         </DialogContent>

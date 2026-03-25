@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock, RotateCw, ShieldAlert } from 'lucide-react';
+import { Plus, Edit, Building2, CreditCard, Users, Car, Bell, CheckCircle2, XCircle, AlertTriangle, CalendarClock, RotateCw, ShieldAlert, Star } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, formatDateTime } from '@/lib/utils/formatters';
@@ -28,7 +28,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/users') ? 'users' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
+  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/users') ? 'users' : location.pathname.includes('/settings') ? 'settings' : location.pathname.includes('/testimonials') ? 'testimonials' : location.pathname.includes('/faqs') ? 'faqs' : 'tenants';
 
   const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
@@ -76,6 +76,7 @@ export default function SuperAdmin() {
     { key: 'theme_color', label: 'Personalización del Tema' },
     { key: 'printing', label: 'Impresión de Recibos' },
     { key: 'monthly_subscriptions', label: 'Mensualidades' },
+    { key: 'testimonials', label: 'Testimonios' },
   ] as const;
 
   const { data: tenants = [], isLoading: loadingTenants } = useQuery({
@@ -625,7 +626,9 @@ export default function SuperAdmin() {
           </TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
           <TabsTrigger value="users" className="flex-1 sm:flex-none">Usuarios</TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
+          <TabsTrigger value="testimonials" className="flex-1 sm:flex-none">Testimonios</TabsTrigger>
+          <TabsTrigger value="faqs" className="flex-1 sm:flex-none">FAQ</TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Config</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">
@@ -739,6 +742,14 @@ export default function SuperAdmin() {
 
         <TabsContent value="users" className="mt-4 space-y-4">
           <SuperAdminUsers tenants={tenants} />
+        </TabsContent>
+
+        <TabsContent value="testimonials" className="mt-4 space-y-4">
+          <TestimonialsAdmin />
+        </TabsContent>
+
+        <TabsContent value="faqs" className="mt-4 space-y-4">
+          <FaqsAdmin />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4 space-y-4">
@@ -1049,6 +1060,172 @@ function SuperAdminUsers({ tenants }: { tenants: Tenant[] }) {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={() => createMutation.mutate()} disabled={!newName || !newEmail || !newPassword || createMutation.isPending}>
               {createMutation.isPending ? 'Creando...' : 'Crear'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/* ═══ TESTIMONIALS ADMIN ═══ */
+function TestimonialsAdmin() {
+  const queryClient = useQueryClient();
+  const { data: testimonials = [], isLoading } = useQuery({
+    queryKey: ['admin-testimonials'],
+    queryFn: async () => {
+      const { data } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const toggleApproval = useMutation({
+    mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
+      const { error } = await supabase.from('testimonials').update({ is_approved: approved }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Testimonio actualizado');
+      queryClient.invalidateQueries({ queryKey: ['admin-testimonials'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('testimonials').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Testimonio eliminado');
+      queryClient.invalidateQueries({ queryKey: ['admin-testimonials'] });
+    },
+  });
+
+  if (isLoading) return <TableSkeleton columns={5} rows={4} />;
+
+  const columns: Column<any>[] = [
+    { key: 'full_name', label: 'Nombre' },
+    { key: 'business_name', label: 'Parqueadero', render: (r) => r.business_name || '—' },
+    { key: 'rating', label: 'Estrellas', render: (r) => <div className="flex gap-0.5">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} className="h-3 w-3 fill-primary text-primary" />)}</div> },
+    { key: 'review', label: 'Reseña', render: (r) => <span className="text-xs line-clamp-2">{r.review}</span> },
+    { key: 'is_approved', label: 'Estado', render: (r) => <Badge variant={r.is_approved ? 'default' : 'secondary'}>{r.is_approved ? 'Publicado' : 'Pendiente'}</Badge> },
+  ];
+
+  return (
+    <>
+      <DataTable columns={columns} data={testimonials} searchPlaceholder="Buscar testimonios..."
+        actions={(row) => (
+          <div className="flex gap-1">
+            <Button size="sm" variant={row.is_approved ? 'outline' : 'default'}
+              onClick={() => toggleApproval.mutate({ id: row.id, approved: !row.is_approved })}>
+              {row.is_approved ? 'Ocultar' : 'Aprobar'}
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(row.id)}>Eliminar</Button>
+          </div>
+        )}
+      />
+    </>
+  );
+}
+
+/* ═══ FAQ ADMIN ═══ */
+function FaqsAdmin() {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<any>(null);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [sortOrder, setSortOrder] = useState('0');
+
+  const { data: faqs = [], isLoading } = useQuery({
+    queryKey: ['admin-faqs'],
+    queryFn: async () => {
+      const { data } = await supabase.from('faqs').select('*').order('sort_order');
+      return data || [];
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (editingFaq) {
+        const { error } = await supabase.from('faqs').update({ question, answer, sort_order: parseInt(sortOrder) || 0 }).eq('id', editingFaq.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('faqs').insert({ question, answer, sort_order: parseInt(sortOrder) || 0 });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingFaq ? 'FAQ actualizada' : 'FAQ creada');
+      setOpen(false); resetForm();
+      queryClient.invalidateQueries({ queryKey: ['admin-faqs'] });
+    },
+    onError: () => toast.error('Error al guardar'),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('faqs').update({ is_active: active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-faqs'] }),
+  });
+
+  const deleteFaq = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('faqs').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('FAQ eliminada');
+      queryClient.invalidateQueries({ queryKey: ['admin-faqs'] });
+    },
+  });
+
+  const resetForm = () => { setQuestion(''); setAnswer(''); setSortOrder('0'); setEditingFaq(null); };
+
+  const openEdit = (faq: any) => {
+    setEditingFaq(faq); setQuestion(faq.question); setAnswer(faq.answer); setSortOrder(String(faq.sort_order)); setOpen(true);
+  };
+
+  if (isLoading) return <TableSkeleton columns={4} rows={4} />;
+
+  const columns: Column<any>[] = [
+    { key: 'sort_order', label: '#', render: (r) => r.sort_order },
+    { key: 'question', label: 'Pregunta', render: (r) => <span className="text-xs font-medium">{r.question}</span> },
+    { key: 'answer', label: 'Respuesta', render: (r) => <span className="text-xs line-clamp-2">{r.answer}</span> },
+    { key: 'is_active', label: 'Activa', render: (r) => <Switch checked={r.is_active} onCheckedChange={(v) => toggleActive.mutate({ id: r.id, active: v })} /> },
+  ];
+
+  return (
+    <>
+      <div className="flex justify-end">
+        <Button onClick={() => { resetForm(); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva FAQ</Button>
+      </div>
+      <DataTable columns={columns} data={faqs} searchPlaceholder="Buscar preguntas..."
+        actions={(row) => (
+          <div className="flex gap-1">
+            <Button size="sm" variant="outline" onClick={() => openEdit(row)}><Edit className="h-3 w-3" /></Button>
+            <Button size="sm" variant="destructive" onClick={() => deleteFaq.mutate(row.id)}>Eliminar</Button>
+          </div>
+        )}
+      />
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingFaq ? 'Editar FAQ' : 'Nueva FAQ'}</DialogTitle>
+            <DialogDescription>Esta información se muestra en la página principal</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label>Pregunta *</Label><Input value={question} onChange={(e) => setQuestion(e.target.value)} /></div>
+            <div className="space-y-2"><Label>Respuesta *</Label><Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} rows={4} /></div>
+            <div className="space-y-2"><Label>Orden</Label><Input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!question || !answer || saveMutation.isPending}>
+              {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
             </Button>
           </DialogFooter>
         </DialogContent>

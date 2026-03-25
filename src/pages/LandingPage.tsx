@@ -22,8 +22,14 @@ const MODULE_LABELS: Record<string, string> = {
   payments: 'Pagos y Facturación',
   my_plan: 'Mi Plan',
   theme: 'Color del Tema',
+  theme_color: 'Personalización del Tema',
   map: 'Mapa',
   team: 'Equipo',
+  schedules: 'Horarios de Operación',
+  printing: 'Impresión de Recibos',
+  monthly_subscriptions: 'Mensualidades',
+  reports_download: 'Descarga de Reportes PDF',
+  settings: 'Configuración',
 };
 /* ─── Counter animation hook ─── */
 function useCounter(end: number, duration = 2000, inView: boolean) {
@@ -70,18 +76,7 @@ const operatorBenefits = [
   'Gestión simplificada sin complicaciones',
 ];
 
-const faqs = [
-  { q: '¿Qué necesito para empezar a usar ParkiUpar?', a: 'Solo necesitas un dispositivo con acceso a internet (computador, tablet o celular) y crear tu cuenta. No requiere instalación.' },
-  { q: '¿Quiénes son los clientes habituales?', a: 'Parqueaderos pequeños, medianos y grandes que buscan digitalizar y optimizar su operación diaria.' },
-  { q: '¿Qué tipo de planes ofrece ParkiUpar?', a: 'Ofrecemos planes con suscripción mensual adaptados a la cantidad de espacios y funcionalidades que necesites.' },
-  { q: '¿Es compatible con dispositivos móviles?', a: 'Sí, ParkiUpar es 100% responsive y funciona en cualquier navegador desde celular, tablet o computador.' },
-];
-
-const testimonials = [
-  { name: 'Carlos M.', business: 'Parqueadero Centro', text: 'ParkiUpar nos permitió controlar los ingresos diarios de forma transparente. Ya no hay filtraciones de dinero.', rating: 5 },
-  { name: 'María L.', business: 'Parqueadero La Terminal', text: 'Excelente herramienta. Su servicio es satisfactorio y siempre están atentos a nuestras solicitudes.', rating: 5 },
-  { name: 'Andrés R.', business: 'Parqueadero Los Ángeles', text: 'Facilita el control de entradas y salidas, generando confianza al cobrar el valor real. Altamente recomendada.', rating: 5 },
-];
+// FAQs and testimonials are now loaded from the database
 
 /* ─── Animated section wrapper ─── */
 function Section({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) {
@@ -172,15 +167,31 @@ export default function LandingPage() {
 
   // Fetch plans from Supabase
   const [plans, setPlans] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [faqs, setFaqs] = useState<any[]>([]);
+
   useEffect(() => {
     supabase
       .from('plans')
       .select('*')
       .eq('is_active', true)
       .order('price_monthly', { ascending: true })
-      .then(({ data }) => {
-        if (data) setPlans(data);
-      });
+      .then(({ data }) => { if (data) setPlans(data); });
+
+    supabase
+      .from('testimonials')
+      .select('*')
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setTestimonials(data); });
+
+    supabase
+      .from('faqs')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order')
+      .then(({ data }) => { if (data) setFaqs(data); });
   }, []);
 
   return (
@@ -702,34 +713,41 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="rounded-2xl border border-border bg-card p-6 md:p-8 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex gap-0.5 mb-5">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} className="h-4 w-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-6">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-primary">{t.name.charAt(0)}</span>
+          {testimonials.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">Aún no hay testimonios publicados</p>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {testimonials.map((t: any, i: number) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="rounded-2xl border border-border bg-card p-6 md:p-8 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex gap-0.5 mb-5">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <Star key={j} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                    {Array.from({ length: 5 - t.rating }).map((_, j) => (
+                      <Star key={`e${j}`} className="h-4 w-4 text-muted-foreground/30" />
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.business}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">"{t.review}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-primary">{t.full_name?.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{t.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{t.business_name || 'Cliente'}</p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </Section>
 
@@ -744,9 +762,13 @@ export default function LandingPage() {
             </h2>
           </div>
           <div className="space-y-3">
-            {faqs.map(faq => (
-              <FaqItem key={faq.q} q={faq.q} a={faq.a} />
-            ))}
+            {faqs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No hay preguntas frecuentes disponibles</p>
+            ) : (
+              faqs.map((faq: any) => (
+                <FaqItem key={faq.id} q={faq.question} a={faq.answer} />
+              ))
+            )}
           </div>
         </div>
       </Section>

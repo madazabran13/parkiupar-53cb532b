@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock, CalendarDays, Printer,
+  Clock, CalendarDays, Printer, MessageSquare,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +34,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/settings': 'settings',
   '/schedules': 'schedules',
   '/monthly-subscriptions': 'monthly_subscriptions',
+  '/testimonials': 'testimonials',
 };
 
 type MenuItem = {
@@ -78,6 +79,12 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
       { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', roles: ['admin'] },
     ],
   },
+  {
+    label: 'Comunidad',
+    items: [
+      { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+    ],
+  },
 ];
 
 const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.ElementType; path: string }[] }[] = [
@@ -87,6 +94,13 @@ const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
       { label: 'Parqueaderos', icon: Building2, path: '/superadmin' },
       { label: 'Planes', icon: CreditCard, path: '/superadmin/plans' },
+    ],
+  },
+  {
+    label: 'Contenido',
+    items: [
+      { label: 'Testimonios', icon: MessageSquare, path: '/superadmin/testimonials' },
+      { label: 'FAQ', icon: Shield, path: '/superadmin/faqs' },
     ],
   },
   {
