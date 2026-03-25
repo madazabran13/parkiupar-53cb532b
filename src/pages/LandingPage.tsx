@@ -713,34 +713,41 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="rounded-2xl border border-border bg-card p-6 md:p-8 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex gap-0.5 mb-5">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} className="h-4 w-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-6">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-primary">{t.name.charAt(0)}</span>
+          {testimonials.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">Aún no hay testimonios publicados</p>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {testimonials.map((t: any, i: number) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="rounded-2xl border border-border bg-card p-6 md:p-8 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex gap-0.5 mb-5">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <Star key={j} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                    {Array.from({ length: 5 - t.rating }).map((_, j) => (
+                      <Star key={`e${j}`} className="h-4 w-4 text-muted-foreground/30" />
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.business}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">"{t.review}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-primary">{t.full_name?.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{t.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{t.business_name || 'Cliente'}</p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </Section>
 
@@ -755,9 +762,13 @@ export default function LandingPage() {
             </h2>
           </div>
           <div className="space-y-3">
-            {faqs.map(faq => (
-              <FaqItem key={faq.q} q={faq.q} a={faq.a} />
-            ))}
+            {faqs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No hay preguntas frecuentes disponibles</p>
+            ) : (
+              faqs.map((faq: any) => (
+                <FaqItem key={faq.id} q={faq.question} a={faq.answer} />
+              ))
+            )}
           </div>
         </div>
       </Section>
