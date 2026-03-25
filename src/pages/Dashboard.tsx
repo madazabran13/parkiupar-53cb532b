@@ -10,13 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, LogOut, AlertTriangle } from 'lucide-react';
+import { Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, LogOut, AlertTriangle, Printer } from 'lucide-react';
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateLiveFee, calculateParkingFee } from '@/lib/utils/pricing';
+import { generateExitReceiptPDF } from '@/lib/utils/pdfGenerators';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate, VehicleCategory } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
@@ -28,10 +30,13 @@ const VEHICLE_ICONS: Record<string, React.ElementType> = {
 
 export default function Dashboard() {
   const { profile, tenantId } = useAuth();
-  const { tenant } = useTenant();
+  const { tenant, planModules } = useTenant();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(Date.now());
   const [selectedSession, setSelectedSession] = useState<ParkingSession | null>(null);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [confirmExit, setConfirmExit] = useState(false);
+  const hasPrinting = planModules.includes('printing');
 
   // Refresh live fees every 1s
   useEffect(() => {
