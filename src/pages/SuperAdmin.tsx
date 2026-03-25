@@ -743,6 +743,14 @@ export default function SuperAdmin() {
           <SuperAdminUsers tenants={tenants} />
         </TabsContent>
 
+        <TabsContent value="testimonials" className="mt-4 space-y-4">
+          <TestimonialsAdmin />
+        </TabsContent>
+
+        <TabsContent value="faqs" className="mt-4 space-y-4">
+          <FaqsAdmin />
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-4 space-y-4">
           <ProfileSettings />
         </TabsContent>
