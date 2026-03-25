@@ -28,7 +28,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/users') ? 'users' : location.pathname.includes('/settings') ? 'settings' : 'tenants';
+  const currentTab = location.pathname.includes('/plans') ? 'plans' : location.pathname.includes('/users') ? 'users' : location.pathname.includes('/settings') ? 'settings' : location.pathname.includes('/testimonials') ? 'testimonials' : location.pathname.includes('/faqs') ? 'faqs' : 'tenants';
 
   const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
@@ -625,7 +625,9 @@ export default function SuperAdmin() {
           </TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Planes</TabsTrigger>
           <TabsTrigger value="users" className="flex-1 sm:flex-none">Usuarios</TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Configuración</TabsTrigger>
+          <TabsTrigger value="testimonials" className="flex-1 sm:flex-none">Testimonios</TabsTrigger>
+          <TabsTrigger value="faqs" className="flex-1 sm:flex-none">FAQ</TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Config</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tenants" className="mt-4 space-y-4">

@@ -26,6 +26,7 @@ import Payments from "@/pages/Payments";
 import AuditLog from "@/pages/AuditLog";
 import Schedules from "@/pages/Schedules";
 import MonthlySubscriptions from "@/pages/MonthlySubscriptions";
+import Testimonials from "@/pages/Testimonials";
 import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/payments" element={<Payments />} />
               <Route path="/schedules" element={<Schedules />} />
               <Route path="/monthly-subscriptions" element={<MonthlySubscriptions />} />
+              <Route path="/testimonials" element={<Testimonials />} />
               <Route path="/my-plan" element={<MyPlan />} />
               <Route path="/audit" element={<AuditLog />} />
               <Route path="/settings" element={<SettingsPage />} />
@@ -81,6 +83,8 @@ const App = () => (
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/superadmin/plans" element={<SuperAdmin />} />
               <Route path="/superadmin/users" element={<SuperAdmin />} />
+              <Route path="/superadmin/testimonials" element={<SuperAdmin />} />
+              <Route path="/superadmin/faqs" element={<SuperAdmin />} />
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
             </Route>
 
