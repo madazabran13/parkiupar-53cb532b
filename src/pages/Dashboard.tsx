@@ -144,7 +144,7 @@ export default function Dashboard() {
       const rate = getSessionRate(session);
       const fee = rate
         ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
-        : { total: 0, totalMinutes: 0 };
+        : { total: 0, totalMinutes: 0, fractions: 0, costPerFraction: 0 };
 
       const { error } = await supabase.from('parking_sessions').update({
         exit_time: exitTime,
@@ -153,12 +153,24 @@ export default function Dashboard() {
         status: 'completed' as const,
       }).eq('id', session.id);
       if (error) throw error;
+      return { session, exitTime, fee, rate };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success('Salida registrada');
       setSelectedSession(null);
       queryClient.invalidateQueries({ queryKey: ['active-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['today-completed'] });
+      if (hasPrinting && result?.rate) {
+        setReceiptData({
+          tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
+          plate: result.session.plate, vehicleType: VEHICLE_TYPE_LABELS[result.session.vehicle_type],
+          customerName: result.session.customer_name, spaceNumber: result.session.space_number,
+          entryTime: result.session.entry_time, exitTime: result.exitTime,
+          totalMinutes: result.fee.totalMinutes, fractions: result.fee.fractions,
+          costPerFraction: result.fee.costPerFraction, ratePerHour: result.rate.rate_per_hour,
+          fractionMinutes: result.rate.fraction_minutes, total: result.fee.total,
+        });
+      }
     },
     onError: () => toast.error('Error al registrar salida'),
   });
