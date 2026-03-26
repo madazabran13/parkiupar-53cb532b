@@ -167,6 +167,7 @@ export default function Dashboard() {
       setSelectedSession(null);
       queryClient.invalidateQueries({ queryKey: ['active-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['today-completed'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
       if (hasPrinting && result?.rate) {
         setReceiptData({
           tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,

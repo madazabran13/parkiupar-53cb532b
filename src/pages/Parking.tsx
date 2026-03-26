@@ -145,6 +145,7 @@ export default function Parking() {
       setExitSession(null);
       queryClient.invalidateQueries({ queryKey: ['sessions-active'] });
       queryClient.invalidateQueries({ queryKey: ['sessions-history'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
       // Show receipt dialog after exit
       if (hasPrinting && result?.rate) {
         setReceiptData({
