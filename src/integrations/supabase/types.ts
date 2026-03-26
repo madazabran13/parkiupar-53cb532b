@@ -623,6 +623,57 @@ export type Database = {
           },
         ]
       }
+      subscription_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          subscription_id: string
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          subscription_id: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          subscription_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_schedules: {
         Row: {
           close_time: string

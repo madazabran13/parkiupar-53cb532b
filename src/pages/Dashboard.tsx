@@ -153,6 +153,13 @@ export default function Dashboard() {
         status: 'completed' as const,
       }).eq('id', session.id);
       if (error) throw error;
+      // Release parking space
+      if (session.space_number) {
+        const { data: spaces } = await supabase.from('parking_spaces').select('id').eq('tenant_id', tenantId!).eq('space_number', session.space_number);
+        if (spaces && spaces.length > 0) {
+          await supabase.from('parking_spaces').update({ status: 'available', reserved_by: null, reserved_at: null, reservation_expires_at: null, session_id: null }).eq('id', spaces[0].id);
+        }
+      }
       return { session, exitTime, fee, rate };
     },
     onSuccess: (result) => {
@@ -160,6 +167,7 @@ export default function Dashboard() {
       setSelectedSession(null);
       queryClient.invalidateQueries({ queryKey: ['active-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['today-completed'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
       if (hasPrinting && result?.rate) {
         setReceiptData({
           tenantName: tenant?.name || 'Parqueadero', tenantAddress: tenant?.address, tenantPhone: tenant?.phone,
