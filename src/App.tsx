@@ -31,6 +31,7 @@ import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
+import IncidentReports from "./pages/IncidentReports";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/my-plan" element={<MyPlan />} />
               <Route path="/audit" element={<AuditLog />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/incidents" element={<IncidentReports />} />
             </Route>
 
             <Route
@@ -86,6 +88,7 @@ const App = () => (
               <Route path="/superadmin/testimonials" element={<SuperAdmin />} />
               <Route path="/superadmin/faqs" element={<SuperAdmin />} />
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
+              <Route path="/superadmin/incidents" element={<IncidentReports />} />
             </Route>
 
             <Route path="/access-denied" element={<AccessDenied />} />

@@ -141,6 +141,56 @@ export type Database = {
         }
         Relationships: []
       }
+      incident_reports: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          status: string
+          tenant_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          status?: string
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_reports_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_subscriptions: {
         Row: {
           amount: number

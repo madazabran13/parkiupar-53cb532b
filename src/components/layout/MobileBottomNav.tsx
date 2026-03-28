@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Map, Grid3X3, BarChart3, Users, DollarSign,
   UserCog, Shield, Settings, Wallet, CreditCard, MoreHorizontal, Building2,
-  Clock, LogOut, Moon, Sun, CalendarDays, MessageSquare,
+  Clock, LogOut, Moon, Sun, CalendarDays, MessageSquare, Bug,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
@@ -48,6 +48,7 @@ const ALL_NAV_ITEMS = [
   { label: 'Pagos', icon: Wallet, path: '/payments', module: 'payments', roles: ['admin'] },
   { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', module: 'my_plan', roles: ['admin'] },
   { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', module: 'testimonials', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+  { label: 'Incidencias', icon: Bug, path: '/incidents', module: 'incidents', roles: ['admin', 'portero', 'cajero', 'viewer'] },
 ];
 
 const SUPERADMIN_NAV_ITEMS = [
