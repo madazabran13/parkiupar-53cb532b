@@ -31,6 +31,7 @@ import AccessDenied from "@/pages/AccessDenied";
 import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
+import IncidentReports from "./pages/IncidentReports";
 
 const queryClient = new QueryClient();
 
