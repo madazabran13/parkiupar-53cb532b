@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock, CalendarDays, Printer, MessageSquare,
+  Clock, CalendarDays, Printer, MessageSquare, Bug,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,6 +83,7 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
     label: 'Comunidad',
     items: [
       { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+      { label: 'Incidencias', icon: Bug, path: '/incidents', roles: ['admin', 'portero', 'cajero', 'viewer'] },
     ],
   },
 ];
@@ -101,6 +102,7 @@ const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.
     items: [
       { label: 'Testimonios', icon: MessageSquare, path: '/superadmin/testimonials' },
       { label: 'FAQ', icon: Shield, path: '/superadmin/faqs' },
+      { label: 'Incidencias', icon: Bug, path: '/superadmin/incidents' },
     ],
   },
   {
