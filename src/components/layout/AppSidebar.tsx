@@ -13,11 +13,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/hooks/useTenant';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ROLE_LABELS } from '@/types';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 const MODULE_KEY_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -49,7 +50,7 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
     label: 'Principal',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
-      { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+      { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'portero', 'cajero', 'conductor'] },
     ],
   },
   {
@@ -67,7 +68,7 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
       { label: 'Tarifas', icon: DollarSign, path: '/rates', roles: ['admin'] },
       { label: 'Horarios', icon: Clock, path: '/schedules', roles: ['admin'] },
       { label: 'Equipo', icon: UserCog, path: '/team', roles: ['admin'] },
-      { label: 'Ajustes', icon: Settings, path: '/settings', roles: ['admin', 'viewer'] },
+      { label: 'Ajustes', icon: Settings, path: '/settings', roles: ['admin', 'conductor'] },
     ],
   },
   {
@@ -82,8 +83,8 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
   {
     label: 'Comunidad',
     items: [
-      { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', roles: ['admin', 'portero', 'cajero', 'viewer'] },
-      { label: 'Incidencias', icon: Bug, path: '/incidents', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+      { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', roles: ['admin', 'portero', 'cajero', 'conductor'] },
+      { label: 'Incidencias', icon: Bug, path: '/incidents', roles: ['admin', 'portero', 'cajero', 'conductor'] },
     ],
   },
 ];
@@ -115,8 +116,15 @@ const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.
   },
 ];
 
+// Map paths to notification query conditions
+const NOTIFICATION_PATHS: Record<string, string> = {
+  '/incidents': 'incident',
+  '/superadmin/incidents': 'incident',
+  '/capacity': 'info',
+};
+
 export function AppSidebar() {
-  const { role, profile, signOut } = useAuth();
+  const { role, profile, signOut, user } = useAuth();
   const { tenant, planModules } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
@@ -124,6 +132,35 @@ export function AppSidebar() {
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch unread notifications count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unread-notifications-count', user?.id],
+    enabled: !!user?.id,
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('is_read', false);
+      return count || 0;
+    },
+  });
+
+  // Fetch unread incident reports count (for superadmin)
+  const { data: pendingIncidents = 0 } = useQuery({
+    queryKey: ['pending-incidents-count'],
+    enabled: role === 'superadmin',
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('incident_reports')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      return count || 0;
+    },
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -135,7 +172,7 @@ export function AppSidebar() {
   };
 
   const isSuperadmin = role === 'superadmin';
-  const effectiveRole = role === 'operator' ? 'portero' : role;
+  const effectiveRole = role === 'operator' ? 'portero' : (role === 'viewer' ? 'conductor' : role);
   const userModules = profile && (profile as any).user_modules;
 
   const handleSignOut = async () => {
@@ -146,7 +183,7 @@ export function AppSidebar() {
   const getRoleDisplay = (r: string | null) => {
     if (!r) return '';
     if (r === 'operator') return 'Portero';
-    if (r === 'viewer') return 'Cliente';
+    if (r === 'viewer') return 'Conductor';
     return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
   };
 
@@ -160,11 +197,29 @@ export function AppSidebar() {
     return true;
   };
 
+  const hasNewForPath = (path: string): boolean => {
+    if (path === '/incidents' || path === '/superadmin/incidents') {
+      return isSuperadmin ? pendingIncidents > 0 : false;
+    }
+    if (path === '/dashboard' && unreadCount > 0) return true;
+    return false;
+  };
+
+  const NotificationDot = ({ path }: { path: string }) => {
+    if (!hasNewForPath(path)) return null;
+    return (
+      <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+      </span>
+    );
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <Link to={isSuperadmin ? '/superadmin' : role === 'viewer' ? '/map' : '/dashboard'} className="flex items-center gap-2 flex-1 min-w-0">
+          <Link to={isSuperadmin ? '/superadmin' : role === 'conductor' || role === 'viewer' ? '/map' : '/dashboard'} className="flex items-center gap-2 flex-1 min-w-0">
             <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8 rounded object-contain flex-shrink-0" />
             <span className="font-bold text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
               {tenant?.name || 'ParkiUpar'}
@@ -191,8 +246,11 @@ export function AppSidebar() {
                   {section.items.map((item) => (
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.label}>
-                        <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
-                          <item.icon className="h-4 w-4" />
+                        <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)} className="relative">
+                          <div className="relative">
+                            <item.icon className="h-4 w-4" />
+                            <NotificationDot path={item.path} />
+                          </div>
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -211,8 +269,11 @@ export function AppSidebar() {
                     {filtered.map((item) => (
                       <SidebarMenuItem key={item.path}>
                         <SidebarMenuButton asChild isActive={location.pathname === item.path} tooltip={item.label}>
-                          <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)}>
-                            <item.icon className="h-4 w-4" />
+                          <Link to={item.path} onClick={() => isMobile && setOpenMobile(false)} className="relative">
+                            <div className="relative">
+                              <item.icon className="h-4 w-4" />
+                              <NotificationDot path={item.path} />
+                            </div>
                             <span>{item.label}</span>
                           </Link>
                         </SidebarMenuButton>
