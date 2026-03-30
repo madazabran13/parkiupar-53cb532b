@@ -1116,6 +1116,7 @@ export type Database = {
         | "viewer"
         | "cajero"
         | "portero"
+        | "conductor"
       license_type: "basic" | "pro" | "enterprise"
       session_status: "active" | "completed" | "cancelled"
       vehicle_type: "car" | "motorcycle" | "truck" | "bicycle"
@@ -1253,6 +1254,7 @@ export const Constants = {
         "viewer",
         "cajero",
         "portero",
+        "conductor",
       ],
       license_type: ["basic", "pro", "enterprise"],
       session_status: ["active", "completed", "cancelled"],
