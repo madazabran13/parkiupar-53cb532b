@@ -35,7 +35,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
 const ALL_NAV_ITEMS = [
   { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
   { label: 'Vehículos', icon: Car, path: '/parking', module: 'parking', roles: ['admin', 'portero', 'cajero'] },
-  { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+  { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'portero', 'cajero', 'conductor'] },
   { label: 'Aforo', icon: Grid3X3, path: '/capacity', module: 'capacity', roles: ['admin', 'portero', 'cajero'] },
   { label: 'Reportes', icon: BarChart3, path: '/reports', module: 'reports', roles: ['admin'] },
   { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'portero', 'cajero'] },
@@ -44,11 +44,11 @@ const ALL_NAV_ITEMS = [
   { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', module: 'monthly_subscriptions', roles: ['admin', 'portero', 'cajero'] },
   { label: 'Equipo', icon: UserCog, path: '/team', module: 'team', roles: ['admin'] },
   { label: 'Auditoría', icon: Shield, path: '/audit', module: 'audit', roles: ['admin'] },
-  { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'viewer'] },
+  { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'conductor'] },
   { label: 'Pagos', icon: Wallet, path: '/payments', module: 'payments', roles: ['admin'] },
   { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', module: 'my_plan', roles: ['admin'] },
-  { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', module: 'testimonials', roles: ['admin', 'portero', 'cajero', 'viewer'] },
-  { label: 'Incidencias', icon: Bug, path: '/incidents', module: 'incidents', roles: ['admin', 'portero', 'cajero', 'viewer'] },
+  { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', module: 'testimonials', roles: ['admin', 'portero', 'cajero', 'conductor'] },
+  { label: 'Incidencias', icon: Bug, path: '/incidents', module: 'incidents', roles: ['admin', 'portero', 'cajero', 'conductor'] },
 ];
 
 const SUPERADMIN_NAV_ITEMS = [
@@ -72,7 +72,7 @@ export function MobileBottomNav() {
   if (!role) return null;
 
   const isSuperadmin = role === 'superadmin';
-  const effectiveRole = role === 'operator' ? 'portero' : role;
+  const effectiveRole = role === 'operator' ? 'portero' : (role === 'viewer' ? 'conductor' : role);
   const itemSource = isSuperadmin ? SUPERADMIN_NAV_ITEMS : ALL_NAV_ITEMS;
 
   const userModules = profile && (profile as any).user_modules;
@@ -96,7 +96,7 @@ export function MobileBottomNav() {
   const getRoleDisplay = (r: string | null) => {
     if (!r) return '';
     if (r === 'operator') return 'Portero';
-    if (r === 'viewer') return 'Cliente';
+    if (r === 'viewer' || r === 'conductor') return 'Conductor';
     return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
   };
 

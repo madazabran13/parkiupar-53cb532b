@@ -34,7 +34,7 @@ interface TeamUser {
 const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
   { value: 'portero', label: 'Portero' },
   { value: 'cajero', label: 'Cajero' },
-  { value: 'viewer', label: 'Cliente' },
+  { value: 'conductor', label: 'Conductor' },
 ];
 
 export default function TeamUsers() {
@@ -125,7 +125,7 @@ export default function TeamUsers() {
 
   const getRoleLabel = (role: string) => {
     if (role === 'operator') return 'Portero';
-    if (role === 'viewer') return 'Cliente';
+    if (role === 'viewer' || role === 'conductor') return 'Conductor';
     return ROLE_LABELS[role as AppRole] || role;
   };
 

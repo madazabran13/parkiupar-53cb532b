@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +55,36 @@ export default function Parking() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [spaceNumber, setSpaceNumber] = useState('');
   const [notes, setNotes] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+
+  // Auto-generate plate for bicycles
+  const generateBicyclePlate = () => {
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    return `BICI-${rand}`;
+  };
+
+  // When vehicle type changes to bicycle, auto-generate plate
+  useEffect(() => {
+    if (vehicleType === 'bicycle' && (!plate || plate.startsWith('BICI-'))) {
+      setPlate(generateBicyclePlate());
+    }
+  }, [vehicleType]);
+
+  // Customer name autocomplete query
+  const { data: customerSuggestions = [] } = useQuery({
+    queryKey: ['customer-suggestions', tenantId, customerSearch],
+    enabled: !!tenantId && customerSearch.length >= 2,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customers')
+        .select('id, full_name, phone')
+        .eq('tenant_id', tenantId!)
+        .ilike('full_name', `%${customerSearch}%`)
+        .limit(5);
+      return data || [];
+    },
+  });
 
   const [editPlate, setEditPlate] = useState('');
   const [editVehicleType, setEditVehicleType] = useState<VehicleType>('car');
@@ -173,7 +203,7 @@ export default function Parking() {
     onError: (err: any) => { if (err.message === 'TIMEOUT') { toast.error('Ya pasaron más de 2 minutos'); setEditSession(null); } else toast.error('Error al actualizar'); },
   });
 
-  const resetForm = () => { setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes(''); };
+  const resetForm = () => { setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes(''); setCustomerSearch(''); setShowCustomerSuggestions(false); };
   const previewRate = rateMap[vehicleType];
 
   const activeColumns: Column<ParkingSession>[] = [
@@ -238,14 +268,60 @@ export default function Parking() {
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto">
           <DialogHeader><DialogTitle>Registrar Entrada</DialogTitle><DialogDescription>Ingresa los datos del vehículo</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Placa *</Label><Input placeholder="ABC123" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} className="uppercase" /></div>
+            <div className="space-y-2">
+              <Label>{vehicleType === 'bicycle' ? 'Identificador (auto)' : 'Placa *'}</Label>
+              <Input
+                placeholder={vehicleType === 'bicycle' ? 'BICI-XXXX' : 'ABC123'}
+                value={plate}
+                onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                className="uppercase"
+                readOnly={vehicleType === 'bicycle'}
+              />
+              {vehicleType === 'bicycle' && (
+                <p className="text-xs text-muted-foreground">Se genera automáticamente para bicicletas</p>
+              )}
+            </div>
             <div className="space-y-2"><Label>Tipo de vehículo *</Label>
               <Select value={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)}><SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label><Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
+              <div className="space-y-2 relative">
+                <Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                <Input
+                  placeholder="Juan Pérez"
+                  value={customerName}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    setCustomerSearch(e.target.value);
+                    setShowCustomerSuggestions(true);
+                  }}
+                  onFocus={() => customerSearch.length >= 2 && setShowCustomerSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCustomerSuggestions(false), 200)}
+                />
+                {showCustomerSuggestions && customerSuggestions.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md max-h-40 overflow-auto">
+                    {customerSuggestions.map((c: any) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setCustomerName(c.full_name);
+                          setCustomerPhone(c.phone || '');
+                          setCustomerSearch('');
+                          setShowCustomerSuggestions(false);
+                        }}
+                      >
+                        <span className="font-medium">{c.full_name}</span>
+                        {c.phone && <span className="text-muted-foreground ml-2 text-xs">{c.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="space-y-2"><Label>Teléfono <span className="text-muted-foreground text-xs">(opcional)</span></Label><Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
             </div>
             <div className="space-y-2"><Label>Espacio (opcional)</Label><Input placeholder="A-12" value={spaceNumber} onChange={(e) => setSpaceNumber(e.target.value)} /></div>

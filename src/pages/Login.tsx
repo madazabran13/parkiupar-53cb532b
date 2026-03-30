@@ -20,7 +20,7 @@ export default function Login() {
   useEffect(() => {
     if (waitingForRole && role) {
       if (role === 'superadmin') navigate('/superadmin', { replace: true });
-      else if (role === 'viewer') navigate('/map', { replace: true });
+      else if (role === 'viewer' || role === 'conductor') navigate('/map', { replace: true });
       else navigate('/dashboard', { replace: true });
       setWaitingForRole(false);
     }

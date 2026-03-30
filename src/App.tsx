@@ -52,7 +52,7 @@ const App = () => (
 
             <Route
               element={
-                <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer', 'cajero', 'portero']}>
+                <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer', 'cajero', 'portero', 'conductor']}>
                   <DashboardLayout />
                 </ProtectedRoute>
               }
