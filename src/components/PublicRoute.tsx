@@ -21,7 +21,7 @@ export default function PublicRoute({ children }: PublicRouteProps) {
 
   if (user && role) {
     if (role === 'superadmin') return <Navigate to="/superadmin" replace />;
-    if (role === 'viewer') return <Navigate to="/map" replace />;
+    if (role === 'viewer' || role === 'conductor') return <Navigate to="/map" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 
