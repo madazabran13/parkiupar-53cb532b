@@ -203,7 +203,7 @@ export default function Parking() {
     onError: (err: any) => { if (err.message === 'TIMEOUT') { toast.error('Ya pasaron más de 2 minutos'); setEditSession(null); } else toast.error('Error al actualizar'); },
   });
 
-  const resetForm = () => { setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes(''); };
+  const resetForm = () => { setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes(''); setCustomerSearch(''); setShowCustomerSuggestions(false); };
   const previewRate = rateMap[vehicleType];
 
   const activeColumns: Column<ParkingSession>[] = [
