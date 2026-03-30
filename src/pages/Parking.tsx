@@ -268,14 +268,60 @@ export default function Parking() {
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto">
           <DialogHeader><DialogTitle>Registrar Entrada</DialogTitle><DialogDescription>Ingresa los datos del vehículo</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Placa *</Label><Input placeholder="ABC123" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} className="uppercase" /></div>
+            <div className="space-y-2">
+              <Label>{vehicleType === 'bicycle' ? 'Identificador (auto)' : 'Placa *'}</Label>
+              <Input
+                placeholder={vehicleType === 'bicycle' ? 'BICI-XXXX' : 'ABC123'}
+                value={plate}
+                onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                className="uppercase"
+                readOnly={vehicleType === 'bicycle'}
+              />
+              {vehicleType === 'bicycle' && (
+                <p className="text-xs text-muted-foreground">Se genera automáticamente para bicicletas</p>
+              )}
+            </div>
             <div className="space-y-2"><Label>Tipo de vehículo *</Label>
               <Select value={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)}><SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label><Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
+              <div className="space-y-2 relative">
+                <Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                <Input
+                  placeholder="Juan Pérez"
+                  value={customerName}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    setCustomerSearch(e.target.value);
+                    setShowCustomerSuggestions(true);
+                  }}
+                  onFocus={() => customerSearch.length >= 2 && setShowCustomerSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCustomerSuggestions(false), 200)}
+                />
+                {showCustomerSuggestions && customerSuggestions.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md max-h-40 overflow-auto">
+                    {customerSuggestions.map((c: any) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setCustomerName(c.full_name);
+                          setCustomerPhone(c.phone || '');
+                          setCustomerSearch('');
+                          setShowCustomerSuggestions(false);
+                        }}
+                      >
+                        <span className="font-medium">{c.full_name}</span>
+                        {c.phone && <span className="text-muted-foreground ml-2 text-xs">{c.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="space-y-2"><Label>Teléfono <span className="text-muted-foreground text-xs">(opcional)</span></Label><Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
             </div>
             <div className="space-y-2"><Label>Espacio (opcional)</Label><Input placeholder="A-12" value={spaceNumber} onChange={(e) => setSpaceNumber(e.target.value)} /></div>
