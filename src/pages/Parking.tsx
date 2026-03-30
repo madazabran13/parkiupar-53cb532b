@@ -55,6 +55,36 @@ export default function Parking() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [spaceNumber, setSpaceNumber] = useState('');
   const [notes, setNotes] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+
+  // Auto-generate plate for bicycles
+  const generateBicyclePlate = () => {
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    return `BICI-${rand}`;
+  };
+
+  // When vehicle type changes to bicycle, auto-generate plate
+  useEffect(() => {
+    if (vehicleType === 'bicycle' && (!plate || plate.startsWith('BICI-'))) {
+      setPlate(generateBicyclePlate());
+    }
+  }, [vehicleType]);
+
+  // Customer name autocomplete query
+  const { data: customerSuggestions = [] } = useQuery({
+    queryKey: ['customer-suggestions', tenantId, customerSearch],
+    enabled: !!tenantId && customerSearch.length >= 2,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customers')
+        .select('id, full_name, phone')
+        .eq('tenant_id', tenantId!)
+        .ilike('full_name', `%${customerSearch}%`)
+        .limit(5);
+      return data || [];
+    },
+  });
 
   const [editPlate, setEditPlate] = useState('');
   const [editVehicleType, setEditVehicleType] = useState<VehicleType>('car');
