@@ -10,7 +10,7 @@ export default function AccessDenied() {
 
   const handleGoHome = () => {
     if (role === 'superadmin') navigate('/superadmin', { replace: true });
-    else if (role === 'viewer') navigate('/map', { replace: true });
+    else if (role === 'viewer' || role === 'conductor') navigate('/map', { replace: true });
     else navigate('/dashboard', { replace: true });
   };
 

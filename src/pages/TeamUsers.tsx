@@ -125,7 +125,7 @@ export default function TeamUsers() {
 
   const getRoleLabel = (role: string) => {
     if (role === 'operator') return 'Portero';
-    if (role === 'viewer') return 'Cliente';
+    if (role === 'viewer' || role === 'conductor') return 'Conductor';
     return ROLE_LABELS[role as AppRole] || role;
   };
 
