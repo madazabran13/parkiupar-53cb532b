@@ -34,7 +34,7 @@ interface TeamUser {
 const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
   { value: 'portero', label: 'Portero' },
   { value: 'cajero', label: 'Cajero' },
-  { value: 'viewer', label: 'Cliente' },
+  { value: 'conductor', label: 'Conductor' },
 ];
 
 export default function TeamUsers() {

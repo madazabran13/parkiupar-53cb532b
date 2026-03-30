@@ -911,9 +911,9 @@ function SuperAdminUsers({ tenants }: { tenants: Tenant[] }) {
   const ALL_ROLES = [
     { value: 'superadmin', label: 'Super Admin' },
     { value: 'admin', label: 'Administrador' },
-    { value: 'portero', label: 'Portero' },
     { value: 'cajero', label: 'Cajero' },
-    { value: 'viewer', label: 'Cliente' },
+    { value: 'portero', label: 'Portero' },
+    { value: 'conductor', label: 'Conductor' },
   ];
 
   const { data: users = [], isLoading } = useQuery({

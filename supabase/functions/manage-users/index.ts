@@ -48,12 +48,12 @@ Deno.serve(async (req) => {
         throw new Error("No puedes crear usuarios con ese rol");
       }
 
-      const allowedAdminRoles = ["portero", "cajero", "operator", "viewer"];
+      const allowedAdminRoles = ["portero", "cajero", "operator", "viewer", "conductor"];
       if (callerProfile.role === "admin" && !allowedAdminRoles.includes(role)) {
         throw new Error("No puedes crear usuarios con ese rol");
       }
 
-      if (callerProfile.role === "admin" && targetTenant && ["portero", "cajero"].includes(role)) {
+      if (callerProfile.role === "admin" && targetTenant && ["portero", "cajero", "conductor"].includes(role)) {
         const { data: tenantData } = await supabaseAdmin.from("tenants").select("plan_id").eq("id", targetTenant).single();
         if (tenantData?.plan_id) {
           const { data: planData } = await supabaseAdmin.from("plans").select("max_users").eq("id", tenantData.plan_id).single();
