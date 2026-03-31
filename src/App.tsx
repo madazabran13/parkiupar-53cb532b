@@ -32,6 +32,7 @@ import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import IncidentReports from "./pages/IncidentReports";
+import TenantView from "./pages/TenantView";
 
 const queryClient = new QueryClient();
 
