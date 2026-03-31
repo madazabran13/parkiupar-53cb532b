@@ -256,6 +256,8 @@ export default function MonthlySubscriptions() {
   const paymentMutation = useMutation({
     mutationFn: async () => {
       if (!paymentSub || !paymentAmount || Number(paymentAmount) <= 0) throw new Error('Monto inválido');
+      if (Number(paymentAmount) > remainingBalance && remainingBalance > 0) throw new Error(`El abono no puede superar el saldo pendiente de ${formatCurrency(remainingBalance)}`);
+      if (remainingBalance <= 0) throw new Error('Esta mensualidad ya está completamente pagada');
       const { data, error } = await supabase.from('subscription_payments').insert({
         subscription_id: paymentSub.id,
         tenant_id: tenantId!,
