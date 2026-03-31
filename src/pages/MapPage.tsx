@@ -315,6 +315,11 @@ export default function MapPage() {
         queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
         queryClient.invalidateQueries({ queryKey: ['detail-spaces'] });
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parking_sessions' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
+        queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
+        queryClient.invalidateQueries({ queryKey: ['detail-spaces'] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
