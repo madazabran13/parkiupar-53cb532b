@@ -506,6 +506,20 @@ export default function MonthlySubscriptions() {
             <div className="space-y-4">
               <div className="rounded-lg border bg-muted/50 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Monto mensual:</span>
+                  <span className="font-medium">{formatCurrency(paymentSub.amount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total pagado:</span>
+                  <span className="font-medium text-primary">{formatCurrency(totalPaid)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Saldo pendiente:</span>
+                  <span className={`font-bold ${remainingBalance > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                    {formatCurrency(remainingBalance)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Vencimiento:</span>
                   <span className="font-medium">{formatDate(paymentSub.end_date)}</span>
                 </div>
@@ -516,9 +530,26 @@ export default function MonthlySubscriptions() {
                   </span>
                 </div>
               </div>
+              {remainingBalance <= 0 && (
+                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 text-center font-medium">
+                  ✅ Mensualidad completamente pagada
+                </div>
+              )}
               <div className="space-y-2">
-                <Label>Monto del abono (COP) *</Label>
-                <Input type="number" placeholder="50000" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
+                <Label>Monto del abono (COP) * {remainingBalance > 0 && <span className="text-muted-foreground font-normal">(máx. {formatCurrency(remainingBalance)})</span>}</Label>
+                <Input
+                  type="number"
+                  placeholder="50000"
+                  value={paymentAmount}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPaymentAmount(val);
+                  }}
+                  max={remainingBalance}
+                />
+                {Number(paymentAmount) > remainingBalance && remainingBalance > 0 && (
+                  <p className="text-xs text-destructive">El abono excede el saldo pendiente de {formatCurrency(remainingBalance)}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Método de pago</Label>
