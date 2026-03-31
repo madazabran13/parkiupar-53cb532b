@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, Users, CalendarDays, Building2 } from 'lucide-react';
+import { ArrowLeft, Car, Bike, Truck, ParkingCircle, DollarSign, TrendingUp, Clock, Timer, Users, CalendarDays, Building2, CarFront, UserCheck, FileBarChart } from 'lucide-react';
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateLiveFee } from '@/lib/utils/pricing';
 import { VEHICLE_TYPE_LABELS, ROLE_LABELS } from '@/types';
