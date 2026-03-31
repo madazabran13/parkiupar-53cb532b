@@ -158,20 +158,23 @@ export default function MonthlySubscriptions() {
     },
   });
 
+  const activeSubId = historySub?.id || paymentSub?.id;
+
   const { data: payments = [], isLoading: loadingPayments } = useQuery({
-    queryKey: ['sub-payments', historySub?.id],
-    enabled: !!historySub,
+    queryKey: ['sub-payments', activeSubId],
+    enabled: !!activeSubId,
     queryFn: async () => {
       const { data } = await supabase
         .from('subscription_payments')
         .select('*')
-        .eq('subscription_id', historySub!.id)
+        .eq('subscription_id', activeSubId!)
         .order('payment_date', { ascending: false });
       return (data || []) as unknown as SubscriptionPayment[];
     },
   });
 
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+  const remainingBalance = paymentSub ? Math.max(0, paymentSub.amount - totalPaid) : 0;
 
   const filteredSubs = subscriptions.filter((sub) => {
     if (filter === 'all') return true;
