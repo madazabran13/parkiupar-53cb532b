@@ -572,7 +572,10 @@ export default function MonthlySubscriptions() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPaymentSub(null)}>Cancelar</Button>
-            <Button onClick={() => paymentMutation.mutate()} disabled={!paymentAmount || Number(paymentAmount) <= 0 || paymentMutation.isPending}>
+            <Button
+              onClick={() => paymentMutation.mutate()}
+              disabled={!paymentAmount || Number(paymentAmount) <= 0 || (Number(paymentAmount) > remainingBalance && remainingBalance > 0) || remainingBalance <= 0 || paymentMutation.isPending}
+            >
               <DollarSign className="h-4 w-4 mr-1" /> {paymentMutation.isPending ? 'Registrando...' : 'Registrar Abono'}
             </Button>
           </DialogFooter>
