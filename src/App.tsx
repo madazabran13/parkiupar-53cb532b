@@ -32,6 +32,7 @@ import SuspendedAccount from "@/pages/SuspendedAccount";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import IncidentReports from "./pages/IncidentReports";
+import TenantView from "./pages/TenantView";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/superadmin/faqs" element={<SuperAdmin />} />
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
               <Route path="/superadmin/incidents" element={<IncidentReports />} />
+              <Route path="/superadmin/tenant/:tenantId" element={<TenantView />} />
             </Route>
 
             <Route path="/access-denied" element={<AccessDenied />} />
