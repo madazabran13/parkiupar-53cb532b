@@ -22,10 +22,23 @@ const VEHICLE_ICONS: Record<string, React.ElementType> = {
 
 const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
+type SubFilter = 'all' | 'active' | 'pending' | 'expired' | 'cancelled';
+
+const getDaysLeft = (end: string) => Math.ceil((new Date(end).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+const getSubStatusTV = (sub: any): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
+  if (!sub.is_active) return { label: 'Cancelada', variant: 'secondary' };
+  const days = getDaysLeft(sub.end_date);
+  if (days < 0) return { label: 'Vencida', variant: 'destructive' };
+  if (days <= 5) return { label: `Vence en ${days}d`, variant: 'outline' };
+  return { label: 'Al día', variant: 'default' };
+};
+
 export default function TenantView() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const navigate = useNavigate();
   const [now, setNow] = useState(Date.now());
+  const [subFilter, setSubFilter] = useState<SubFilter>('all');
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
