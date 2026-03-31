@@ -471,34 +471,212 @@ export default function TenantView() {
           )}
         </TabsContent>
 
-        {/* SUBSCRIPTIONS */}
+        {/* SUBSCRIPTIONS - ALL */}
         <TabsContent value="subs" className="mt-4">
           {subscriptions.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No hay mensualidades activas</p>
+                <p className="text-muted-foreground">No hay mensualidades</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {subscriptions.map((sub: any) => (
-                <Card key={sub.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono font-bold text-sm">{sub.plate}</span>
-                      <Badge variant="outline" className="text-[10px]">{formatCurrency(sub.amount)}/mes</Badge>
+              {subscriptions.map((sub: any) => {
+                const isExpired = new Date(sub.end_date) < new Date();
+                const isActive = sub.is_active && !isExpired;
+                return (
+                  <Card key={sub.id} className={!isActive ? 'opacity-60' : ''}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono font-bold text-sm">{sub.plate}</span>
+                        <div className="flex items-center gap-1">
+                          <Badge variant={isActive ? 'default' : 'secondary'} className="text-[10px]">
+                            {isActive ? 'Activa' : isExpired ? 'Vencida' : 'Inactiva'}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">{formatCurrency(sub.amount)}/mes</Badge>
+                        </div>
+                      </div>
+                      {sub.customer_name && <p className="text-sm text-muted-foreground truncate">👤 {sub.customer_name}</p>}
+                      {sub.customer_phone && <p className="text-xs text-muted-foreground">📞 {sub.customer_phone}</p>}
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+                        <span>{new Date(sub.start_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
+                        <span>→</span>
+                        <span>{new Date(sub.end_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* VEHICLES */}
+        <TabsContent value="vehicles" className="mt-4">
+          {vehicles.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <CarFront className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No hay vehículos registrados</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {(['car', 'motorcycle', 'truck', 'bicycle'] as const).map((type) => {
+                  const count = vehicles.filter((v: any) => v.vehicle_type === type).length;
+                  if (count === 0) return null;
+                  const Icon = VEHICLE_ICONS[type] || Car;
+                  return (
+                    <Badge key={type} variant="secondary" className="gap-1">
+                      <Icon className="h-3 w-3" /> {VEHICLE_TYPE_LABELS[type]}: {count}
+                    </Badge>
+                  );
+                })}
+              </div>
+              <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {vehicles.map((v: any) => {
+                  const Icon = VEHICLE_ICONS[v.vehicle_type] || Car;
+                  const hasActiveSession = activeSessions.some((s) => s.plate === v.plate);
+                  return (
+                    <Card key={v.id} className={hasActiveSession ? 'border-l-4 border-l-primary' : ''}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-mono font-bold text-sm tracking-wider">{v.plate}</span>
+                            <p className="text-[10px] text-muted-foreground uppercase">{VEHICLE_TYPE_LABELS[v.vehicle_type]}</p>
+                          </div>
+                          {hasActiveSession && <Badge className="text-[10px]">En parqueadero</Badge>}
+                        </div>
+                        {v.brand && <p className="text-xs text-muted-foreground">🚗 {v.brand} {v.color ? `· ${v.color}` : ''}</p>}
+                        {v.customers && <p className="text-xs text-muted-foreground truncate">👤 {v.customers.full_name} · {v.customers.phone}</p>}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* CUSTOMERS */}
+        <TabsContent value="customers" className="mt-4">
+          {customers.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <UserCheck className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No hay clientes registrados</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {customers.map((c: any) => (
+                <Card key={c.id}>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                      {(c.full_name || '?')[0].toUpperCase()}
                     </div>
-                    {sub.customer_name && <p className="text-sm text-muted-foreground truncate">👤 {sub.customer_name}</p>}
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
-                      <span>{new Date(sub.start_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
-                      <span>→</span>
-                      <span>{new Date(sub.end_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{c.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{c.phone} {c.email ? `· ${c.email}` : ''}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-primary">{formatCurrency(c.total_spent)}</p>
+                      <p className="text-[10px] text-muted-foreground">{c.total_visits} visitas</p>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+          )}
+        </TabsContent>
+
+        {/* REPORTS / HISTORY */}
+        <TabsContent value="reports" className="mt-4 space-y-4">
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <Card>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <FileBarChart className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                <div className="text-lg font-bold">{recentHistory.length}</div>
+                <p className="text-[10px] text-muted-foreground">Sesiones recientes</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <DollarSign className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                <div className="text-lg font-bold">{formatCurrency(recentHistory.reduce((s, h) => s + (h.total_amount || 0), 0))}</div>
+                <p className="text-[10px] text-muted-foreground">Ingresos recientes</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <Clock className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                <div className="text-lg font-bold">{recentHistory.filter(h => h.status === 'completed').length}</div>
+                <p className="text-[10px] text-muted-foreground">Completadas</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <CarFront className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                <div className="text-lg font-bold">{vehicles.length}</div>
+                <p className="text-[10px] text-muted-foreground">Vehículos totales</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* History table */}
+          {recentHistory.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileBarChart className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No hay historial de sesiones</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-sm sm:text-base">Últimas 100 sesiones finalizadas</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="p-2 sm:p-3 text-left font-medium text-muted-foreground">Placa</th>
+                        <th className="p-2 sm:p-3 text-left font-medium text-muted-foreground">Tipo</th>
+                        <th className="p-2 sm:p-3 text-left font-medium text-muted-foreground">Cliente</th>
+                        <th className="p-2 sm:p-3 text-left font-medium text-muted-foreground">Entrada</th>
+                        <th className="p-2 sm:p-3 text-left font-medium text-muted-foreground">Salida</th>
+                        <th className="p-2 sm:p-3 text-right font-medium text-muted-foreground">Total</th>
+                        <th className="p-2 sm:p-3 text-center font-medium text-muted-foreground">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentHistory.map((h) => (
+                        <tr key={h.id} className="border-b border-border hover:bg-muted/30">
+                          <td className="p-2 sm:p-3 font-mono font-bold">{h.plate}</td>
+                          <td className="p-2 sm:p-3 text-muted-foreground">{VEHICLE_TYPE_LABELS[h.vehicle_type]}</td>
+                          <td className="p-2 sm:p-3 text-muted-foreground truncate max-w-[120px]">{h.customer_name || '—'}</td>
+                          <td className="p-2 sm:p-3 text-muted-foreground whitespace-nowrap">{formatDateTime(h.entry_time)}</td>
+                          <td className="p-2 sm:p-3 text-muted-foreground whitespace-nowrap">{h.exit_time ? formatDateTime(h.exit_time) : '—'}</td>
+                          <td className="p-2 sm:p-3 text-right font-bold text-primary">{formatCurrency(h.total_amount || 0)}</td>
+                          <td className="p-2 sm:p-3 text-center">
+                            <Badge variant={h.status === 'completed' ? 'default' : 'secondary'} className="text-[10px]">
+                              {h.status === 'completed' ? 'Completada' : 'Cancelada'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
