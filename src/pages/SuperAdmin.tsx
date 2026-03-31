@@ -718,7 +718,10 @@ export default function SuperAdmin() {
             loading={loadingTenants}
             searchPlaceholder="Buscar parqueaderos..."
             actions={(row) => (
-              <Button size="sm" variant="ghost" onClick={() => openEditTenant(row)}><Edit className="h-3 w-3" /></Button>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" onClick={() => navigate(`/superadmin/tenant/${row.id}`)} title="Ver parqueadero"><Eye className="h-3 w-3" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => openEditTenant(row)}><Edit className="h-3 w-3" /></Button>
+              </div>
             )}
           />
         </TabsContent>
