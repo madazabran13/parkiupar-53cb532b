@@ -97,7 +97,7 @@ export default function TenantView() {
     queryKey: ['tv-subs', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase.from('monthly_subscriptions').select('*').eq('tenant_id', tenantId!).eq('is_active', true);
+      const { data } = await supabase.from('monthly_subscriptions').select('*').eq('tenant_id', tenantId!).order('end_date', { ascending: false });
       return data || [];
     },
   });
@@ -108,6 +108,33 @@ export default function TenantView() {
     queryFn: async () => {
       const { data } = await supabase.from('parking_spaces').select('*').eq('tenant_id', tenantId!).order('space_number');
       return data || [];
+    },
+  });
+
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['tv-vehicles', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('vehicles').select('*, customers(full_name, phone)').eq('tenant_id', tenantId!).order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['tv-customers', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('customers').select('*').eq('tenant_id', tenantId!).order('total_visits', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const { data: recentHistory = [] } = useQuery({
+    queryKey: ['tv-history', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data } = await supabase.from('parking_sessions').select('*').eq('tenant_id', tenantId!).in('status', ['completed', 'cancelled']).order('exit_time', { ascending: false }).limit(100);
+      return (data || []) as unknown as ParkingSession[];
     },
   });
 
