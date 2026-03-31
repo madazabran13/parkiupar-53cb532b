@@ -230,12 +230,15 @@ export default function TenantView() {
       )}
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto">
+        <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">General</TabsTrigger>
           <TabsTrigger value="sessions">Sesiones ({activeSessions.length})</TabsTrigger>
-          <TabsTrigger value="spaces">Aforo ({spaces.length})</TabsTrigger>
-          <TabsTrigger value="team">Equipo ({teamMembers.length})</TabsTrigger>
+          <TabsTrigger value="vehicles">Vehículos ({vehicles.length})</TabsTrigger>
+          <TabsTrigger value="customers">Clientes ({customers.length})</TabsTrigger>
           <TabsTrigger value="subs">Mensualidades ({subscriptions.length})</TabsTrigger>
+          <TabsTrigger value="spaces">Aforo ({spaces.length})</TabsTrigger>
+          <TabsTrigger value="reports">Reportes</TabsTrigger>
+          <TabsTrigger value="team">Equipo ({teamMembers.length})</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW */}
