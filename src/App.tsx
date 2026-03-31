@@ -90,6 +90,7 @@ const App = () => (
               <Route path="/superadmin/faqs" element={<SuperAdmin />} />
               <Route path="/superadmin/settings" element={<SuperAdmin />} />
               <Route path="/superadmin/incidents" element={<IncidentReports />} />
+              <Route path="/superadmin/tenant/:tenantId" element={<TenantView />} />
             </Route>
 
             <Route path="/access-denied" element={<AccessDenied />} />
