@@ -22,10 +22,23 @@ const VEHICLE_ICONS: Record<string, React.ElementType> = {
 
 const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
+type SubFilter = 'all' | 'active' | 'pending' | 'expired' | 'cancelled';
+
+const getDaysLeft = (end: string) => Math.ceil((new Date(end).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+const getSubStatusTV = (sub: any): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } => {
+  if (!sub.is_active) return { label: 'Cancelada', variant: 'secondary' };
+  const days = getDaysLeft(sub.end_date);
+  if (days < 0) return { label: 'Vencida', variant: 'destructive' };
+  if (days <= 5) return { label: `Vence en ${days}d`, variant: 'outline' };
+  return { label: 'Al día', variant: 'default' };
+};
+
 export default function TenantView() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const navigate = useNavigate();
   const [now, setNow] = useState(Date.now());
+  const [subFilter, setSubFilter] = useState<SubFilter>('all');
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -472,44 +485,87 @@ export default function TenantView() {
         </TabsContent>
 
         {/* SUBSCRIPTIONS - ALL */}
-        <TabsContent value="subs" className="mt-4">
-          {subscriptions.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No hay mensualidades</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {subscriptions.map((sub: any) => {
-                const isExpired = new Date(sub.end_date) < new Date();
-                const isActive = sub.is_active && !isExpired;
-                return (
-                  <Card key={sub.id} className={!isActive ? 'opacity-60' : ''}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono font-bold text-sm">{sub.plate}</span>
-                        <div className="flex items-center gap-1">
-                          <Badge variant={isActive ? 'default' : 'secondary'} className="text-[10px]">
-                            {isActive ? 'Activa' : isExpired ? 'Vencida' : 'Inactiva'}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px]">{formatCurrency(sub.amount)}/mes</Badge>
-                        </div>
-                      </div>
-                      {sub.customer_name && <p className="text-sm text-muted-foreground truncate">👤 {sub.customer_name}</p>}
-                      {sub.customer_phone && <p className="text-xs text-muted-foreground">📞 {sub.customer_phone}</p>}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
-                        <span>{new Date(sub.start_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
-                        <span>→</span>
-                        <span>{new Date(sub.end_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                      </div>
+        <TabsContent value="subs" className="mt-4 space-y-4">
+          {(() => {
+            const subFilterCounts = {
+              all: subscriptions.length,
+              active: subscriptions.filter((s: any) => s.is_active && getDaysLeft(s.end_date) > 5).length,
+              pending: subscriptions.filter((s: any) => s.is_active && getDaysLeft(s.end_date) >= 0 && getDaysLeft(s.end_date) <= 5).length,
+              expired: subscriptions.filter((s: any) => s.is_active && getDaysLeft(s.end_date) < 0).length,
+              cancelled: subscriptions.filter((s: any) => !s.is_active).length,
+            };
+            const filteredSubs = subscriptions.filter((sub: any) => {
+              if (subFilter === 'all') return true;
+              if (subFilter === 'active') return sub.is_active && getDaysLeft(sub.end_date) > 5;
+              if (subFilter === 'pending') return sub.is_active && getDaysLeft(sub.end_date) >= 0 && getDaysLeft(sub.end_date) <= 5;
+              if (subFilter === 'expired') return sub.is_active && getDaysLeft(sub.end_date) < 0;
+              if (subFilter === 'cancelled') return !sub.is_active;
+              return true;
+            });
+            return (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { key: 'all' as SubFilter, label: 'Todas' },
+                    { key: 'active' as SubFilter, label: 'Al día' },
+                    { key: 'pending' as SubFilter, label: 'Por vencer' },
+                    { key: 'expired' as SubFilter, label: 'Vencidas' },
+                    { key: 'cancelled' as SubFilter, label: 'Canceladas' },
+                  ]).map(({ key, label }) => (
+                    <Badge
+                      key={key}
+                      variant={subFilter === key ? 'default' : 'outline'}
+                      className="cursor-pointer text-xs px-3 py-1"
+                      onClick={() => setSubFilter(key)}
+                    >
+                      {label} ({subFilterCounts[key]})
+                    </Badge>
+                  ))}
+                </div>
+
+                {filteredSubs.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="text-muted-foreground">No hay mensualidades en esta categoría</p>
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
-          )}
+                ) : (
+                  <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredSubs.map((sub: any) => {
+                      const status = getSubStatusTV(sub);
+                      const days = getDaysLeft(sub.end_date);
+                      return (
+                        <Card key={sub.id} className={!sub.is_active ? 'opacity-60' : ''}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-mono font-bold text-sm">{sub.plate}</span>
+                              <div className="flex items-center gap-1">
+                                <Badge variant={status.variant} className="text-[10px]">
+                                  {status.label}
+                                </Badge>
+                                <Badge variant="outline" className="text-[10px]">{formatCurrency(sub.amount)}/mes</Badge>
+                              </div>
+                            </div>
+                            {sub.customer_name && <p className="text-sm text-muted-foreground truncate">👤 {sub.customer_name}</p>}
+                            {sub.customer_phone && <p className="text-xs text-muted-foreground">📞 {sub.customer_phone}</p>}
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+                              <span>{new Date(sub.start_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span>
+                              <span>→</span>
+                              <span className={days < 0 ? 'text-destructive font-semibold' : days <= 5 ? 'text-amber-600 font-medium' : ''}>
+                                {new Date(sub.end_date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                {days >= 0 && sub.is_active && ` (${days}d)`}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* VEHICLES */}

@@ -158,20 +158,23 @@ export default function MonthlySubscriptions() {
     },
   });
 
+  const activeSubId = historySub?.id || paymentSub?.id;
+
   const { data: payments = [], isLoading: loadingPayments } = useQuery({
-    queryKey: ['sub-payments', historySub?.id],
-    enabled: !!historySub,
+    queryKey: ['sub-payments', activeSubId],
+    enabled: !!activeSubId,
     queryFn: async () => {
       const { data } = await supabase
         .from('subscription_payments')
         .select('*')
-        .eq('subscription_id', historySub!.id)
+        .eq('subscription_id', activeSubId!)
         .order('payment_date', { ascending: false });
       return (data || []) as unknown as SubscriptionPayment[];
     },
   });
 
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+  const remainingBalance = paymentSub ? Math.max(0, paymentSub.amount - totalPaid) : 0;
 
   const filteredSubs = subscriptions.filter((sub) => {
     if (filter === 'all') return true;
@@ -253,6 +256,8 @@ export default function MonthlySubscriptions() {
   const paymentMutation = useMutation({
     mutationFn: async () => {
       if (!paymentSub || !paymentAmount || Number(paymentAmount) <= 0) throw new Error('Monto inválido');
+      if (Number(paymentAmount) > remainingBalance && remainingBalance > 0) throw new Error(`El abono no puede superar el saldo pendiente de ${formatCurrency(remainingBalance)}`);
+      if (remainingBalance <= 0) throw new Error('Esta mensualidad ya está completamente pagada');
       const { data, error } = await supabase.from('subscription_payments').insert({
         subscription_id: paymentSub.id,
         tenant_id: tenantId!,
@@ -501,6 +506,20 @@ export default function MonthlySubscriptions() {
             <div className="space-y-4">
               <div className="rounded-lg border bg-muted/50 p-3 text-sm space-y-1">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Monto mensual:</span>
+                  <span className="font-medium">{formatCurrency(paymentSub.amount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total pagado:</span>
+                  <span className="font-medium text-primary">{formatCurrency(totalPaid)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Saldo pendiente:</span>
+                  <span className={`font-bold ${remainingBalance > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                    {formatCurrency(remainingBalance)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Vencimiento:</span>
                   <span className="font-medium">{formatDate(paymentSub.end_date)}</span>
                 </div>
@@ -511,9 +530,26 @@ export default function MonthlySubscriptions() {
                   </span>
                 </div>
               </div>
+              {remainingBalance <= 0 && (
+                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 text-center font-medium">
+                  ✅ Mensualidad completamente pagada
+                </div>
+              )}
               <div className="space-y-2">
-                <Label>Monto del abono (COP) *</Label>
-                <Input type="number" placeholder="50000" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
+                <Label>Monto del abono (COP) * {remainingBalance > 0 && <span className="text-muted-foreground font-normal">(máx. {formatCurrency(remainingBalance)})</span>}</Label>
+                <Input
+                  type="number"
+                  placeholder="50000"
+                  value={paymentAmount}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPaymentAmount(val);
+                  }}
+                  max={remainingBalance}
+                />
+                {Number(paymentAmount) > remainingBalance && remainingBalance > 0 && (
+                  <p className="text-xs text-destructive">El abono excede el saldo pendiente de {formatCurrency(remainingBalance)}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Método de pago</Label>
@@ -536,7 +572,10 @@ export default function MonthlySubscriptions() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPaymentSub(null)}>Cancelar</Button>
-            <Button onClick={() => paymentMutation.mutate()} disabled={!paymentAmount || Number(paymentAmount) <= 0 || paymentMutation.isPending}>
+            <Button
+              onClick={() => paymentMutation.mutate()}
+              disabled={!paymentAmount || Number(paymentAmount) <= 0 || (Number(paymentAmount) > remainingBalance && remainingBalance > 0) || remainingBalance <= 0 || paymentMutation.isPending}
+            >
               <DollarSign className="h-4 w-4 mr-1" /> {paymentMutation.isPending ? 'Registrando...' : 'Registrar Abono'}
             </Button>
           </DialogFooter>

@@ -589,9 +589,10 @@ export default function LandingPage() {
                         </span>
                         <span className="text-muted-foreground text-sm font-medium">/mes</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Hasta <span className="font-semibold text-foreground">{plan.max_spaces}</span> espacios
-                      </p>
+                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                        <span>📦 <span className="font-semibold text-foreground">{plan.max_spaces}</span> espacios</span>
+                        <span>👥 <span className="font-semibold text-foreground">{plan.max_users}</span> usuarios</span>
+                      </div>
                     </div>
 
                     <ul className="space-y-3 mb-8">
