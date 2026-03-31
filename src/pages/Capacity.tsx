@@ -102,19 +102,25 @@ export default function Capacity() {
   useRealtime({
     table: 'parking_sessions',
     filter: tenantId ? `tenant_id=eq.${tenantId}` : undefined,
-    queryKeys: [['capacity-sessions', tenantId || '']],
+    queryKeys: [['capacity-sessions', tenantId || ''], ['parking-spaces', tenantId || '']],
   });
 
   useRealtime({
     table: 'parking_spaces',
     filter: tenantId ? `tenant_id=eq.${tenantId}` : undefined,
-    queryKeys: [['parking-spaces', tenantId || '']],
+    queryKeys: [['parking-spaces', tenantId || ''], ['capacity-sessions', tenantId || '']],
   });
 
   useRealtime({
     table: 'space_reservations',
     filter: tenantId ? `tenant_id=eq.${tenantId}` : undefined,
-    queryKeys: [['parking-spaces', tenantId || ''], ['space-reservations', tenantId || '']],
+    queryKeys: [['parking-spaces', tenantId || ''], ['space-reservations', tenantId || ''], ['capacity-sessions', tenantId || '']],
+  });
+
+  useRealtime({
+    table: 'tenants',
+    filter: tenantId ? `id=eq.${tenantId}` : undefined,
+    queryKeys: [['tenant', tenantId || '']],
   });
 
   const { data: activeSessions = [], isLoading: loadingCapacity } = useQuery({
