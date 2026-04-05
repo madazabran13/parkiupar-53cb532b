@@ -172,6 +172,19 @@ export default function Capacity() {
 
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
 
+  // Auto-generate plate for bicycles
+  const generateBicyclePlate = () => `BICI-${Math.floor(1000 + Math.random() * 9000)}`;
+  const selectedCatIcon = categories.find(c => c.id === selectedCategoryId)?.icon;
+  const isBicycleCategory = selectedCatIcon === 'bicycle';
+
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategoryId(catId);
+    const cat = categories.find(c => c.id === catId);
+    if (cat?.icon === 'bicycle' && (!plate || plate.startsWith('BICI-'))) {
+      setPlate(generateBicyclePlate());
+    }
+  };
+
   const findRateForSession = (session: ParkingSession): VehicleCategory | undefined => {
     const byName = categories.find((c) => c.name.toLowerCase() === session.vehicle_type?.toLowerCase());
     if (byName) return byName;
