@@ -60,8 +60,28 @@ export default function Capacity() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [searchingPlate, setSearchingPlate] = useState(false);
   const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
+
+  // Customer name autocomplete query
+  const { data: customerSuggestions = [] } = useQuery({
+    queryKey: ['capacity-customer-suggestions', tenantId, customerSearch],
+    enabled: !!tenantId && customerSearch.length >= 2,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customers')
+        .select('id, full_name, phone')
+        .eq('tenant_id', tenantId!)
+        .ilike('full_name', `%${customerSearch}%`)
+        .limit(5);
+      return data || [];
+    },
+  });
+
+  // Bicycle/autocomplete helpers defined after categories query below
+  
 
   // Exit dialog
   const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
@@ -151,6 +171,19 @@ export default function Capacity() {
   });
 
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
+
+  // Auto-generate plate for bicycles
+  const generateBicyclePlate = () => `BICI-${Math.floor(1000 + Math.random() * 9000)}`;
+  const selectedCatIcon = categories.find(c => c.id === selectedCategoryId)?.icon;
+  const isBicycleCategory = selectedCatIcon === 'bicycle';
+
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategoryId(catId);
+    const cat = categories.find(c => c.id === catId);
+    if (cat?.icon === 'bicycle' && (!plate || plate.startsWith('BICI-'))) {
+      setPlate(generateBicyclePlate());
+    }
+  };
 
   const findRateForSession = (session: ParkingSession): VehicleCategory | undefined => {
     const byName = categories.find((c) => c.name.toLowerCase() === session.vehicle_type?.toLowerCase());
@@ -396,6 +429,7 @@ export default function Capacity() {
     setEntryOpen(false); setSelectedSpace(null); setPlate('');
     setSelectedCategoryId(categories.length > 0 ? categories[0].id : '');
     setCustomerName(''); setCustomerPhone(''); setNotes(''); setFoundVehicle(null);
+    setCustomerSearch(''); setShowCustomerSuggestions(false);
   };
 
   const closeReserveDialog = () => {
@@ -637,15 +671,25 @@ export default function Capacity() {
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Registrar Entrada {selectedSpace ? `- Espacio #${selectedSpace}` : ''}</DialogTitle>
-            <DialogDescription>Busca por placa si el vehículo ya está registrado</DialogDescription>
+            <DialogDescription>{isBicycleCategory ? 'Ingresa los datos del cliente y detalles de la bicicleta' : 'Busca por placa si el vehículo ya está registrado'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Placa *</Label>
+              <Label>{isBicycleCategory ? 'Identificador (auto)' : 'Placa *'}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="ABC123" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} className="pl-9 uppercase font-mono text-base" autoFocus />
+                <Input
+                  placeholder={isBicycleCategory ? 'BICI-XXXX' : 'ABC123'}
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                  className="pl-9 uppercase font-mono text-base"
+                  autoFocus={!isBicycleCategory}
+                  readOnly={isBicycleCategory}
+                />
               </div>
+              {isBicycleCategory && (
+                <p className="text-xs text-muted-foreground">Se genera automáticamente para bicicletas</p>
+              )}
               {searchingPlate && <p className="text-xs text-muted-foreground animate-pulse">Buscando vehículo...</p>}
               {foundVehicle && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"><p className="font-medium text-primary">✓ Vehículo encontrado</p></div>
@@ -661,7 +705,7 @@ export default function Capacity() {
             <div className="space-y-2">
               <Label>Categoría *</Label>
               {categories.length > 0 ? (
-                <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => {
@@ -673,8 +717,43 @@ export default function Capacity() {
               ) : <p className="text-sm text-muted-foreground">Crea categorías en Tarifas.</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Nombre</Label><Input placeholder="Juan Pérez" value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
-              <div className="space-y-2"><Label>Teléfono</Label><Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
+              <div className="space-y-2 relative">
+                <Label>Nombre {isBicycleCategory && <span className="text-destructive">*</span>}</Label>
+                <Input
+                  placeholder="Juan Pérez"
+                  value={customerName}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    setCustomerSearch(e.target.value);
+                    setShowCustomerSuggestions(true);
+                  }}
+                  onFocus={() => customerSearch.length >= 2 && setShowCustomerSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCustomerSuggestions(false), 200)}
+                  autoFocus={isBicycleCategory}
+                />
+                {showCustomerSuggestions && customerSuggestions.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md max-h-40 overflow-auto">
+                    {customerSuggestions.map((c: any) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setCustomerName(c.full_name);
+                          setCustomerPhone(c.phone || '');
+                          setCustomerSearch('');
+                          setShowCustomerSuggestions(false);
+                        }}
+                      >
+                        <span className="font-medium">{c.full_name}</span>
+                        {c.phone && <span className="text-muted-foreground ml-2 text-xs">{c.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2"><Label>Teléfono {isBicycleCategory && <span className="text-destructive">*</span>}</Label><Input placeholder="3001234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
             </div>
             <div className="space-y-2"><Label>Notas</Label><Textarea placeholder="Observaciones..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
             {selectedCategory && (

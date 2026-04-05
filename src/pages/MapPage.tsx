@@ -713,7 +713,10 @@ export default function MapPage() {
       <Dialog open={reserveDialogOpen} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-auto z-[9999]">
           <DialogHeader>
-            <DialogTitle>Reservar Cupo</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <BookmarkCheck className="h-5 w-5 text-primary" />
+              Reservar Cupo
+            </DialogTitle>
             <DialogDescription>
               {reserveTenant?.name} — {availableSpaces.length} cupos disponibles
             </DialogDescription>
@@ -722,8 +725,8 @@ export default function MapPage() {
             {/* Space grid for selection */}
             {detailSpaces.length > 0 && (
               <div className="space-y-2">
-                <Label>Selecciona un espacio</Label>
-                <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-40 overflow-auto rounded-lg border p-2">
+                <Label className="text-sm font-medium">Selecciona un espacio</Label>
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-48 overflow-auto rounded-xl border bg-muted/30 p-3">
                   {detailSpaces.map((sp) => {
                     const isAvail = sp.status === 'available';
                     const isSelected = selectedSpaceId === sp.id;
@@ -731,12 +734,14 @@ export default function MapPage() {
                       <button
                         key={sp.id}
                         disabled={!isAvail}
-                        onClick={() => isAvail && setSelectedSpaceId(isSelected ? null : sp.id)}
-                        className={`rounded-md border p-1.5 text-xs font-medium transition-all ${
-                          isSelected ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/30' :
-                          isAvail ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 cursor-pointer' :
-                          sp.status === 'reserved' ? 'bg-amber-100 text-amber-600 border-amber-300 dark:bg-amber-900/30 cursor-not-allowed opacity-60' :
-                          'bg-destructive/10 text-destructive border-destructive/30 cursor-not-allowed opacity-60'
+                        onClick={() => {
+                          if (isAvail) setSelectedSpaceId(isSelected ? null : sp.id);
+                        }}
+                        className={`rounded-lg border-2 p-2 text-xs font-bold transition-all ${
+                          isSelected ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/30 scale-105 shadow-md' :
+                          isAvail ? 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100 hover:scale-105 dark:bg-green-900/30 dark:text-green-400 cursor-pointer' :
+                          sp.status === 'reserved' ? 'bg-amber-50 text-amber-500 border-amber-200 dark:bg-amber-900/30 cursor-not-allowed opacity-50' :
+                          'bg-muted text-muted-foreground border-border cursor-not-allowed opacity-40'
                         }`}
                       >
                         {sp.space_number}
@@ -744,38 +749,49 @@ export default function MapPage() {
                     );
                   })}
                 </div>
-                <div className="flex gap-2 text-[10px]">
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-green-500" /> Libre</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-amber-500" /> Reservado</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded bg-destructive" /> Ocupado</span>
+                {selectedSpaceId && (
+                  <div className="rounded-lg bg-primary/10 border border-primary/20 p-2.5 text-sm text-center">
+                    <span className="font-semibold text-primary">Espacio #{detailSpaces.find(s => s.id === selectedSpaceId)?.space_number}</span> seleccionado
+                  </div>
+                )}
+                <div className="flex gap-3 text-[10px] justify-center">
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> Libre</span>
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> Reservado</span>
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-destructive" /> Ocupado</span>
                 </div>
               </div>
             )}
             <div className="space-y-2">
               <Label>Placa del vehículo *</Label>
-              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase" />
+              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-base tracking-wider" />
             </div>
-            <div className="space-y-2">
-              <Label>Teléfono *</Label>
-              <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Teléfono *</Label>
+                <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Nombre (opcional)</Label>
-              <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} />
-            </div>
-            <div className="rounded-lg border bg-muted/50 p-3 text-sm flex items-center gap-2">
-              <Timer className="h-4 w-4 text-amber-600 flex-shrink-0" />
-              <span>Tu cupo se reserva por <strong>{((reserveTenant?.settings as any)?.reservation_timeout_minutes || 15)} min</strong>. Si no llegas, se libera automáticamente.</span>
+            <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 p-3 text-sm flex items-start gap-3">
+              <Timer className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800 dark:text-amber-400">Tiempo limitado</p>
+                <p className="text-amber-700 dark:text-amber-500 text-xs mt-0.5">Tu cupo se reserva por <strong>{((reserveTenant?.settings as any)?.reservation_timeout_minutes || 15)} min</strong>. Si no llegas, se libera automáticamente.</p>
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setReserveDialogOpen(false); setSelectedSpaceId(null); setDetailTenant(null); }}>Cancelar</Button>
             <Button
               onClick={() => reserveMutation.mutate()}
               disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
+              className="gap-2"
             >
-              <BookmarkCheck className="h-4 w-4 mr-1" />
-              {reserveMutation.isPending ? 'Reservando...' : 'Reservar'}
+              <BookmarkCheck className="h-4 w-4" />
+              {reserveMutation.isPending ? 'Reservando...' : 'Reservar Cupo'}
             </Button>
           </DialogFooter>
         </DialogContent>

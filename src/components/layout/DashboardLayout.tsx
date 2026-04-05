@@ -53,7 +53,7 @@ export default function DashboardLayout() {
               <NotificationBell />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 pb-16 sm:pb-4 md:pb-6">
+          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 pb-20 sm:pb-4 md:pb-6">
             <Outlet />
           </main>
         </SidebarInset>
