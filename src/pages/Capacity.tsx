@@ -95,7 +95,7 @@ export default function Capacity() {
       setPlate(generateBicyclePlate());
     }
   };
-  const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
+  
 
   // Exit dialog
   const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
