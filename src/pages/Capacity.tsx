@@ -60,6 +60,8 @@ export default function Capacity() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [searchingPlate, setSearchingPlate] = useState(false);
   const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
 
