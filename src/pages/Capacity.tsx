@@ -65,6 +65,38 @@ export default function Capacity() {
   const [searchingPlate, setSearchingPlate] = useState(false);
   const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
 
+  // Customer name autocomplete query
+  const { data: customerSuggestions = [] } = useQuery({
+    queryKey: ['capacity-customer-suggestions', tenantId, customerSearch],
+    enabled: !!tenantId && customerSearch.length >= 2,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('customers')
+        .select('id, full_name, phone')
+        .eq('tenant_id', tenantId!)
+        .ilike('full_name', `%${customerSearch}%`)
+        .limit(5);
+      return data || [];
+    },
+  });
+
+  // Auto-generate plate for bicycles
+  const generateBicyclePlate = () => `BICI-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // Detect bicycle category and auto-generate plate
+  const selectedCatIcon = categories.find(c => c.id === selectedCategoryId)?.icon;
+  const isBicycleCategory = selectedCatIcon === 'bicycle';
+
+  // When category changes to bicycle, auto-generate plate
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategoryId(catId);
+    const cat = categories.find(c => c.id === catId);
+    if (cat?.icon === 'bicycle' && (!plate || plate.startsWith('BICI-'))) {
+      setPlate(generateBicyclePlate());
+    }
+  };
+  const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
+
   // Exit dialog
   const [exitSession, setExitSession] = useState<ParkingSession | null>(null);
   const [exitSpace, setExitSpace] = useState<number | null>(null);
