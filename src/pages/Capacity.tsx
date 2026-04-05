@@ -429,6 +429,7 @@ export default function Capacity() {
     setEntryOpen(false); setSelectedSpace(null); setPlate('');
     setSelectedCategoryId(categories.length > 0 ? categories[0].id : '');
     setCustomerName(''); setCustomerPhone(''); setNotes(''); setFoundVehicle(null);
+    setCustomerSearch(''); setShowCustomerSuggestions(false);
   };
 
   const closeReserveDialog = () => {
