@@ -539,6 +539,36 @@ export default function MonthlySubscriptions() {
                 </div>
               )}
               <div className="space-y-2">
+                <Label>Mes a pagar *</Label>
+                <Select value={paymentMonth} onValueChange={setPaymentMonth}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar mes" /></SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const months: { value: string; label: string }[] = [];
+                      if (paymentSub) {
+                        const start = new Date(paymentSub.start_date);
+                        const end = new Date(paymentSub.end_date);
+                        const current = new Date(start.getFullYear(), start.getMonth(), 1);
+                        while (current <= end) {
+                          const label = current.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+                          months.push({ value: label, label: label.charAt(0).toUpperCase() + label.slice(1) });
+                          current.setMonth(current.getMonth() + 1);
+                        }
+                      }
+                      if (months.length === 0) {
+                        const now = new Date();
+                        for (let i = -1; i < 3; i++) {
+                          const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                          const label = d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+                          months.push({ value: label, label: label.charAt(0).toUpperCase() + label.slice(1) });
+                        }
+                      }
+                      return months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>);
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Monto del abono (COP) * {remainingBalance > 0 && <span className="text-muted-foreground font-normal">(máx. {formatCurrency(remainingBalance)})</span>}</Label>
                 <Input
                   type="number"
