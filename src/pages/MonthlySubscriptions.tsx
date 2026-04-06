@@ -282,6 +282,7 @@ export default function MonthlySubscriptions() {
       setPaymentSub(null);
       setPaymentAmount('');
       setPaymentNotes('');
+      setPaymentMonth('');
     },
     onError: (e: any) => toast.error(e.message),
   });
