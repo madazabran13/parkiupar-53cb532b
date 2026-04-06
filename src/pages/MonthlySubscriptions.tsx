@@ -381,7 +381,7 @@ export default function MonthlySubscriptions() {
             <Button size="sm" variant="ghost" onClick={() => openEdit(row)} title="Editar">
               <Pencil className="h-3 w-3" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => { setPaymentSub(row); setPaymentAmount(''); setPaymentNotes(''); }} title="Registrar abono">
+            <Button size="sm" variant="ghost" onClick={() => { setPaymentSub(row); setPaymentAmount(''); setPaymentNotes(''); setPaymentMonth(''); }} title="Registrar abono">
               <DollarSign className="h-3 w-3" />
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setHistorySub(row)} title="Historial de pagos">
