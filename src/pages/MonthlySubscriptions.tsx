@@ -673,7 +673,7 @@ export default function MonthlySubscriptions() {
                 </div>
               )}
 
-              <Button className="w-full" variant="outline" onClick={() => { setHistorySub(null); setPaymentSub(historySub); setPaymentAmount(''); setPaymentNotes(''); }}>
+              <Button className="w-full" variant="outline" onClick={() => { setHistorySub(null); setPaymentSub(historySub); setPaymentAmount(''); setPaymentNotes(''); setPaymentMonth(''); }}>
                 <DollarSign className="h-4 w-4 mr-1" /> Registrar Nuevo Abono
               </Button>
             </div>
