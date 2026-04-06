@@ -96,6 +96,48 @@
 }
 
 
+/* Dark mode enhancements */
+.dark {
+  color-scheme: dark;
+}
+
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background: hsl(224 18% 9%);
+  color: hsl(210 40% 98%);
+}
+
+.dark .leaflet-control-zoom a {
+  background: hsl(224 18% 12%) !important;
+  color: hsl(210 40% 98%) !important;
+  border-color: hsl(222 14% 18%) !important;
+}
+
+/* Card glow in dark mode */
+.dark [data-slot="card"] {
+  box-shadow: 0 0 0 1px hsl(222 14% 15%), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+}
+
+.dark [data-slot="card"]:hover {
+  box-shadow: 0 0 0 1px hsl(222 14% 18%), 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Better scrollbar in dark mode */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: hsl(224 20% 5%);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(222 14% 20%);
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(222 14% 28%);
+}
+
 
 /* Mobile-first responsive utilities */
 @layer base {

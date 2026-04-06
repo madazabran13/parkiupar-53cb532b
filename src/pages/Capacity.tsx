@@ -28,10 +28,10 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  car: 'bg-blue-500 hover:bg-blue-600',
-  motorcycle: 'bg-amber-500 hover:bg-amber-600',
-  truck: 'bg-purple-500 hover:bg-purple-600',
-  bicycle: 'bg-green-600 hover:bg-green-700',
+  car: 'bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500',
+  motorcycle: 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500',
+  truck: 'bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-500',
+  bicycle: 'bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-500',
 };
 
 const STATUS_COLORS: Record<SpaceStatus, string> = {

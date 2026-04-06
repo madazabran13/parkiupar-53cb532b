@@ -534,7 +534,7 @@ export default function MonthlySubscriptions() {
                 </div>
               </div>
               {remainingBalance <= 0 && (
-                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 text-center font-medium">
+                <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400 text-center font-medium">
                   ✅ Mensualidad completamente pagada
                 </div>
               )}
