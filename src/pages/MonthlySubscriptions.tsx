@@ -138,6 +138,7 @@ export default function MonthlySubscriptions() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentMonth, setPaymentMonth] = useState('');
 
   useRealtime({
     table: 'monthly_subscriptions',
