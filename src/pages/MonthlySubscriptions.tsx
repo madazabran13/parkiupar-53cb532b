@@ -138,6 +138,7 @@ export default function MonthlySubscriptions() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentMonth, setPaymentMonth] = useState('');
 
   useRealtime({
     table: 'monthly_subscriptions',
@@ -258,12 +259,13 @@ export default function MonthlySubscriptions() {
       if (!paymentSub || !paymentAmount || Number(paymentAmount) <= 0) throw new Error('Monto inválido');
       if (Number(paymentAmount) > remainingBalance && remainingBalance > 0) throw new Error(`El abono no puede superar el saldo pendiente de ${formatCurrency(remainingBalance)}`);
       if (remainingBalance <= 0) throw new Error('Esta mensualidad ya está completamente pagada');
+      const noteWithMonth = [paymentMonth ? `Mes: ${paymentMonth}` : '', paymentNotes].filter(Boolean).join(' — ');
       const { data, error } = await supabase.from('subscription_payments').insert({
         subscription_id: paymentSub.id,
         tenant_id: tenantId!,
         amount: Number(paymentAmount),
         payment_method: paymentMethod,
-        notes: paymentNotes || null,
+        notes: noteWithMonth || null,
         created_by: user?.id || null,
       }).select().single();
       if (error) throw error;
@@ -280,6 +282,7 @@ export default function MonthlySubscriptions() {
       setPaymentSub(null);
       setPaymentAmount('');
       setPaymentNotes('');
+      setPaymentMonth('');
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -378,7 +381,7 @@ export default function MonthlySubscriptions() {
             <Button size="sm" variant="ghost" onClick={() => openEdit(row)} title="Editar">
               <Pencil className="h-3 w-3" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => { setPaymentSub(row); setPaymentAmount(''); setPaymentNotes(''); }} title="Registrar abono">
+            <Button size="sm" variant="ghost" onClick={() => { setPaymentSub(row); setPaymentAmount(''); setPaymentNotes(''); setPaymentMonth(''); }} title="Registrar abono">
               <DollarSign className="h-3 w-3" />
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setHistorySub(row)} title="Historial de pagos">
@@ -536,6 +539,36 @@ export default function MonthlySubscriptions() {
                 </div>
               )}
               <div className="space-y-2">
+                <Label>Mes a pagar *</Label>
+                <Select value={paymentMonth} onValueChange={setPaymentMonth}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar mes" /></SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const months: { value: string; label: string }[] = [];
+                      if (paymentSub) {
+                        const start = new Date(paymentSub.start_date);
+                        const end = new Date(paymentSub.end_date);
+                        const current = new Date(start.getFullYear(), start.getMonth(), 1);
+                        while (current <= end) {
+                          const label = current.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+                          months.push({ value: label, label: label.charAt(0).toUpperCase() + label.slice(1) });
+                          current.setMonth(current.getMonth() + 1);
+                        }
+                      }
+                      if (months.length === 0) {
+                        const now = new Date();
+                        for (let i = -1; i < 3; i++) {
+                          const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                          const label = d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+                          months.push({ value: label, label: label.charAt(0).toUpperCase() + label.slice(1) });
+                        }
+                      }
+                      return months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>);
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Monto del abono (COP) * {remainingBalance > 0 && <span className="text-muted-foreground font-normal">(máx. {formatCurrency(remainingBalance)})</span>}</Label>
                 <Input
                   type="number"
@@ -574,7 +607,7 @@ export default function MonthlySubscriptions() {
             <Button variant="outline" onClick={() => setPaymentSub(null)}>Cancelar</Button>
             <Button
               onClick={() => paymentMutation.mutate()}
-              disabled={!paymentAmount || Number(paymentAmount) <= 0 || (Number(paymentAmount) > remainingBalance && remainingBalance > 0) || remainingBalance <= 0 || paymentMutation.isPending}
+              disabled={!paymentAmount || !paymentMonth || Number(paymentAmount) <= 0 || (Number(paymentAmount) > remainingBalance && remainingBalance > 0) || remainingBalance <= 0 || paymentMutation.isPending}
             >
               <DollarSign className="h-4 w-4 mr-1" /> {paymentMutation.isPending ? 'Registrando...' : 'Registrar Abono'}
             </Button>
@@ -640,7 +673,7 @@ export default function MonthlySubscriptions() {
                 </div>
               )}
 
-              <Button className="w-full" variant="outline" onClick={() => { setHistorySub(null); setPaymentSub(historySub); setPaymentAmount(''); setPaymentNotes(''); }}>
+              <Button className="w-full" variant="outline" onClick={() => { setHistorySub(null); setPaymentSub(historySub); setPaymentAmount(''); setPaymentNotes(''); setPaymentMonth(''); }}>
                 <DollarSign className="h-4 w-4 mr-1" /> Registrar Nuevo Abono
               </Button>
             </div>
