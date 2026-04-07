@@ -300,6 +300,24 @@ export default function MapPage() {
     });
   }, [tenants, ratesMap, search, vehicleFilter, maxPrice]);
 
+  // Keep tenantsRef in sync
+  useEffect(() => {
+    tenantsRef.current = tenants;
+  }, [tenants]);
+
+  // Global click handler for reserve buttons inside Leaflet popups
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('[data-reserve-tenant]') as HTMLElement | null;
+      if (!btn) return;
+      const tenantId = btn.getAttribute('data-reserve-tenant');
+      const t = tenantsRef.current.find(t => t.id === tenantId);
+      if (t) openReserveDialog(t);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
