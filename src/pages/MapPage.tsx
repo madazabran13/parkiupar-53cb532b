@@ -411,6 +411,12 @@ export default function MapPage() {
           </div>`
         : '';
 
+      const reserveBtnHtml = !isClosed && tenant.available_spaces > 0 
+        ? `<button data-reserve-tenant="${tenant.id}" style="width:100%;margin-top:8px;padding:8px 12px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            ✅ Reservar Cupo
+          </button>`
+        : '';
+
       const navHtml = `
         <div style="display:flex;gap:6px;margin-top:10px;">
           <a href="${getGoogleMapsUrl(lat, lng)}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;background:#4285f4;color:white;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
@@ -420,6 +426,7 @@ export default function MapPage() {
             🧭 Waze
           </a>
         </div>
+        ${reserveBtnHtml}
       `;
 
       const marker = L.marker([lat, lng], {
