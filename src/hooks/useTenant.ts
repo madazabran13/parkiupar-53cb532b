@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Tenant } from '@/types';
@@ -59,8 +59,9 @@ export function useTenant() {
     const interval = setInterval(fetchTenant, POLL_INTERVAL);
 
     // Realtime subscription
+    const channelId = `tenant-${tenantId}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel(`tenant-${tenantId}`)
+      .channel(channelId)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
