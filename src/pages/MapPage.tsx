@@ -96,6 +96,7 @@ export default function MapPage() {
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const tenantsRef = useRef<Tenant[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
