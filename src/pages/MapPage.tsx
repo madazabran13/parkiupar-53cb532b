@@ -96,6 +96,7 @@ export default function MapPage() {
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const tenantsRef = useRef<Tenant[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -299,6 +300,24 @@ export default function MapPage() {
     });
   }, [tenants, ratesMap, search, vehicleFilter, maxPrice]);
 
+  // Keep tenantsRef in sync
+  useEffect(() => {
+    tenantsRef.current = tenants;
+  }, [tenants]);
+
+  // Global click handler for reserve buttons inside Leaflet popups
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('[data-reserve-tenant]') as HTMLElement | null;
+      if (!btn) return;
+      const tenantId = btn.getAttribute('data-reserve-tenant');
+      const t = tenantsRef.current.find(t => t.id === tenantId);
+      if (t) openReserveDialog(t);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
   useEffect(() => {
     const channel = supabase
       .channel('map-realtime')
@@ -410,6 +429,12 @@ export default function MapPage() {
           </div>`
         : '';
 
+      const reserveBtnHtml = !isClosed && tenant.available_spaces > 0 
+        ? `<button data-reserve-tenant="${tenant.id}" style="width:100%;margin-top:8px;padding:8px 12px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            ✅ Reservar Cupo
+          </button>`
+        : '';
+
       const navHtml = `
         <div style="display:flex;gap:6px;margin-top:10px;">
           <a href="${getGoogleMapsUrl(lat, lng)}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;background:#4285f4;color:white;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
@@ -419,6 +444,7 @@ export default function MapPage() {
             🧭 Waze
           </a>
         </div>
+        ${reserveBtnHtml}
       `;
 
       const marker = L.marker([lat, lng], {
