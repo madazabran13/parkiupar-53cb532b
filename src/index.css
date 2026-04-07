@@ -51,41 +51,41 @@
   }
 
   .dark {
-    --background: 224 20% 5%;
-    --foreground: 210 40% 98%;
+    --background: 222 22% 6%;
+    --foreground: 210 40% 96%;
 
-    --card: 224 18% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 222 20% 9%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 224 18% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222 22% 8%;
+    --popover-foreground: 210 40% 96%;
 
     --primary: 213 94% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 16% 13%;
-    --secondary-foreground: 210 40% 95%;
+    --secondary: 222 18% 14%;
+    --secondary-foreground: 210 40% 93%;
 
-    --muted: 222 14% 11%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 222 16% 12%;
+    --muted-foreground: 215 20% 58%;
 
-    --accent: 222 16% 14%;
-    --accent-foreground: 210 40% 95%;
+    --accent: 222 18% 15%;
+    --accent-foreground: 210 40% 93%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 14% 15%;
-    --input: 222 14% 18%;
+    --border: 222 14% 16%;
+    --input: 222 16% 19%;
     --ring: 213 94% 58%;
 
-    --sidebar-background: 224 22% 4%;
-    --sidebar-foreground: 210 30% 94%;
+    --sidebar-background: 222 24% 5%;
+    --sidebar-foreground: 210 30% 92%;
     --sidebar-primary: 213 94% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 16% 10%;
-    --sidebar-accent-foreground: 210 30% 94%;
-    --sidebar-border: 222 14% 12%;
+    --sidebar-accent: 222 18% 11%;
+    --sidebar-accent-foreground: 210 30% 92%;
+    --sidebar-border: 222 14% 13%;
     --sidebar-ring: 213 94% 58%;
 
     --success: 142.1 70.6% 45.3%;
@@ -95,51 +95,132 @@
   }
 }
 
+/* ── Theme transition ── */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 400ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-/* Dark mode enhancements */
+/* Exclude elements where the transition causes jank */
+input,
+textarea,
+[data-radix-popper-content-wrapper],
+[data-radix-popper-content-wrapper] *,
+.recharts-wrapper *,
+canvas,
+video,
+svg path,
+svg rect,
+svg circle {
+  transition-property: none !important;
+}
+
+/* ── Dark mode enhancements ── */
 .dark {
   color-scheme: dark;
 }
 
+/* Leaflet popups */
 .dark .leaflet-popup-content-wrapper,
 .dark .leaflet-popup-tip {
-  background: hsl(224 18% 9%);
-  color: hsl(210 40% 98%);
+  background: hsl(222 20% 9%);
+  color: hsl(210 40% 96%);
 }
 
 .dark .leaflet-control-zoom a {
-  background: hsl(224 18% 12%) !important;
-  color: hsl(210 40% 98%) !important;
-  border-color: hsl(222 14% 18%) !important;
+  background: hsl(222 20% 13%) !important;
+  color: hsl(210 40% 96%) !important;
+  border-color: hsl(222 14% 19%) !important;
 }
 
-/* Card glow in dark mode */
+/* Card depth & glow */
 .dark [data-slot="card"] {
-  box-shadow: 0 0 0 1px hsl(222 14% 15%), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 0 0 1px hsl(222 14% 16%),
+    0 1px 3px 0 rgba(0, 0, 0, 0.3),
+    0 4px 12px -2px rgba(0, 0, 0, 0.25);
 }
 
 .dark [data-slot="card"]:hover {
-  box-shadow: 0 0 0 1px hsl(222 14% 18%), 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 0 0 1px hsl(213 94% 58% / 0.15),
+    0 2px 6px 0 rgba(0, 0, 0, 0.35),
+    0 8px 24px -4px rgba(0, 0, 0, 0.3);
 }
 
-/* Better scrollbar in dark mode */
+/* Subtle primary glow on focused inputs */
+.dark input:focus,
+.dark textarea:focus,
+.dark [data-state="open"] {
+  box-shadow: 0 0 0 2px hsl(213 94% 58% / 0.2);
+}
+
+/* Better scrollbar */
 .dark ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 .dark ::-webkit-scrollbar-track {
-  background: hsl(224 20% 5%);
+  background: hsl(222 22% 6%);
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(222 14% 20%);
+  background: hsl(222 14% 22%);
   border-radius: 3px;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(222 14% 28%);
+  background: hsl(222 14% 30%);
+}
+
+/* Badge refinements in dark mode */
+.dark .bg-green-100 { background-color: hsl(142 40% 14%) !important; }
+.dark .text-green-800 { color: hsl(142 70% 65%) !important; }
+.dark .bg-red-100 { background-color: hsl(0 40% 14%) !important; }
+.dark .text-red-800 { color: hsl(0 70% 68%) !important; }
+.dark .bg-yellow-100 { background-color: hsl(38 40% 14%) !important; }
+.dark .text-yellow-800 { color: hsl(38 85% 65%) !important; }
+.dark .bg-blue-100 { background-color: hsl(213 40% 14%) !important; }
+.dark .text-blue-800 { color: hsl(213 85% 68%) !important; }
+.dark .bg-purple-100 { background-color: hsl(270 40% 14%) !important; }
+.dark .text-purple-800 { color: hsl(270 70% 68%) !important; }
+.dark .bg-orange-100 { background-color: hsl(25 40% 14%) !important; }
+.dark .text-orange-800 { color: hsl(25 85% 65%) !important; }
+
+/* Alert/status backgrounds in dark */
+.dark .bg-green-50 { background-color: hsl(142 30% 10%) !important; }
+.dark .bg-red-50 { background-color: hsl(0 30% 10%) !important; }
+.dark .bg-yellow-50 { background-color: hsl(38 30% 10%) !important; }
+.dark .bg-blue-50 { background-color: hsl(213 30% 10%) !important; }
+.dark .bg-orange-50 { background-color: hsl(25 30% 10%) !important; }
+
+/* Text colors in dark */
+.dark .text-green-600 { color: hsl(142 65% 55%) !important; }
+.dark .text-red-600 { color: hsl(0 65% 60%) !important; }
+.dark .text-yellow-600 { color: hsl(38 80% 58%) !important; }
+.dark .text-blue-600 { color: hsl(213 80% 62%) !important; }
+.dark .text-orange-600 { color: hsl(25 80% 58%) !important; }
+.dark .text-purple-600 { color: hsl(270 65% 62%) !important; }
+
+/* Border colors in dark */
+.dark .border-green-200 { border-color: hsl(142 30% 20%) !important; }
+.dark .border-red-200 { border-color: hsl(0 30% 20%) !important; }
+.dark .border-yellow-200 { border-color: hsl(38 30% 20%) !important; }
+.dark .border-blue-200 { border-color: hsl(213 30% 20%) !important; }
+
+/* Table rows */
+.dark tbody tr:hover {
+  background-color: hsl(222 18% 11%) !important;
+}
+
+/* Separator */
+.dark [data-orientation="horizontal"] {
+  background-color: hsl(222 14% 14%);
 }
 
 
-/* Mobile-first responsive utilities */
+/* ── Mobile-first responsive utilities ── */
 @layer base {
   @media (max-width: 639px) {
     .dialog-content, [role="dialog"] > div {
@@ -154,7 +235,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Leaflet custom styles */
+/* ── Leaflet custom styles ── */
 .custom-marker {
   background: transparent !important;
   border: none !important;
