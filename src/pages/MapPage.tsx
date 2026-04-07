@@ -667,9 +667,7 @@ export default function MapPage() {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {isPublic && (
-            <div className="flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary flex-shrink-0">
-              <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg object-contain flex-shrink-0" />
           )}
           <div className="min-w-0">
             <h1 className="text-base sm:text-xl md:text-2xl font-bold text-foreground truncate">
