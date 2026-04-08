@@ -198,6 +198,12 @@ export default function Capacity() {
     }
   }, [categories, selectedCategoryId]);
 
+  useEffect(() => {
+    if (typeof tenant?.total_spaces === 'number') {
+      setOptimisticTotalSpaces(tenant.total_spaces);
+    }
+  }, [tenant?.total_spaces]);
+
   const searchPlate = useCallback(async (plateVal: string) => {
     if (!tenantId || plateVal.length < 3) { setFoundVehicle(null); return; }
     setSearchingPlate(true);
