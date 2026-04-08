@@ -450,8 +450,18 @@ export default function Capacity() {
         const { error } = await supabase.from('parking_spaces').insert(batch);
         if (error) throw error;
       }
+      // Also sync tenant total_spaces
+      const occupied = activeSessions.length;
+      await supabase.from('tenants').update({
+        total_spaces: count, available_spaces: Math.max(0, count - occupied),
+      }).eq('id', tenantId!);
     },
-    onSuccess: () => { toast.success('Espacios creados'); setSetupOpen(false); queryClient.invalidateQueries({ queryKey: ['parking-spaces'] }); },
+    onSuccess: () => {
+      toast.success('Espacios creados');
+      setSetupOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant'] });
+    },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
