@@ -30,11 +30,11 @@ export function useTenant() {
         supabase.from('tenants').update({ available_spaces: corrected }).eq('id', tenantId).then(() => {});
       }
 
-      // Auto-fix: if plan has max_spaces and tenant total_spaces doesn't match
-      if (plans?.max_spaces && t.total_spaces !== plans.max_spaces) {
-        const occupied = t.total_spaces - t.available_spaces;
+      // Auto-fix only when tenant exceeds the plan limit
+      if (plans?.max_spaces && t.total_spaces > plans.max_spaces) {
+        const occupied = Math.max(t.total_spaces - t.available_spaces, 0);
         t.total_spaces = plans.max_spaces;
-        t.available_spaces = Math.max(plans.max_spaces - Math.max(occupied, 0), 0);
+        t.available_spaces = Math.max(plans.max_spaces - occupied, 0);
         // Fire-and-forget DB correction
         supabase.from('tenants').update({ 
           total_spaces: t.total_spaces, 
