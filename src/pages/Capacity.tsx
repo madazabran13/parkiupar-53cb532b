@@ -908,14 +908,7 @@ export default function Capacity() {
         </DialogContent>
       </Dialog>
 
-      {/* Setup Spaces Dialog */}
-      <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Configurar Cupos</DialogTitle><DialogDescription>Se crearán espacios individuales para gestión de reservas</DialogDescription></DialogHeader>
-          <div className="space-y-2"><Label>Cantidad de espacios</Label><Input type="number" min={1} max={500} value={spaceCount} onChange={(e) => setSpaceCount(e.target.value)} /></div>
-          <DialogFooter><Button variant="outline" onClick={() => setSetupOpen(false)}>Cancelar</Button><Button onClick={() => setupMutation.mutate()} disabled={setupMutation.isPending}>{setupMutation.isPending ? 'Creando...' : 'Crear Espacios'}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Setup dialog unified with capacity */}
 
       {/* Confirm dialogs */}
       <ConfirmDialog open={confirmEntry} onOpenChange={setConfirmEntry} title="Confirmar Entrada"
