@@ -1,0 +1,92 @@
+version: "3.8"
+
+services:
+
+  # ── Frontend React ────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parkiupar-frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    depends_on:
+      - supabase-db
+    networks:
+      - parkiupar-network
+    restart: unless-stopped
+
+  # ── Supabase: Base de datos PostgreSQL ───────────────────
+  supabase-db:
+    image: supabase/postgres:15.6.1.143
+    container_name: parkiupar-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      - ./supabase/init:/docker-entrypoint-initdb.d
+    networks:
+      - parkiupar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Supabase: API REST (PostgREST) ────────────────────────
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.0
+    container_name: parkiupar-rest
+    ports:
+      - "3000:3000"
+    environment:
+      PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-chars}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    networks:
+      - parkiupar-network
+    restart: unless-stopped
+
+  # ── Supabase: Auth ────────────────────────────────────────
+  supabase-auth:
+    image: supabase/gotrue:v2.158.1
+    container_name: parkiupar-auth
+    ports:
+      - "9999:9999"
+    environment:
+      GOTRUE_API_HOST: "0.0.0.0"
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://localhost:9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: http://localhost
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-chars}
+      GOTRUE_DISABLE_SIGNUP: "false"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    networks:
+      - parkiupar-network
+    restart: unless-stopped
+
+# ── Volúmenes ─────────────────────────────────────────────
+volumes:
+  supabase-db-data:
+
+# ── Red interna ───────────────────────────────────────────
+networks:
+  parkiupar-network:
+    driver: bridge
