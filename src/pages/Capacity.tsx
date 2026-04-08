@@ -435,33 +435,7 @@ export default function Capacity() {
     },
   });
 
-  const setupMutation = useMutation({
-    mutationFn: async () => {
-      const count = parseInt(spaceCount);
-      if (isNaN(count) || count < 1 || count > 500) throw new Error('Ingresa entre 1 y 500 espacios');
-      await supabase.from('parking_spaces').delete().eq('tenant_id', tenantId!);
-      const spacesToInsert = Array.from({ length: count }, (_, i) => ({
-        tenant_id: tenantId!, space_number: String(i + 1), label: `Espacio ${i + 1}`, status: 'available' as const,
-      }));
-      for (let i = 0; i < spacesToInsert.length; i += 50) {
-        const batch = spacesToInsert.slice(i, i + 50);
-        const { error } = await supabase.from('parking_spaces').insert(batch);
-        if (error) throw error;
-      }
-      // Also sync tenant total_spaces
-      const occupied = activeSessions.length;
-      await supabase.from('tenants').update({
-        total_spaces: count, available_spaces: Math.max(0, count - occupied),
-      }).eq('id', tenantId!);
-    },
-    onSuccess: () => {
-      toast.success('Espacios creados');
-      setSetupOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant'] });
-    },
-    onError: (e: any) => toast.error(e.message || 'Error'),
-  });
+  // setupMutation removed - unified into updateCapacity
 
   const closeEntryDialog = () => {
     setEntryOpen(false); setSelectedSpace(null); setPlate('');
