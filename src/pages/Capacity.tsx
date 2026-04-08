@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon, AlertTriangle, BookmarkCheck, Timer, RefreshCw, Printer, Eye, X, Check } from 'lucide-react';
+import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon, AlertTriangle, BookmarkCheck, Timer, Printer, Eye, X, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
