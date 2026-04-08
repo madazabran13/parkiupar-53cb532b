@@ -51,6 +51,7 @@ export default function Capacity() {
 
   const [configOpen, setConfigOpen] = useState(false);
   const [newCapacity, setNewCapacity] = useState('');
+  const [optimisticTotalSpaces, setOptimisticTotalSpaces] = useState<number | null>(null);
 
   // Entry dialog
   const [entryOpen, setEntryOpen] = useState(false);
