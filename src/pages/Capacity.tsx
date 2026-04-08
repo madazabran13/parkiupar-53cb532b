@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon, AlertTriangle, BookmarkCheck, Timer, RefreshCw, Printer, Eye, X, Check } from 'lucide-react';
+import { Settings, ParkingCircle, Search, Car, Bike, Truck, LogOut as ExitIcon, AlertTriangle, BookmarkCheck, Timer, Printer, Eye, X, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatCurrency, formatDuration, formatTime, formatDateTime } from '@/lib/utils/formatters';
 import { calculateParkingFee, calculateLiveFee } from '@/lib/utils/pricing';
@@ -108,9 +108,7 @@ export default function Capacity() {
   const [confirmReserveFromDetail, setConfirmReserveFromDetail] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
 
-  // Setup dialog
-  const [setupOpen, setSetupOpen] = useState(false);
-  const [spaceCount, setSpaceCount] = useState('');
+  // Setup dialog removed - unified with capacity
 
   const hasPrinting = planModules.includes('printing');
 
@@ -437,33 +435,7 @@ export default function Capacity() {
     },
   });
 
-  const setupMutation = useMutation({
-    mutationFn: async () => {
-      const count = parseInt(spaceCount);
-      if (isNaN(count) || count < 1 || count > 500) throw new Error('Ingresa entre 1 y 500 espacios');
-      await supabase.from('parking_spaces').delete().eq('tenant_id', tenantId!);
-      const spacesToInsert = Array.from({ length: count }, (_, i) => ({
-        tenant_id: tenantId!, space_number: String(i + 1), label: `Espacio ${i + 1}`, status: 'available' as const,
-      }));
-      for (let i = 0; i < spacesToInsert.length; i += 50) {
-        const batch = spacesToInsert.slice(i, i + 50);
-        const { error } = await supabase.from('parking_spaces').insert(batch);
-        if (error) throw error;
-      }
-      // Also sync tenant total_spaces
-      const occupied = activeSessions.length;
-      await supabase.from('tenants').update({
-        total_spaces: count, available_spaces: Math.max(0, count - occupied),
-      }).eq('id', tenantId!);
-    },
-    onSuccess: () => {
-      toast.success('Espacios creados');
-      setSetupOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant'] });
-    },
-    onError: (e: any) => toast.error(e.message || 'Error'),
-  });
+  // setupMutation removed - unified into updateCapacity
 
   const closeEntryDialog = () => {
     setEntryOpen(false); setSelectedSpace(null); setPlate('');
@@ -578,10 +550,7 @@ export default function Capacity() {
           <p className="text-sm text-muted-foreground">Gestión de espacios, reservas y entradas/salidas en tiempo real</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setSpaceCount(String(parkingSpaces.length || totalSpaces)); setSetupOpen(true); }} className="text-xs">
-            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Cupos
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }} className="text-xs">
+          <Button variant="outline" size="sm" onClick={() => { setNewCapacity(String(parkingSpaces.length || totalSpaces)); setConfigOpen(true); }} className="text-xs">
             <Settings className="h-3.5 w-3.5 mr-1" /> Capacidad
           </Button>
         </div>
@@ -645,7 +614,7 @@ export default function Capacity() {
             <div className="py-12 text-center">
               <ParkingCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground mb-4">No hay espacios configurados</p>
-              <Button onClick={() => { setSpaceCount(String(totalSpaces)); setSetupOpen(true); }}>Crear Espacios</Button>
+              <Button onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }}>Configurar Espacios</Button>
             </div>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5 sm:gap-2">
@@ -939,14 +908,7 @@ export default function Capacity() {
         </DialogContent>
       </Dialog>
 
-      {/* Setup Spaces Dialog */}
-      <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Configurar Cupos</DialogTitle><DialogDescription>Se crearán espacios individuales para gestión de reservas</DialogDescription></DialogHeader>
-          <div className="space-y-2"><Label>Cantidad de espacios</Label><Input type="number" min={1} max={500} value={spaceCount} onChange={(e) => setSpaceCount(e.target.value)} /></div>
-          <DialogFooter><Button variant="outline" onClick={() => setSetupOpen(false)}>Cancelar</Button><Button onClick={() => setupMutation.mutate()} disabled={setupMutation.isPending}>{setupMutation.isPending ? 'Creando...' : 'Crear Espacios'}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Setup dialog unified with capacity */}
 
       {/* Confirm dialogs */}
       <ConfirmDialog open={confirmEntry} onOpenChange={setConfirmEntry} title="Confirmar Entrada"
