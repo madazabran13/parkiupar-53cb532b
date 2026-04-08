@@ -500,7 +500,7 @@ export default function Capacity() {
     });
   }, [now, parkingSpaces]);
 
-  const totalSpaces = tenant?.total_spaces || 20;
+  const totalSpaces = optimisticTotalSpaces ?? tenant?.total_spaces ?? 20;
   const occupiedSpaces = activeSessions.length;
   const availableSpaces = Math.max(0, totalSpaces - occupiedSpaces);
   const reservedCount = parkingSpaces.filter(s => s.status === 'reserved').length;
