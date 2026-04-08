@@ -247,8 +247,38 @@ export default function Capacity() {
         total_spaces: cap, available_spaces: Math.max(0, cap - occupied),
       }).eq('id', tenantId!);
       if (error) throw error;
+
+      // Sync parking_spaces to match new capacity
+      const currentSpaces = parkingSpaces.length;
+      if (cap > currentSpaces) {
+        // Add missing spaces
+        const newSpaces = Array.from({ length: cap - currentSpaces }, (_, i) => ({
+          tenant_id: tenantId!,
+          space_number: String(currentSpaces + i + 1),
+          label: `Espacio ${currentSpaces + i + 1}`,
+          status: 'available' as const,
+        }));
+        for (let i = 0; i < newSpaces.length; i += 50) {
+          const batch = newSpaces.slice(i, i + 50);
+          const { error: insertErr } = await supabase.from('parking_spaces').insert(batch);
+          if (insertErr) throw insertErr;
+        }
+      } else if (cap < currentSpaces) {
+        // Remove excess spaces (only those that are available, from the end)
+        const spacesToRemove = parkingSpaces
+          .filter(s => parseInt(s.space_number) > cap && s.status === 'available')
+          .map(s => s.id);
+        if (spacesToRemove.length > 0) {
+          await supabase.from('parking_spaces').delete().in('id', spacesToRemove);
+        }
+      }
     },
-    onSuccess: () => { toast.success('Capacidad actualizada'); setConfigOpen(false); queryClient.invalidateQueries({ queryKey: ['tenant'] }); },
+    onSuccess: () => {
+      toast.success('Capacidad y espacios actualizados');
+      setConfigOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['tenant'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+    },
     onError: (e) => toast.error(e.message || 'Error al actualizar'),
   });
 
@@ -420,8 +450,18 @@ export default function Capacity() {
         const { error } = await supabase.from('parking_spaces').insert(batch);
         if (error) throw error;
       }
+      // Also sync tenant total_spaces
+      const occupied = activeSessions.length;
+      await supabase.from('tenants').update({
+        total_spaces: count, available_spaces: Math.max(0, count - occupied),
+      }).eq('id', tenantId!);
     },
-    onSuccess: () => { toast.success('Espacios creados'); setSetupOpen(false); queryClient.invalidateQueries({ queryKey: ['parking-spaces'] }); },
+    onSuccess: () => {
+      toast.success('Espacios creados');
+      setSetupOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant'] });
+    },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
