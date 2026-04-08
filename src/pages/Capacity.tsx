@@ -51,6 +51,7 @@ export default function Capacity() {
 
   const [configOpen, setConfigOpen] = useState(false);
   const [newCapacity, setNewCapacity] = useState('');
+  const [optimisticTotalSpaces, setOptimisticTotalSpaces] = useState<number | null>(null);
 
   // Entry dialog
   const [entryOpen, setEntryOpen] = useState(false);
@@ -197,6 +198,12 @@ export default function Capacity() {
     }
   }, [categories, selectedCategoryId]);
 
+  useEffect(() => {
+    if (typeof tenant?.total_spaces === 'number') {
+      setOptimisticTotalSpaces(tenant.total_spaces);
+    }
+  }, [tenant?.total_spaces]);
+
   const searchPlate = useCallback(async (plateVal: string) => {
     if (!tenantId || plateVal.length < 3) { setFoundVehicle(null); return; }
     setSearchingPlate(true);
@@ -272,6 +279,10 @@ export default function Capacity() {
       }
     },
     onSuccess: () => {
+      const cap = parseInt(newCapacity);
+      if (!Number.isNaN(cap)) {
+        setOptimisticTotalSpaces(cap);
+      }
       toast.success('Capacidad y espacios actualizados');
       setConfigOpen(false);
       queryClient.invalidateQueries({ queryKey: ['tenant'] });
@@ -489,7 +500,7 @@ export default function Capacity() {
     });
   }, [now, parkingSpaces]);
 
-  const totalSpaces = tenant?.total_spaces || 20;
+  const totalSpaces = optimisticTotalSpaces ?? tenant?.total_spaces ?? 20;
   const occupiedSpaces = activeSessions.length;
   const availableSpaces = Math.max(0, totalSpaces - occupiedSpaces);
   const reservedCount = parkingSpaces.filter(s => s.status === 'reserved').length;

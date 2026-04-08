@@ -33,6 +33,21 @@ function getAvailabilityColor(available: number, total: number, scheduleStatus?:
   return '#22c55e';
 }
 
+function sortSpacesByNumber<T extends { space_number: string }>(spaces: T[]): T[] {
+  return [...spaces].sort((a, b) => {
+    const aNum = Number.parseInt(a.space_number, 10);
+    const bNum = Number.parseInt(b.space_number, 10);
+
+    if (Number.isNaN(aNum) && Number.isNaN(bNum)) {
+      return a.space_number.localeCompare(b.space_number, undefined, { numeric: true });
+    }
+    if (Number.isNaN(aNum)) return 1;
+    if (Number.isNaN(bNum)) return -1;
+
+    return aNum - bNum;
+  });
+}
+
 function getScheduleStatus(schedules: TenantSchedule[]): { label: string; color: string } {
   if (schedules.length === 0) return { label: 'Sin horario', color: '#6b7280' };
   
@@ -126,7 +141,7 @@ export default function MapPage() {
         .eq('status', 'available')
         .order('space_number')
         .limit(100);
-      return (data || []) as unknown as ParkingSpace[];
+      return sortSpacesByNumber((data || []) as unknown as ParkingSpace[]);
     },
   });
 
@@ -143,7 +158,7 @@ export default function MapPage() {
         .eq('tenant_id', detailTenant!.id)
         .order('space_number')
         .limit(200);
-      return (data || []) as unknown as ParkingSpace[];
+      return sortSpacesByNumber((data || []) as unknown as ParkingSpace[]);
     },
   });
 
