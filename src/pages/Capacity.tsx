@@ -279,6 +279,10 @@ export default function Capacity() {
       }
     },
     onSuccess: () => {
+      const cap = parseInt(newCapacity);
+      if (!Number.isNaN(cap)) {
+        setOptimisticTotalSpaces(cap);
+      }
       toast.success('Capacidad y espacios actualizados');
       setConfigOpen(false);
       queryClient.invalidateQueries({ queryKey: ['tenant'] });
