@@ -614,7 +614,7 @@ export default function Capacity() {
             <div className="py-12 text-center">
               <ParkingCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground mb-4">No hay espacios configurados</p>
-              <Button onClick={() => { setSpaceCount(String(totalSpaces)); setSetupOpen(true); }}>Crear Espacios</Button>
+              <Button onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }}>Configurar Espacios</Button>
             </div>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5 sm:gap-2">
