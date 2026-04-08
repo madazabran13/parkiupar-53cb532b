@@ -108,9 +108,7 @@ export default function Capacity() {
   const [confirmReserveFromDetail, setConfirmReserveFromDetail] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
 
-  // Setup dialog
-  const [setupOpen, setSetupOpen] = useState(false);
-  const [spaceCount, setSpaceCount] = useState('');
+  // Setup dialog removed - unified with capacity
 
   const hasPrinting = planModules.includes('printing');
 
