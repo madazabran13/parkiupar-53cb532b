@@ -247,11 +247,13 @@ export default function Capacity() {
       const cap = parseInt(newCapacity);
       if (isNaN(cap) || cap < 1) throw new Error('Invalid');
       if (cap > maxSpaces) throw new Error(`El máximo de espacios según tu plan es ${maxSpaces}`);
-      const occupied = tenant ? tenant.total_spaces - tenant.available_spaces : 0;
-      const { error } = await supabase.from('tenants').update({
-        total_spaces: cap, available_spaces: Math.max(0, cap - occupied),
-      }).eq('id', tenantId!);
-      if (error) throw error;
+
+      const { data: capacityResult, error: capacityError } = await supabase.functions.invoke('update-tenant-capacity', {
+        body: { capacity: cap },
+      });
+
+      if (capacityError) throw capacityError;
+      if (capacityResult?.error) throw new Error(capacityResult.error);
 
       // Sync parking_spaces to match new capacity
       const currentSpaces = parkingSpaces.length;
@@ -277,16 +279,20 @@ export default function Capacity() {
           await supabase.from('parking_spaces').delete().in('id', spacesToRemove);
         }
       }
+
+      return {
+        totalSpaces: capacityResult?.total_spaces ?? cap,
+      };
     },
-    onSuccess: () => {
-      const cap = parseInt(newCapacity);
-      if (!Number.isNaN(cap)) {
-        setOptimisticTotalSpaces(cap);
+    onSuccess: (result) => {
+      const nextTotal = result?.totalSpaces ?? parseInt(newCapacity);
+      if (!Number.isNaN(nextTotal)) {
+        setOptimisticTotalSpaces(nextTotal);
       }
       toast.success('Capacidad y espacios actualizados');
       setConfigOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['tenant'] });
-      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['capacity-sessions', tenantId] });
     },
     onError: (e) => toast.error(e.message || 'Error al actualizar'),
   });
@@ -561,7 +567,7 @@ export default function Capacity() {
           <p className="text-sm text-muted-foreground">Gestión de espacios, reservas y entradas/salidas en tiempo real</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setNewCapacity(String(parkingSpaces.length || totalSpaces)); setConfigOpen(true); }} className="text-xs">
+          <Button variant="outline" size="sm" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }} className="text-xs">
             <Settings className="h-3.5 w-3.5 mr-1" /> Capacidad
           </Button>
         </div>
