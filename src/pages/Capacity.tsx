@@ -798,7 +798,7 @@ export default function Capacity() {
           <div className="bg-muted/30 px-6 pt-6 pb-4 border-b">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-lg">
-                <LogOut className="h-5 w-5 text-destructive" />
+                <ExitIcon className="h-5 w-5 text-destructive" />
                 Registrar Salida
               </DialogTitle>
               <DialogDescription className="flex items-center gap-2 mt-1">
