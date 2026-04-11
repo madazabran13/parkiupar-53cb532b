@@ -165,14 +165,12 @@ npx supabase db push
 |---|---|
 | `superadmin` | Acceso total a todos los tenants |
 | `admin` | Administrador de un tenant |
-| `operator` | Operador general |
 | `cajero` | Gestión de pagos y caja |
 | `portero` | Registro de entradas/salidas |
 | `conductor` | Portal de autoservicio del cliente |
-| `viewer` | Solo lectura |
 
 ---
 
 ## Licencia
 
-Propietario — todos los derechos reservados.
+INGEMD SOLUTIONS SAS — todos los derechos reservados.
