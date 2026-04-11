@@ -847,7 +847,7 @@ export default function Capacity() {
             )}
             <Button onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending} variant="destructive" className="font-semibold">
               <ExitIcon className="h-4 w-4 mr-1" />
-              {exitMutation.isPending ? 'Procesando...' : 'Confirmar Salida'}
+              {exitMutation.isPending ? 'Procesando...' : 'Salida'}
             </Button>
           </DialogFooter>
         </DialogContent>
