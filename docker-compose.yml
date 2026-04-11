@@ -62,7 +62,7 @@ services:
 
   # ── Supabase: Auth ────────────────────────────────────────
   supabase-auth:
-    image: supabase/gotrue:v2.158.1
+    image: supabase/gotrue:v2.143.0
     container_name: parkiupar-auth
     ports:
       - "9999:9999"
