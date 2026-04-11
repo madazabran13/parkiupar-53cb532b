@@ -793,24 +793,20 @@ export default function Capacity() {
 
       {/* Exit Dialog */}
       <Dialog open={!!exitSession} onOpenChange={() => { setExitSession(null); setExitSpace(null); }}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
-          {/* Header */}
-          <div className="bg-muted/30 px-6 pr-12 pt-6 pb-4 border-b">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg">
-                <ExitIcon className="h-5 w-5 text-destructive" />
-                Registrar Salida
-              </DialogTitle>
-              <DialogDescription className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="font-mono text-xs">Espacio #{exitSpace}</Badge>
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <ExitIcon className="h-5 w-5 text-destructive" />
+              Registrar Salida
+              <Badge variant="outline" className="font-mono text-xs ml-1">Espacio #{exitSpace}</Badge>
+            </DialogTitle>
+            <DialogDescription>Confirma la salida del vehículo</DialogDescription>
+          </DialogHeader>
 
           {exitSession && (
-            <div className="px-6 py-5 space-y-5">
+            <div className="space-y-4">
               {/* Vehicle info cards */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
                   <p className="text-xs text-muted-foreground">Placa</p>
                   <p className="font-mono font-bold text-base">{exitSession.plate}</p>
@@ -842,8 +838,7 @@ export default function Capacity() {
             </div>
           )}
 
-          {/* Footer */}
-          <div className="px-6 py-4 bg-muted/20 border-t flex flex-col sm:flex-row gap-2 sm:justify-end">
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => { setExitSession(null); setExitSpace(null); }}>Cancelar</Button>
             {hasPrinting && (
               <Button variant="secondary" onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending}>
@@ -854,7 +849,7 @@ export default function Capacity() {
               <ExitIcon className="h-4 w-4 mr-1" />
               {exitMutation.isPending ? 'Procesando...' : 'Confirmar Salida'}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
