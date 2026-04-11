@@ -611,12 +611,6 @@ export default function Capacity() {
             {label}
           </Badge>
         ))}
-        {categories.map((cat) => (
-          <Badge key={cat.id} variant="outline" className="gap-1 text-xs">
-            <div className={`h-2.5 w-2.5 rounded ${TYPE_COLORS[cat.icon]?.split(' ')[0] || 'bg-blue-500'}`} />
-            {cat.name}
-          </Badge>
-        ))}
       </div>
 
       {/* Grid */}
@@ -674,10 +668,10 @@ export default function Capacity() {
 
                 return (
                   <button key={space.num} onClick={() => handleGridSpaceClick(space)}
-                    className={`relative flex flex-col items-center justify-center rounded-lg border p-1.5 sm:p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 min-h-[52px] sm:min-h-[64px] ${
+                    className={`relative flex flex-col items-center justify-center rounded-lg border-2 p-1.5 sm:p-2 text-xs font-medium transition-all cursor-pointer active:scale-95 min-h-[52px] sm:min-h-[64px] ${
                       space.occupied
-                        ? `${TYPE_COLORS[space.vehicleType || 'car'] || 'bg-blue-500 hover:bg-blue-600'} text-white border-transparent shadow-sm`
-                        : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200'
+                        ? `${STATUS_COLORS.occupied} shadow-sm`
+                        : `${STATUS_COLORS.available}`
                     }`}
                     title={space.session ? `${space.session.plate} - ${getCategoryLabel(space.session.vehicle_type)} - ${formatCurrency(spaceLiveFee)}` : `Espacio #${space.num}`}
                   >
