@@ -52,7 +52,7 @@ parkiupar/
 - **Facturación y tarifas**: precios por tipo de vehículo, pagos, suscripciones mensuales
 - **Reportes**: ingresos, logs de auditoría, incidentes
 - **Administración**: gestión de usuarios, planes, control de superadmin
-- **Multi-rol**: `superadmin`, `admin`, `operator`, `cajero`, `portero`, `conductor`, `viewer`
+- **Multi-rol**: `superadmin`, `admin`, `cajero`, `portero`, `conductor`
 - **Tiempo real**: sincronización vía Supabase Realtime (WebSocket)
 - **PWA**: aplicación instalable con soporte offline básico
 
