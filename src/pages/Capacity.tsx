@@ -793,46 +793,68 @@ export default function Capacity() {
 
       {/* Exit Dialog */}
       <Dialog open={!!exitSession} onOpenChange={() => { setExitSession(null); setExitSpace(null); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              Registrar Salida <Badge variant="secondary" className="font-mono">Espacio #{exitSpace}</Badge>
-            </DialogTitle>
-            <DialogDescription>Confirma la salida del vehículo</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          {/* Header */}
+          <div className="bg-muted/30 px-6 pt-6 pb-4 border-b">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg">
+                <LogOut className="h-5 w-5 text-destructive" />
+                Registrar Salida
+              </DialogTitle>
+              <DialogDescription className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="font-mono text-xs">Espacio #{exitSpace}</Badge>
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
           {exitSession && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Placa:</span> <strong className="font-mono">{exitSession.plate}</strong></div>
-                <div><span className="text-muted-foreground">Tipo:</span> <strong>{getCategoryLabel(exitSession.vehicle_type)}</strong></div>
-                <div><span className="text-muted-foreground">Cliente:</span> <strong>{exitSession.customer_name || '—'}</strong></div>
-                <div><span className="text-muted-foreground">Entrada:</span> <strong>{formatTime(exitSession.entry_time)}</strong></div>
+            <div className="px-6 py-5 space-y-5">
+              {/* Vehicle info cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Placa</p>
+                  <p className="font-mono font-bold text-base">{exitSession.plate}</p>
+                </div>
+                <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Tipo</p>
+                  <p className="font-semibold text-sm">{getCategoryLabel(exitSession.vehicle_type)}</p>
+                </div>
+                <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Cliente</p>
+                  <p className="font-semibold text-sm truncate">{exitSession.customer_name || '—'}</p>
+                </div>
+                <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Entrada</p>
+                  <p className="font-semibold text-sm">{formatTime(exitSession.entry_time)}</p>
+                </div>
               </div>
+
+              {/* Fee highlight */}
               {exitFee && (
-                <div className="rounded-lg border bg-muted/50 p-4">
-                  <div className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-center">
-                    <p className="text-sm text-muted-foreground">Total a cobrar</p>
-                    <p className="text-3xl font-bold text-primary">{formatCurrency(exitFee.total)}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {exitFee.totalMinutes} min · {exitFee.fractions} fracciones × {formatCurrency(exitFee.costPerFraction)}
-                    </p>
-                  </div>
+                <div className="rounded-xl border-2 border-primary/30 bg-gradient-to-b from-primary/5 to-primary/10 p-5 text-center space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total a cobrar</p>
+                  <p className="text-4xl font-extrabold text-primary tracking-tight">{formatCurrency(exitFee.total)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {exitFee.totalMinutes} min · {exitFee.fractions} fracciones × {formatCurrency(exitFee.costPerFraction)}
+                  </p>
                 </div>
               )}
             </div>
           )}
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+
+          {/* Footer */}
+          <div className="px-6 py-4 bg-muted/20 border-t flex flex-col sm:flex-row gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => { setExitSession(null); setExitSpace(null); }}>Cancelar</Button>
             {hasPrinting && (
               <Button variant="secondary" onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending}>
                 <Printer className="h-4 w-4 mr-1" /> Salida + Recibo
               </Button>
             )}
-            <Button onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending} variant="destructive">
+            <Button onClick={() => setConfirmExit(true)} disabled={exitMutation.isPending} variant="destructive" className="font-semibold">
               <ExitIcon className="h-4 w-4 mr-1" />
               {exitMutation.isPending ? 'Procesando...' : 'Confirmar Salida'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
