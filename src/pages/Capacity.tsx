@@ -795,7 +795,7 @@ export default function Capacity() {
       <Dialog open={!!exitSession} onOpenChange={() => { setExitSession(null); setExitSpace(null); }}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden">
           {/* Header */}
-          <div className="bg-muted/30 px-6 pt-6 pb-4 border-b">
+          <div className="bg-muted/30 px-6 pr-12 pt-6 pb-4 border-b">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-lg">
                 <ExitIcon className="h-5 w-5 text-destructive" />
