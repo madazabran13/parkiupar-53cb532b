@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { useRealtime } from '@/hooks/useRealtime';
+import { useRateStrategy } from '@/hooks/useRateStrategy';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
+import { ParkingService, VehicleService } from '@/services';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
   car: Car,
