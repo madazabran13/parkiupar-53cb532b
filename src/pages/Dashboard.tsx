@@ -55,69 +55,35 @@ export default function Dashboard() {
   const { data: activeSessions = [], isLoading: loadingSessions } = useQuery({
     queryKey: ['active-sessions', tenantId],
     enabled: !!tenantId,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('parking_sessions')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .eq('status', 'active')
-        .order('entry_time', { ascending: false });
-      return (data || []) as unknown as ParkingSession[];
-    },
+    queryFn: () => ParkingService.getActiveSessions(tenantId!),
   });
 
   const { data: todayCompleted = [] } = useQuery({
     queryKey: ['today-completed', tenantId],
     enabled: !!tenantId,
-    queryFn: async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const { data } = await supabase
-        .from('parking_sessions')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .eq('status', 'completed')
-        .gte('exit_time', today.toISOString());
-      return (data || []) as unknown as ParkingSession[];
-    },
+    queryFn: () => ParkingService.getTodayCompleted(tenantId!),
   });
 
   const { data: rates = [] } = useQuery({
     queryKey: ['rates', tenantId],
     enabled: !!tenantId,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('vehicle_rates')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .eq('is_active', true);
-      return (data || []) as unknown as VehicleRate[];
-    },
+    queryFn: () => VehicleService.getActiveRates(tenantId!),
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['vehicle-categories', tenantId],
     enabled: !!tenantId,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('vehicle_categories')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .eq('is_active', true);
-      return (data || []) as unknown as VehicleCategory[];
-    },
+    queryFn: () => VehicleService.getActiveCategories(tenantId!),
   });
 
-  const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
+  // Strategy pattern for rate resolution
+  const { resolveRate } = useRateStrategy(rates, categories);
 
-  // Resolve rate for a session: vehicle_rates > vehicle_categories > session stored rate
-  const getSessionRate = (session: ParkingSession): { rate_per_hour: number; fraction_minutes: number } | null => {
-    const fromRates = rateMap[session.vehicle_type];
-    if (fromRates) return { rate_per_hour: fromRates.rate_per_hour, fraction_minutes: fromRates.fraction_minutes };
-    const fromCat = categories.find((c) => c.icon === session.vehicle_type);
-    if (fromCat) return { rate_per_hour: fromCat.rate_per_hour, fraction_minutes: fromCat.fraction_minutes };
-    if (session.rate_per_hour && session.rate_per_hour > 0) return { rate_per_hour: session.rate_per_hour, fraction_minutes: 15 };
-    return null;
+  const getSessionRate = (session: ParkingSession) => {
+    const resolved = resolveRate(session);
+    if (resolved.source === 'none') return null;
+    return { rate_per_hour: resolved.ratePerHour, fraction_minutes: resolved.fractionMinutes };
+  };
   };
 
   const todayRevenue = todayCompleted.reduce((sum, s) => sum + (s.total_amount || 0), 0);
