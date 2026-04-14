@@ -113,19 +113,16 @@ export default function Dashboard() {
         ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
         : { total: 0, totalMinutes: 0, fractions: 0, costPerFraction: 0 };
 
-      const { error } = await supabase.from('parking_sessions').update({
-        exit_time: exitTime,
-        hours_parked: Math.round(fee.totalMinutes / 60 * 100) / 100,
-        total_amount: fee.total,
-        status: 'completed' as const,
-      }).eq('id', session.id);
-      if (error) throw error;
-      // Release parking space
+      await ParkingService.completeSession({
+        sessionId: session.id,
+        exitTime,
+        hoursParked: Math.round(fee.totalMinutes / 60 * 100) / 100,
+        totalAmount: fee.total,
+      });
+
       if (session.space_number) {
-        const { data: spaces } = await supabase.from('parking_spaces').select('id').eq('tenant_id', tenantId!).eq('space_number', session.space_number);
-        if (spaces && spaces.length > 0) {
-          await supabase.from('parking_spaces').update({ status: 'available', reserved_by: null, reserved_at: null, reservation_expires_at: null, session_id: null }).eq('id', spaces[0].id);
-        }
+        const spaces = await SpaceService.findByNumber(tenantId!, session.space_number);
+        if (spaces) await SpaceService.setAvailable(spaces.id);
       }
       return { session, exitTime, fee, rate };
     },
