@@ -60,13 +60,12 @@ export default function ReservationDetailDialog({
             </div>
           </div>
         )}
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose}>Cerrar</Button>
+        <DialogFooter className="flex-col sm:flex-row gap-3">
           <Button variant="destructive" size="sm" onClick={onCancel} disabled={cancelLoading}>
-            <X className="h-4 w-4 mr-1" /> Cancelar Reserva
+            <X className="h-4 w-4 mr-1" /> Cancelar
           </Button>
           <Button size="sm" onClick={onConfirmArrival}>
-            <Check className="h-4 w-4 mr-1" /> Confirmar Llegada
+            <Check className="h-4 w-4 mr-1" /> Confirmar
           </Button>
         </DialogFooter>
       </DialogContent>
