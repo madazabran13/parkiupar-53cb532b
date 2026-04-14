@@ -11,7 +11,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://gateway:3000
+      - VITE_API_URL=http://gateway:8080
     depends_on:
       - gateway
     networks:
@@ -26,10 +26,22 @@ services:
       dockerfile: Dockerfile
     container_name: gateway
     ports:
-      - "3000:3000"
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      MS_AUTH_URL: http://ms-auth:3001
+      MS_VEHICULOS_URL: http://ms-vehiculos:3002
+      MS_PARQUEADEROS_URL: http://ms-parqueaderos:3003
+      MS_RESERVAS_URL: http://ms-reservas:3004
+      MS_REPORTES_URL: http://ms-reportes:3005
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
     depends_on:
       - ms-auth
       - ms-vehiculos
+      - ms-parqueaderos
+      - ms-reservas
+      - ms-reportes
     networks:
       - app-network
 
@@ -38,11 +50,17 @@ services:
   # ─────────────────────────────
   ms-auth:
     build:
-      context: ./microservices/services/ms-auth
-      dockerfile: Dockerfile
+      context: ./microservices
+      dockerfile: services/ms-auth/Dockerfile
     container_name: ms-auth
     ports:
       - "3001:3001"
+    environment:
+      PORT: 3001
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
     depends_on:
       - postgres
     networks:
@@ -50,11 +68,71 @@ services:
 
   ms-vehiculos:
     build:
-      context: ./microservices/services/ms-vehiculos
-      dockerfile: Dockerfile
+      context: ./microservices
+      dockerfile: services/ms-vehiculos/Dockerfile
     container_name: ms-vehiculos
     ports:
       - "3002:3002"
+    environment:
+      PORT: 3002
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  ms-parqueaderos:
+    build:
+      context: ./microservices
+      dockerfile: services/ms-parqueaderos/Dockerfile
+    container_name: ms-parqueaderos
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  ms-reservas:
+    build:
+      context: ./microservices
+      dockerfile: services/ms-reservas/Dockerfile
+    container_name: ms-reservas
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      MS_VEHICULOS_URL: http://ms-vehiculos:3002
+      MS_PARQUEADEROS_URL: http://ms-parqueaderos:3003
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    depends_on:
+      - postgres
+      - ms-vehiculos
+      - ms-parqueaderos
+    networks:
+      - app-network
+
+  ms-reportes:
+    build:
+      context: ./microservices
+      dockerfile: services/ms-reportes/Dockerfile
+    container_name: ms-reportes
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
     depends_on:
       - postgres
     networks:
@@ -72,6 +150,8 @@ services:
       POSTGRES_DB: parkiupar
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
 
@@ -90,3 +170,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgres_data:

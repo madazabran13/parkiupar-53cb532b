@@ -15,7 +15,7 @@ export class VehiculoController {
 
   findById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.findById(req.params.id);
+      const data = await this.service.findById(req.params.id as string);
       sendSuccess(res, data);
     } catch (err) { next(err); }
   };
@@ -29,14 +29,14 @@ export class VehiculoController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = await this.service.update(req.params.id, req.body);
+      const data = await this.service.update(req.params.id as string, req.body);
       sendSuccess(res, data);
     } catch (err) { next(err); }
   };
 
   softDelete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await this.service.softDelete(req.params.id);
+      await this.service.softDelete(req.params.id as string);
       sendNoContent(res);
     } catch (err) { next(err); }
   };

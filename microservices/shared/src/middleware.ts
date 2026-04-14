@@ -45,7 +45,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
   }
 
   if (err instanceof ZodError) {
-    sendError(res, 422, 'VALIDATION_FAILED', 'Error de validación', err.errors);
+    sendError(res, 422, 'VALIDATION_FAILED', 'Error de validación', err.issues);
     return;
   }
 

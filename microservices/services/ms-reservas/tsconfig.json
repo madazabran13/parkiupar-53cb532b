@@ -1,9 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler",
-    "outDir": "dist", "rootDir": "src", "strict": true,
-    "esModuleInterop": true, "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true, "resolveJsonModule": true, "declaration": true
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "paths": {
+      "../../../../shared/src/*": ["./shared/src/*"],
+      "../../../shared/src/*": ["./shared/src/*"]
+    },
+    "baseUrl": "."
   },
-  "include": ["src"], "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "shared/src/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
 }
