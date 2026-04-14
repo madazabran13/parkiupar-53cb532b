@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { TeamService } from '@/services/team.service';
+import { BillingService } from '@/services/billing.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
