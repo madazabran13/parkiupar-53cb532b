@@ -1,92 +1,92 @@
-version: "3.8"
-
 services:
 
-  # ── Frontend React ────────────────────────────────────────
+  # ─────────────────────────────
+  # 🌐 FRONTEND
+  # ─────────────────────────────
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: parkiupar-frontend
+    container_name: frontend
     ports:
-      - "80:80"
+      - "5173:5173"
     environment:
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_API_URL=http://gateway:3000
     depends_on:
-      - supabase-db
+      - gateway
     networks:
-      - parkiupar-network
-    restart: unless-stopped
+      - app-network
 
-  # ── Supabase: Base de datos PostgreSQL ───────────────────
-  supabase-db:
-    image: supabase/postgres:15.6.1.143
-    container_name: parkiupar-database
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-    volumes:
-      - supabase-db-data:/var/lib/postgresql/data
-      - ./supabase/init:/docker-entrypoint-initdb.d
-    networks:
-      - parkiupar-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── Supabase: API REST (PostgREST) ────────────────────────
-  supabase-backend:
-    image: postgrest/postgrest:v12.2.0
-    container_name: parkiupar-backend
+  # ─────────────────────────────
+  # 🚪 GATEWAY
+  # ─────────────────────────────
+  gateway:
+    build:
+      context: ./microservices/gateway
+      dockerfile: Dockerfile
+    container_name: gateway
     ports:
       - "3000:3000"
-    environment:
-      PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/postgres
-      PGRST_DB_SCHEMA: public
-      PGRST_DB_ANON_ROLE: anon
-      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-chars}
-      PGRST_DB_USE_LEGACY_GUCS: "false"
     depends_on:
-      supabase-db:
-        condition: service_healthy
+      - ms-auth
+      - ms-vehiculos
     networks:
-      - parkiupar-network
-    restart: unless-stopped
+      - app-network
 
-  # ── Supabase: Auth ────────────────────────────────────────
-  supabase-auth:
-    image: supabase/gotrue:v2.143.0
-    container_name: parkiupar-backend-auth
+  # ─────────────────────────────
+  # 🔐 MICROSERVICIOS
+  # ─────────────────────────────
+  ms-auth:
+    build:
+      context: ./microservices/services/ms-auth
+      dockerfile: Dockerfile
+    container_name: ms-auth
     ports:
-      - "9999:9999"
-    environment:
-      GOTRUE_API_HOST: "0.0.0.0"
-      GOTRUE_API_PORT: 9999
-      API_EXTERNAL_URL: http://localhost:9999
-      GOTRUE_DB_DRIVER: postgres
-      GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/postgres
-      GOTRUE_SITE_URL: http://localhost
-      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-with-at-least-32-chars}
-      GOTRUE_DISABLE_SIGNUP: "false"
+      - "3001:3001"
     depends_on:
-      supabase-db:
-        condition: service_healthy
+      - postgres
     networks:
-      - parkiupar-network
-    restart: unless-stopped
+      - app-network
 
-# ── Volúmenes ─────────────────────────────────────────────
-volumes:
-  supabase-db-data:
+  ms-vehiculos:
+    build:
+      context: ./microservices/services/ms-vehiculos
+      dockerfile: Dockerfile
+    container_name: ms-vehiculos
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+    networks:
+      - app-network
 
-# ── Red interna ───────────────────────────────────────────
+  # ─────────────────────────────
+  # 🐘 DB
+  # ─────────────────────────────
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: parkiupar
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  # ─────────────────────────────
+  # 📨 RABBITMQ
+  # ─────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+
 networks:
-  parkiupar-network:
+  app-network:
     driver: bridge
