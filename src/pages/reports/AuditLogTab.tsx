@@ -44,37 +44,11 @@ export default function AuditLog() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs', tableFilter, actionFilter, search, page, pageSize],
-    queryFn: async () => {
-      let query = supabase
-        .from('audit_logs')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (tableFilter !== 'all') query = query.eq('table_name', tableFilter);
-      if (actionFilter !== 'all') query = query.eq('action', actionFilter);
-      if (search) query = query.or(`user_name.ilike.%${search}%,record_id.ilike.%${search}%`);
-
-      const { data, count, error } = await query;
-      if (error) throw error;
-      return { logs: data || [], total: count || 0 };
-    },
+    queryFn: () => ReportService.getAuditLogs({ tableFilter, actionFilter, search, page, pageSize }),
   });
 
   const fetchAllForExport = useCallback(async () => {
-    let query = supabase
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(5000);
-
-    if (tableFilter !== 'all') query = query.eq('table_name', tableFilter);
-    if (actionFilter !== 'all') query = query.eq('action', actionFilter);
-    if (search) query = query.or(`user_name.ilike.%${search}%,record_id.ilike.%${search}%`);
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+    return ReportService.getAllAuditLogsForExport({ tableFilter, actionFilter, search });
   }, [tableFilter, actionFilter, search]);
 
   const exportCSV = useCallback(async () => {

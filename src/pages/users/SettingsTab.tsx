@@ -60,11 +60,7 @@ export default function SettingsPage() {
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
       if (!fullName.trim()) throw new Error('El nombre es obligatorio');
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ full_name: fullName.trim(), phone: userPhone.trim() || null })
-        .eq('id', user!.id);
-      if (error) throw error;
+      await TenantService.updateProfile(user!.id, { full_name: fullName.trim(), phone: userPhone.trim() || null });
     },
     onSuccess: () => toast.success('Perfil actualizado'),
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -89,18 +85,14 @@ export default function SettingsPage() {
     mutationFn: async () => {
       if (!tName.trim()) throw new Error('El nombre del parqueadero es obligatorio');
       if (!tenantId) throw new Error('Sin parqueadero asignado');
-      const { error } = await supabase
-        .from('tenants')
-        .update({
-          name: tName.trim(),
-          address: tAddress.trim() || null,
-          phone: tPhone.trim() || null,
-          email: tEmail.trim() || null,
-          latitude: tLat ? parseFloat(tLat) : null,
-          longitude: tLng ? parseFloat(tLng) : null,
-        })
-        .eq('id', tenantId);
-      if (error) throw error;
+      await TenantService.updateTenant(tenantId, {
+        name: tName.trim(),
+        address: tAddress.trim() || null,
+        phone: tPhone.trim() || null,
+        email: tEmail.trim() || null,
+        latitude: tLat ? parseFloat(tLat) : null,
+        longitude: tLng ? parseFloat(tLng) : null,
+      });
     },
     onSuccess: () => {
       toast.success('Parqueadero actualizado');

@@ -151,12 +151,7 @@ export default function MonthlySubscriptions() {
     queryKey: ['monthly-subs', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('monthly_subscriptions')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .order('created_at', { ascending: false });
-      return (data || []) as unknown as MonthlySubscription[];
+      return await BillingService.getSubscriptions(tenantId!) as unknown as MonthlySubscription[];
     },
   });
 
@@ -166,12 +161,7 @@ export default function MonthlySubscriptions() {
     queryKey: ['sub-payments', activeSubId],
     enabled: !!activeSubId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('subscription_payments')
-        .select('*')
-        .eq('subscription_id', activeSubId!)
-        .order('payment_date', { ascending: false });
-      return (data || []) as unknown as SubscriptionPayment[];
+      return await BillingService.getSubscriptionPayments(activeSubId!) as unknown as SubscriptionPayment[];
     },
   });
 
@@ -196,20 +186,14 @@ export default function MonthlySubscriptions() {
 
       let customerId: string | null = null;
       if (customerPhone) {
-        const { data: existing } = await supabase.from('customers').select('id').eq('tenant_id', tenantId!).eq('phone', customerPhone).single();
-        customerId = existing?.id || null;
-        if (!customerId) {
-          const { data: newC } = await supabase.from('customers').insert({ tenant_id: tenantId!, phone: customerPhone, full_name: customerName || 'Sin nombre' }).select('id').single();
-          customerId = newC?.id || null;
-        }
+        customerId = await CustomerService.upsert(tenantId!, customerPhone, customerName || 'Sin nombre');
       }
 
-      const { error } = await supabase.from('monthly_subscriptions').insert({
+      await BillingService.createSubscription({
         tenant_id: tenantId!, plate: plate.toUpperCase(), customer_name: customerName || null,
         customer_phone: customerPhone || null, customer_id: customerId, amount: Number(amount),
         start_date: startDate, end_date: endDate, notes: notes || null,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Mensualidad registrada');
@@ -222,8 +206,7 @@ export default function MonthlySubscriptions() {
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('monthly_subscriptions').update({ is_active: false }).eq('id', id);
-      if (error) throw error;
+      await BillingService.cancelSubscription(id);
     },
     onSuccess: () => {
       toast.success('Mensualidad cancelada');
@@ -236,7 +219,7 @@ export default function MonthlySubscriptions() {
   const editMutation = useMutation({
     mutationFn: async () => {
       if (!editSub) return;
-      const { error } = await supabase.from('monthly_subscriptions').update({
+      await BillingService.updateSubscription(editSub.id, {
         plate: editPlate.toUpperCase(),
         customer_name: editCustomerName || null,
         customer_phone: editCustomerPhone || null,
@@ -244,8 +227,7 @@ export default function MonthlySubscriptions() {
         start_date: editStartDate,
         end_date: editEndDate,
         notes: editNotes || null,
-      }).eq('id', editSub.id);
-      if (error) throw error;
+      });
     },
     onSuccess: () => {
       toast.success('Mensualidad actualizada');
@@ -261,22 +243,20 @@ export default function MonthlySubscriptions() {
       if (Number(paymentAmount) > remainingBalance && remainingBalance > 0) throw new Error(`El abono no puede superar el saldo pendiente de ${formatCurrency(remainingBalance)}`);
       if (remainingBalance <= 0) throw new Error('Esta mensualidad ya está completamente pagada');
       const noteWithMonth = [paymentMonth ? `Mes: ${paymentMonth}` : '', paymentNotes].filter(Boolean).join(' — ');
-      const { data, error } = await supabase.from('subscription_payments').insert({
+      const data = await BillingService.createSubscriptionPayment({
         subscription_id: paymentSub.id,
         tenant_id: tenantId!,
         amount: Number(paymentAmount),
         payment_method: paymentMethod,
         notes: noteWithMonth || null,
         created_by: user?.id || null,
-      }).select().single();
-      if (error) throw error;
+      });
       return data as unknown as SubscriptionPayment;
     },
     onSuccess: (payment) => {
       toast.success('Abono registrado');
       queryClient.invalidateQueries({ queryKey: ['sub-payments'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-subs'] });
-      // Print receipt
       if (paymentSub && payment) {
         generatePaymentReceiptPDF(paymentSub, payment, tenant?.name || 'Parqueadero');
       }
