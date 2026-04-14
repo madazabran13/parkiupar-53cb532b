@@ -25,20 +25,6 @@ export default function Schedules() {
   const [openTime, setOpenTime] = useState('06:00');
   const [closeTime, setCloseTime] = useState('18:00');
 
-  // Reservation timeout setting
-  const [timeoutDialogOpen, setTimeoutDialogOpen] = useState(false);
-  const [reservationTimeout, setReservationTimeout] = useState('15');
-
-  const { data: tenant } = useQuery({
-    queryKey: ['tenant-settings', tenantId],
-    enabled: !!tenantId,
-    queryFn: async () => {
-      const { data } = await supabase.from('tenants').select('settings').eq('id', tenantId!).single();
-      return data;
-    },
-  });
-
-  const currentTimeout = (tenant?.settings as any)?.reservation_timeout_minutes || 15;
 
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ['schedules', tenantId],

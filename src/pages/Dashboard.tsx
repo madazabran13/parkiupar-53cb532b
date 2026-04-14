@@ -84,7 +84,6 @@ export default function Dashboard() {
     if (resolved.source === 'none') return null;
     return { rate_per_hour: resolved.ratePerHour, fraction_minutes: resolved.fractionMinutes };
   };
-  };
 
   const todayRevenue = todayCompleted.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const occupancyPercent = tenant
