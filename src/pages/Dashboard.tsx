@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
@@ -21,7 +20,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
-import { ParkingService, VehicleService } from '@/services';
+import { ParkingService, VehicleService, SpaceService } from '@/services';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
   car: Car,
@@ -84,7 +83,6 @@ export default function Dashboard() {
     if (resolved.source === 'none') return null;
     return { rate_per_hour: resolved.ratePerHour, fraction_minutes: resolved.fractionMinutes };
   };
-  };
 
   const todayRevenue = todayCompleted.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const occupancyPercent = tenant
@@ -114,19 +112,16 @@ export default function Dashboard() {
         ? calculateParkingFee(session.entry_time, exitTime, rate.rate_per_hour, rate.fraction_minutes)
         : { total: 0, totalMinutes: 0, fractions: 0, costPerFraction: 0 };
 
-      const { error } = await supabase.from('parking_sessions').update({
-        exit_time: exitTime,
-        hours_parked: Math.round(fee.totalMinutes / 60 * 100) / 100,
-        total_amount: fee.total,
-        status: 'completed' as const,
-      }).eq('id', session.id);
-      if (error) throw error;
-      // Release parking space
+      await ParkingService.completeSession({
+        sessionId: session.id,
+        exitTime,
+        hoursParked: Math.round(fee.totalMinutes / 60 * 100) / 100,
+        totalAmount: fee.total,
+      });
+
       if (session.space_number) {
-        const { data: spaces } = await supabase.from('parking_spaces').select('id').eq('tenant_id', tenantId!).eq('space_number', session.space_number);
-        if (spaces && spaces.length > 0) {
-          await supabase.from('parking_spaces').update({ status: 'available', reserved_by: null, reserved_at: null, reservation_expires_at: null, session_id: null }).eq('id', spaces[0].id);
-        }
+        const spaces = await SpaceService.findByNumber(tenantId!, session.space_number);
+        if (spaces) await SpaceService.setAvailable(spaces.id);
       }
       return { session, exitTime, fee, rate };
     },

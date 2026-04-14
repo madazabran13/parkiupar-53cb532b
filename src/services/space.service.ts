@@ -16,6 +16,17 @@ export const SpaceService = {
     return (data || []) as unknown as ParkingSpace[];
   },
 
+  async findByNumber(tenantId: string, spaceNumber: string): Promise<ParkingSpace | null> {
+    const { data, error } = await supabase
+      .from('parking_spaces')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('space_number', spaceNumber)
+      .maybeSingle();
+    if (error) throw error;
+    return data as unknown as ParkingSpace | null;
+  },
+
   async setOccupied(spaceId: string): Promise<void> {
     const { error } = await supabase
       .from('parking_spaces')

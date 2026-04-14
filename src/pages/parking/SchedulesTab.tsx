@@ -25,20 +25,6 @@ export default function Schedules() {
   const [openTime, setOpenTime] = useState('06:00');
   const [closeTime, setCloseTime] = useState('18:00');
 
-  // Reservation timeout setting
-  const [timeoutDialogOpen, setTimeoutDialogOpen] = useState(false);
-  const [reservationTimeout, setReservationTimeout] = useState('15');
-
-  const { data: tenant } = useQuery({
-    queryKey: ['tenant-settings', tenantId],
-    enabled: !!tenantId,
-    queryFn: async () => {
-      const { data } = await supabase.from('tenants').select('settings').eq('id', tenantId!).single();
-      return data;
-    },
-  });
-
-  const currentTimeout = (tenant?.settings as any)?.reservation_timeout_minutes || 15;
 
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ['schedules', tenantId],
@@ -104,24 +90,6 @@ export default function Schedules() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['schedules'] }),
   });
 
-  const timeoutMutation = useMutation({
-    mutationFn: async () => {
-      const mins = parseInt(reservationTimeout);
-      if (isNaN(mins) || mins < 5 || mins > 120) throw new Error('El tiempo debe estar entre 5 y 120 minutos');
-      const currentSettings = (tenant?.settings || {}) as Record<string, unknown>;
-      const { error } = await supabase.from('tenants').update({
-        settings: { ...currentSettings, reservation_timeout_minutes: mins },
-      }).eq('id', tenantId!);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Tiempo de reserva actualizado');
-      setTimeoutDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['tenant-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant'] });
-    },
-    onError: (e: any) => toast.error(e.message || 'Error'),
-  });
 
   const closeDialog = () => {
     setDialogOpen(false);
@@ -155,9 +123,6 @@ export default function Schedules() {
           <p className="text-xs sm:text-sm text-muted-foreground">Configura las franjas horarias de tu parqueadero</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { setReservationTimeout(String(currentTimeout)); setTimeoutDialogOpen(true); }} className="text-xs sm:text-sm">
-            <Clock className="h-4 w-4 mr-1" /> Reserva: {currentTimeout}min
-          </Button>
           <Button onClick={() => setDialogOpen(true)} className="text-xs sm:text-sm">
             <Plus className="h-4 w-4 mr-1" /> Agregar
           </Button>
@@ -252,31 +217,6 @@ export default function Schedules() {
         </DialogContent>
       </Dialog>
 
-      {/* Reservation Timeout Dialog */}
-      <Dialog open={timeoutDialogOpen} onOpenChange={setTimeoutDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Tiempo de Reserva</DialogTitle>
-            <DialogDescription>Define cuántos minutos puede durar una reserva antes de liberarse automáticamente</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>Minutos (5-120)</Label>
-            <Input
-              type="number"
-              min={5}
-              max={120}
-              value={reservationTimeout}
-              onChange={(e) => setReservationTimeout(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTimeoutDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => timeoutMutation.mutate()} disabled={timeoutMutation.isPending}>
-              {timeoutMutation.isPending ? 'Guardando...' : 'Guardar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
