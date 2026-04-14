@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { ReportService } from '@/services/report.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,15 +47,7 @@ export default function Reports() {
     queryKey: ['report-sessions', tenantId, dateRange.from.toISOString(), dateRange.to.toISOString()],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('parking_sessions')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .eq('status', 'completed')
-        .gte('exit_time', dateRange.from.toISOString())
-        .lte('exit_time', dateRange.to.toISOString())
-        .order('exit_time', { ascending: false });
-      return (data || []) as unknown as ParkingSession[];
+      return await ReportService.getCompletedSessions(tenantId!, dateRange.from.toISOString(), dateRange.to.toISOString()) as unknown as ParkingSession[];
     },
   });
 

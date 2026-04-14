@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { BillingService } from '@/services/billing.service';
+import { TenantService } from '@/services/tenant.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,22 +31,14 @@ export default function MyPlan() {
   const { data: plans = [] } = useQuery({
     queryKey: ['plans'],
     queryFn: async () => {
-      const { data } = await supabase.from('plans').select('*').eq('is_active', true).order('price_monthly');
-      return (data || []) as unknown as Plan[];
+      return await BillingService.getAllActivePlans() as unknown as Plan[];
     },
   });
 
   const { data: myRequests = [] } = useQuery({
     queryKey: ['my-plan-requests', tenantId],
     enabled: !!tenantId,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('plan_requests')
-        .select('*, requested_plan:plans!plan_requests_requested_plan_id_fkey(name, price_monthly)')
-        .eq('tenant_id', tenantId!)
-        .order('created_at', { ascending: false });
-      return data || [];
-    },
+    queryFn: () => TenantService.getPlanRequests(tenantId!),
   });
 
   const currentPlan = plans.find(p => p.id === tenant?.plan_id);
@@ -54,13 +47,12 @@ export default function MyPlan() {
   const requestMutation = useMutation({
     mutationFn: async () => {
       if (!selectedPlan || !tenantId) throw new Error('Datos incompletos');
-      const { error } = await supabase.from('plan_requests').insert({
+      await TenantService.createPlanRequest({
         tenant_id: tenantId,
         current_plan_id: tenant?.plan_id || null,
         requested_plan_id: selectedPlan.id,
         message: message || null,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Solicitud de cambio de plan enviada');

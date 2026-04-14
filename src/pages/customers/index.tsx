@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { TenantService } from '@/services/tenant.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { DataTable, Column } from '@/components/ui/DataTable';
@@ -26,8 +26,7 @@ export default function Customers() {
     queryKey: ['customers', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase.from('customers').select('*').eq('tenant_id', tenantId!).order('created_at', { ascending: false });
-      return (data || []) as unknown as Customer[];
+      return await TenantService.getCustomersByTenant(tenantId!) as unknown as Customer[];
     },
   });
 
@@ -35,8 +34,7 @@ export default function Customers() {
     queryKey: ['customer-sessions', selected?.id],
     enabled: !!selected,
     queryFn: async () => {
-      const { data } = await supabase.from('parking_sessions').select('*').eq('customer_id', selected!.id).order('entry_time', { ascending: false });
-      return (data || []) as unknown as ParkingSession[];
+      return await TenantService.getCustomerSessions(selected!.id) as unknown as ParkingSession[];
     },
   });
 
@@ -44,8 +42,7 @@ export default function Customers() {
     queryKey: ['customer-subscriptions', selected?.id],
     enabled: !!selected && hasMonthly,
     queryFn: async () => {
-      const { data } = await supabase.from('monthly_subscriptions').select('*').eq('customer_id', selected!.id).order('start_date', { ascending: false });
-      return (data || []) as unknown as MonthlySubscription[];
+      return await TenantService.getCustomerSubscriptions(selected!.id) as unknown as MonthlySubscription[];
     },
   });
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { IncidentService } from '@/services/incident.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,27 +42,19 @@ export default function IncidentReports() {
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['incident-reports'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('incident_reports')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => IncidentService.getAll(),
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('incident_reports').insert({
+      await IncidentService.create({
         user_id: user!.id,
-        user_name: profile?.full_name || user!.email,
+        user_name: profile?.full_name || user!.email || '',
         tenant_id: profile?.tenant_id || null,
         title,
         description,
         category,
-      } as any);
-      if (error) throw error;
+      });
     },
     onSuccess: () => {
       toast.success('Reporte enviado correctamente');
@@ -77,10 +69,7 @@ export default function IncidentReports() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, admin_notes }: { id: string; status: string; admin_notes?: string }) => {
-      const update: any = { status };
-      if (admin_notes !== undefined) update.admin_notes = admin_notes;
-      const { error } = await supabase.from('incident_reports').update(update).eq('id', id);
-      if (error) throw error;
+      await IncidentService.updateStatus(id, status, admin_notes);
     },
     onSuccess: () => {
       toast.success('Estado actualizado');

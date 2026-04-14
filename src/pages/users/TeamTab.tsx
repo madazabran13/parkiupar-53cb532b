@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { TeamService } from '@/services/team.service';
+import { BillingService } from '@/services/billing.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
@@ -55,34 +56,24 @@ export default function TeamUsers() {
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['team-users'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'list' } });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-      return (data.users || []) as TeamUser[];
-    },
+    queryFn: () => TeamService.listUsers(),
   });
 
   const { data: planData } = useQuery({
     queryKey: ['plan-max-users', tenant?.plan_id],
     enabled: !!tenant?.plan_id,
-    queryFn: async () => { const { data } = await supabase.from('plans').select('max_users').eq('id', tenant!.plan_id!).single(); return data; },
+    queryFn: () => BillingService.getPlanMaxUsers(tenant!.plan_id!),
   });
 
   const maxUsers = planData?.max_users || 10;
-  const staffUsers = users.filter(u => ['portero', 'cajero', 'operator'].includes(u.role) && u.is_active);
+  const staffUsers = users.filter((u: any) => ['portero', 'cajero', 'operator'].includes(u.role) && u.is_active);
   const isAtLimit = staffUsers.length >= maxUsers;
 
-  // Modules available from the plan
   const availableModules = planModules.filter(m => !['dashboard', 'settings', 'my_plan'].includes(m));
 
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'create', email: newEmail, password: newPassword, full_name: newName, role: newRole, modules: newModules.length > 0 ? newModules : null },
-      });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      await TeamService.createUser({ email: newEmail, password: newPassword, full_name: newName, role: newRole, modules: newModules.length > 0 ? newModules : null });
     },
     onSuccess: () => {
       toast.success('Usuario creado exitosamente');
@@ -94,9 +85,7 @@ export default function TeamUsers() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ user_id, role }: { user_id: string; role: string }) => {
-      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'update_role', user_id, role } });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      await TeamService.updateRole(user_id, role);
     },
     onSuccess: () => { toast.success('Rol actualizado'); setConfirmRoleChange(null); queryClient.invalidateQueries({ queryKey: ['team-users'] }); },
     onError: (e) => { toast.error(`Error: ${e.message}`); setConfirmRoleChange(null); },
@@ -104,11 +93,7 @@ export default function TeamUsers() {
 
   const updateModulesMutation = useMutation({
     mutationFn: async ({ user_id, modules }: { user_id: string; modules: string[] | null }) => {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'update_modules', user_id, modules },
-      });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      await TeamService.updateModules(user_id, modules);
     },
     onSuccess: () => { toast.success('Módulos actualizados'); setModuleEditUser(null); queryClient.invalidateQueries({ queryKey: ['team-users'] }); },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -116,9 +101,7 @@ export default function TeamUsers() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ user_id, is_active }: { user_id: string; is_active: boolean }) => {
-      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'toggle_active', user_id, is_active } });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      await TeamService.toggleActive(user_id, is_active);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-users'] }),
   });
