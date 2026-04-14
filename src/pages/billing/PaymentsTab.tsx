@@ -128,6 +128,7 @@ export default function Payments() {
 
   const checkExpirations = useMutation({
     mutationFn: async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.functions.invoke('check-expirations');
       if (error) throw error;
       return data;
@@ -142,23 +143,14 @@ export default function Payments() {
     queryKey: ['all-plans'],
     enabled: isSuperadmin,
     queryFn: async () => {
-      const { data } = await supabase.from('plans').select('id, name, price_monthly, max_spaces').eq('is_active', true).order('price_monthly');
-      return (data || []) as PlanOption[];
+      return await BillingService.getActivePlans();
     },
   });
 
   const { data: tenants = [], isLoading } = useQuery({
     queryKey: ['payments-tenants', isSuperadmin, tenant?.id],
     queryFn: async () => {
-      let query = supabase
-        .from('tenants')
-        .select('id, name, slug, plan_id, plan_started_at, plan_expires_at, is_active, city, address, phone, email, plans(id, name, price_monthly)')
-        .eq('is_active', true)
-        .order('plan_expires_at', { ascending: true, nullsFirst: false });
-      if (!isSuperadmin && tenant?.id) query = query.eq('id', tenant.id);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as unknown as TenantWithPlan[];
+      return await BillingService.getTenantsWithPlans(isSuperadmin, tenant?.id) as unknown as TenantWithPlan[];
     },
   });
 
@@ -166,14 +158,7 @@ export default function Payments() {
   const { data: history = [], isLoading: histLoading } = useQuery({
     queryKey: ['payment-history', isSuperadmin, tenant?.id],
     queryFn: async () => {
-      let query = supabase
-        .from('payment_history')
-        .select('id, tenant_id, plan_name, amount, months, previous_expires_at, new_expires_at, payment_method, notes, created_at, tenants(name)')
-        .order('created_at', { ascending: false });
-      if (!isSuperadmin && tenant?.id) query = query.eq('tenant_id', tenant.id);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as unknown as PaymentRecord[];
+      return await BillingService.getPaymentHistory(isSuperadmin, tenant?.id) as unknown as PaymentRecord[];
     },
   });
 
@@ -190,26 +175,17 @@ export default function Payments() {
       const newExpiration = addMonths(baseDate, renewMonths);
       const totalAmount = selPlan.price_monthly * renewMonths;
 
-      // Update tenant
-      const { error } = await supabase.from('tenants').update({
-        plan_id: planId,
-        plan_started_at: new Date().toISOString(),
-        plan_expires_at: newExpiration.toISOString(),
-      }).eq('id', renewTenant.id);
-      if (error) throw error;
+      await BillingService.renewTenantPlan(
+        renewTenant.id, planId,
+        new Date().toISOString(), newExpiration.toISOString()
+      );
 
-      // Insert payment history
-      const { error: histErr } = await supabase.from('payment_history').insert({
-        tenant_id: renewTenant.id,
-        plan_id: planId,
-        plan_name: selPlan.name,
-        amount: totalAmount,
-        months: renewMonths,
+      await BillingService.insertPaymentHistory({
+        tenant_id: renewTenant.id, plan_id: planId, plan_name: selPlan.name,
+        amount: totalAmount, months: renewMonths,
         previous_expires_at: renewTenant.plan_expires_at,
-        new_expires_at: newExpiration.toISOString(),
-        payment_method: 'manual',
+        new_expires_at: newExpiration.toISOString(), payment_method: 'manual',
       });
-      if (histErr) console.error('History insert error:', histErr);
 
       // Generate invoice PDF
       const invoiceNumber = `INV-${format(new Date(), 'yyyyMMdd')}-${renewTenant.slug.toUpperCase().slice(0, 6)}`;
