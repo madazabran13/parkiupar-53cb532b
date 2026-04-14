@@ -56,7 +56,7 @@ export const BillingService = {
     return data || [];
   },
 
-  async saveCategory(id: string | null, payload: Record<string, any>) {
+  async saveCategory(id: string | null, payload: any) {
     if (id) {
       const { error } = await supabase.from('vehicle_categories').update(payload).eq('id', id);
       if (error) throw error;
@@ -86,12 +86,12 @@ export const BillingService = {
     return data || [];
   },
 
-  async createSubscription(payload: Record<string, any>) {
+  async createSubscription(payload: any) {
     const { error } = await supabase.from('monthly_subscriptions').insert(payload);
     if (error) throw error;
   },
 
-  async updateSubscription(id: string, payload: Record<string, any>) {
+  async updateSubscription(id: string, payload: any) {
     const { error } = await supabase.from('monthly_subscriptions').update(payload).eq('id', id);
     if (error) throw error;
   },
@@ -111,7 +111,7 @@ export const BillingService = {
     return data || [];
   },
 
-  async createSubscriptionPayment(payload: Record<string, any>) {
+  async createSubscriptionPayment(payload: any) {
     const { data, error } = await supabase
       .from('subscription_payments')
       .insert(payload)
