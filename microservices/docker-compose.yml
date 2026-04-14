@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
+    depends_on:
+      - ms-auth
+      - ms-vehiculos
+      - ms-parqueaderos
+      - ms-reservas
+      - ms-reportes
+    networks:
+      - parkiupar-net
+
+  ms-auth:
+    build:
+      context: .
+      dockerfile: services/ms-auth/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+    networks:
+      - parkiupar-net
+
+  ms-vehiculos:
+    build:
+      context: .
+      dockerfile: services/ms-vehiculos/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+    networks:
+      - parkiupar-net
+
+  ms-parqueaderos:
+    build:
+      context: .
+      dockerfile: services/ms-parqueaderos/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+    networks:
+      - parkiupar-net
+
+  ms-reservas:
+    build:
+      context: .
+      dockerfile: services/ms-reservas/Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+      - MS_VEHICULOS_URL=http://ms-vehiculos:3002
+      - MS_PARQUEADEROS_URL=http://ms-parqueaderos:3003
+    depends_on:
+      - ms-vehiculos
+      - ms-parqueaderos
+    networks:
+      - parkiupar-net
+
+  ms-reportes:
+    build:
+      context: .
+      dockerfile: services/ms-reportes/Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - NODE_ENV=${NODE_ENV:-development}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+    networks:
+      - parkiupar-net
+
+networks:
+  parkiupar-net:
+    driver: bridge
