@@ -50,12 +50,7 @@ export default function Rates() {
     queryKey: ['vehicle-categories', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('vehicle_categories')
-        .select('*')
-        .eq('tenant_id', tenantId!)
-        .order('name');
-      return (data || []) as unknown as VehicleCategory[];
+      return await BillingService.getCategories(tenantId!) as unknown as VehicleCategory[];
     },
   });
 
@@ -95,13 +90,7 @@ export default function Rates() {
         fraction_minutes: fractionEnabled ? (parseInt(fractionMinutes) || 15) : 60,
         minimum_minutes: fractionEnabled ? (parseInt(minimumMinutes) || 15) : 0,
       };
-      if (editing) {
-        const { error } = await supabase.from('vehicle_categories').update(payload).eq('id', editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('vehicle_categories').insert(payload);
-        if (error) throw error;
-      }
+      await BillingService.saveCategory(editing?.id || null, payload);
     },
     onSuccess: () => {
       toast.success(editing ? 'Categoría actualizada' : 'Categoría creada');
@@ -114,16 +103,14 @@ export default function Rates() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from('vehicle_categories').update({ is_active }).eq('id', id);
-      if (error) throw error;
+      await BillingService.toggleCategory(id, is_active);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vehicle-categories'] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('vehicle_categories').delete().eq('id', id);
-      if (error) throw error;
+      await BillingService.deleteCategory(id);
     },
     onSuccess: () => {
       toast.success('Categoría eliminada');
