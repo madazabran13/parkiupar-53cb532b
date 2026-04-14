@@ -21,7 +21,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DashboardSkeleton } from '@/components/ui/PageSkeletons';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
-import { ParkingService, VehicleService } from '@/services';
+import { ParkingService, VehicleService, SpaceService } from '@/services';
 
 const VEHICLE_ICONS: Record<string, React.ElementType> = {
   car: Car,
