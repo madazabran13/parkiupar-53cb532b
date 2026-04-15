@@ -11,7 +11,7 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { updatePassword } = useAuth();
+  // const { updatePassword } = useAuth(); // TODO: Implementar cambio de contraseña con endpoint del ms-auth
   const navigate = useNavigate();
 
   useEffect(() => {

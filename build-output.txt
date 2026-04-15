@@ -1,0 +1,636 @@
+﻿docker : --progress is a global compose flag, better use `docker compose 
+--progress xx build ...
+En línea: 1 Carácter: 1
++ docker compose build --no-cache --progress=plain 2>&1 | Out-File -Enc ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (--progress is a...ss xx build ... 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.13kB 0.2s done
+#1 DONE 0.2s
+
+#2 [ms-vehiculos internal] load build definition from Dockerfile
+#2 transferring dockerfile: 400B 0.0s done
+#2 DONE 0.3s
+
+#3 [gateway internal] load build definition from Dockerfile
+#3 transferring dockerfile: 210B 0.0s done
+#3 DONE 0.2s
+
+#4 [frontend internal] load build definition from Dockerfile
+#4 transferring dockerfile: 257B 0.1s done
+#4 DONE 0.3s
+
+#5 [ms-reportes internal] load build definition from Dockerfile
+#5 transferring dockerfile: 397B 0.1s done
+#5 DONE 0.3s
+
+#6 [frontend internal] load metadata for docker.io/library/node:20-alpine
+#6 ...
+
+#7 [ms-parqueaderos internal] load build definition from Dockerfile
+#7 transferring dockerfile: 409B 0.1s done
+#7 DONE 0.3s
+
+#8 [ms-auth internal] load build definition from Dockerfile
+#8 transferring dockerfile: 385B 0.0s done
+#8 DONE 0.4s
+
+#9 [ms-reservas internal] load build definition from Dockerfile
+#9 transferring dockerfile: 397B 0.1s done
+#9 DONE 0.4s
+
+#6 [ms-auth internal] load metadata for docker.io/library/node:20-alpine
+#6 DONE 0.6s
+
+#10 [gateway internal] load .dockerignore
+#10 transferring context: 2B 0.0s done
+#10 DONE 0.0s
+
+#11 [ms-reportes internal] load .dockerignore
+#11 transferring context: 2B 0.0s done
+#11 DONE 0.1s
+
+#12 [frontend internal] load .dockerignore
+#12 transferring context: 2B 0.0s done
+#12 DONE 0.1s
+
+#13 [gateway internal] load build context
+#13 DONE 0.0s
+
+#14 [ms-parqueaderos internal] load build context
+#14 DONE 0.0s
+
+#15 [ms-auth internal] load build context
+#15 DONE 0.0s
+
+#16 [ms-vehiculos internal] load build context
+#16 DONE 0.0s
+
+#17 [frontend internal] load build context
+#17 DONE 0.0s
+
+#18 [ms-reportes internal] load build context
+#18 DONE 0.0s
+
+#19 [ms-reservas internal] load build context
+#19 DONE 0.0s
+
+#20 [ms-reservas 1/7] FROM docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c
+#20 resolve docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c 0.1s done
+#20 resolve docker.io/library/node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c 0.1s done
+#20 DONE 0.1s
+
+#21 [ms-auth 2/7] WORKDIR /app
+#21 CACHED
+
+#13 [gateway internal] load build context
+#13 transferring context: 443B 0.1s done
+#13 DONE 0.2s
+
+#16 [ms-vehiculos internal] load build context
+#16 transferring context: 1.23kB 0.1s done
+#16 DONE 0.4s
+
+#15 [ms-auth internal] load build context
+#15 transferring context: 11.53kB 0.3s done
+#15 DONE 0.5s
+
+#18 [ms-reportes internal] load build context
+#18 transferring context: 7.58kB 0.1s done
+#18 DONE 0.5s
+
+#14 [ms-parqueaderos internal] load build context
+#14 transferring context: 11.31kB 0.3s done
+#14 DONE 0.6s
+
+#22 [ms-vehiculos  3/10] COPY shared/ ./shared/
+#22 ...
+
+#19 [ms-reservas internal] load build context
+#19 transferring context: 11.18kB 0.3s done
+#19 DONE 0.7s
+
+#22 [ms-reservas  3/10] COPY shared/ ./shared/
+#22 DONE 0.4s
+
+#23 [gateway 3/7] COPY package*.json ./
+#23 DONE 0.5s
+
+#24 [gateway 4/7] RUN npm install
+#24 ...
+
+#25 [ms-reportes  3/10] COPY shared/ ./shared/
+#25 CACHED
+
+#26 [ms-parqueaderos  3/10] COPY shared/ ./shared/
+#26 CACHED
+
+#27 [ms-auth  3/10] COPY shared/ ./shared/
+#27 CACHED
+
+#28 [ms-reservas  3/10] COPY shared/ ./shared/
+#28 CACHED
+
+#17 [frontend internal] load build context
+#17 ...
+
+#29 [ms-reservas  4/10] COPY services/ms-reservas/package.json ./
+#29 DONE 0.5s
+
+#30 [ms-vehiculos  4/10] COPY services/ms-vehiculos/package.json ./
+#30 DONE 0.6s
+
+#31 [ms-parqueaderos  4/10] COPY services/ms-parqueaderos/package.json ./
+#31 DONE 0.6s
+
+#32 [ms-auth  4/10] COPY services/ms-auth/package.json ./
+#32 DONE 0.6s
+
+#33 [ms-reportes  4/10] COPY services/ms-reportes/package.json ./
+#33 DONE 0.6s
+
+#17 [frontend internal] load build context
+#17 transferring context: 15.95MB 5.2s
+#17 transferring context: 30.27MB 10.4s
+#17 ...
+
+#34 [ms-vehiculos  5/10] RUN npm install
+#34 ...
+
+#35 [ms-auth  5/10] RUN npm install
+#35 ...
+
+#36 [ms-reservas  5/10] RUN npm install
+#36 ...
+
+#37 [ms-reportes  5/10] RUN npm install
+#37 ...
+
+#38 [ms-parqueaderos  5/10] RUN npm install
+#38 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 53.36MB 15.4s
+#17 transferring context: 55.76MB 20.5s
+#17 transferring context: 56.53MB 25.7s
+#17 transferring context: 56.85MB 30.8s
+#17 transferring context: 57.22MB 35.9s
+#17 transferring context: 57.50MB 40.9s
+#17 transferring context: 57.93MB 45.9s
+#17 transferring context: 58.97MB 51.0s
+#17 transferring context: 59.77MB 56.7s
+#17 transferring context: 60.05MB 61.9s
+#17 transferring context: 60.34MB 66.9s
+#17 transferring context: 60.65MB 71.9s
+#17 transferring context: 60.81MB 77.0s
+#17 transferring context: 64.89MB 82.1s
+#17 transferring context: 84.98MB 87.1s
+#17 transferring context: 90.80MB 92.1s
+#17 transferring context: 92.66MB 97.1s
+#17 transferring context: 94.27MB 102.2s
+#17 transferring context: 97.26MB 107.3s
+#17 transferring context: 97.64MB 112.3s
+#17 transferring context: 100.82MB 117.4s
+#17 transferring context: 105.07MB 122.4s
+#17 transferring context: 112.96MB 127.5s
+#17 transferring context: 114.20MB 132.6s
+#17 transferring context: 115.62MB 137.7s
+#17 transferring context: 118.34MB 142.8s
+#17 transferring context: 124.63MB 148.0s
+#17 transferring context: 126.60MB 153.1s
+#17 transferring context: 133.85MB 158.2s
+#17 transferring context: 138.11MB 163.3s
+#17 transferring context: 154.31MB 168.4s
+#17 transferring context: 164.45MB 173.5s
+#17 transferring context: 168.31MB 178.6s
+#17 transferring context: 170.39MB 183.7s
+#17 transferring context: 171.26MB 188.7s
+#17 transferring context: 171.79MB 193.7s
+#17 transferring context: 172.98MB 198.8s
+#17 transferring context: 173.83MB 204.2s
+#17 transferring context: 174.37MB 209.4s
+#17 ...
+
+#38 [ms-parqueaderos  5/10] RUN npm install
+#38 210.0 
+#38 210.0 added 97 packages, and audited 98 packages in 3m
+#38 210.0 
+#38 210.0 18 packages are looking for funding
+#38 210.0   run `npm fund` for details
+#38 210.1 
+#38 210.1 found 0 vulnerabilities
+#38 210.1 npm notice
+#38 210.1 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#38 210.1 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#38 210.1 npm notice To update run: npm install -g npm@11.12.1
+#38 210.1 npm notice
+#38 DONE 213.8s
+
+#39 [ms-parqueaderos  6/10] COPY services/ms-parqueaderos/tsconfig.json ./
+#39 ...
+
+#36 [ms-reservas  5/10] RUN npm install
+#36 214.3 
+#36 214.3 added 97 packages, and audited 98 packages in 3m
+#36 214.3 
+#36 214.3 18 packages are looking for funding
+#36 214.3   run `npm fund` for details
+#36 214.3 
+#36 214.3 found 0 vulnerabilities
+#36 214.4 npm notice
+#36 214.4 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#36 214.4 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#36 214.4 npm notice To update run: npm install -g npm@11.12.1
+#36 214.4 npm notice
+#36 DONE 216.8s
+
+#39 [ms-parqueaderos  6/10] COPY services/ms-parqueaderos/tsconfig.json ./
+#39 DONE 2.9s
+
+#40 [ms-reservas  6/10] COPY services/ms-reservas/tsconfig.json ./
+#40 ...
+
+#24 [gateway 4/7] RUN npm install
+#24 218.2 
+#24 218.2 added 125 packages, and audited 126 packages in 4m
+#24 218.2 
+#24 218.2 21 packages are looking for funding
+#24 218.2   run `npm fund` for details
+#24 218.2 
+#24 218.2 found 0 vulnerabilities
+#24 218.3 npm notice
+#24 218.3 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#24 218.3 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#24 218.3 npm notice To update run: npm install -g npm@11.12.1
+#24 218.3 npm notice
+#24 DONE 220.5s
+
+#34 [ms-vehiculos  5/10] RUN npm install
+#34 217.7 
+#34 217.7 added 97 packages, and audited 98 packages in 4m
+#34 217.7 
+#34 217.7 18 packages are looking for funding
+#34 217.7   run `npm fund` for details
+#34 217.7 
+#34 217.7 found 0 vulnerabilities
+#34 217.7 npm notice
+#34 217.7 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#34 217.7 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#34 217.7 npm notice To update run: npm install -g npm@11.12.1
+#34 217.7 npm notice
+#34 DONE 220.1s
+
+#41 [gateway 5/7] COPY tsconfig.json ./
+#41 ...
+
+#40 [ms-reservas  6/10] COPY services/ms-reservas/tsconfig.json ./
+#40 DONE 3.3s
+
+#17 [frontend internal] load build context
+#17 transferring context: 180.62MB 221.5s
+#17 ...
+
+#42 [ms-reservas  7/10] COPY services/ms-reservas/src/ ./src/
+#42 ...
+
+#43 [ms-parqueaderos  7/10] COPY services/ms-parqueaderos/src/ ./src/
+#43 DONE 3.6s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#35 [ms-auth  5/10] RUN npm install
+#35 220.4 
+#35 220.4 added 115 packages, and audited 116 packages in 4m
+#35 220.4 
+#35 220.5 18 packages are looking for funding
+#35 220.5   run `npm fund` for details
+#35 220.5 
+#35 220.5 found 0 vulnerabilities
+#35 220.6 npm notice
+#35 220.6 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#35 220.6 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#35 220.6 npm notice To update run: npm install -g npm@11.12.1
+#35 220.6 npm notice
+#35 DONE 221.9s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#41 [gateway 5/7] COPY tsconfig.json ./
+#41 DONE 4.3s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#44 [ms-vehiculos  6/10] COPY services/ms-vehiculos/tsconfig.json ./
+#44 DONE 3.9s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#42 [ms-reservas  7/10] COPY services/ms-reservas/src/ ./src/
+#42 DONE 4.0s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#45 [ms-auth  6/10] COPY services/ms-auth/tsconfig.json ./
+#45 DONE 2.7s
+
+#17 [frontend internal] load build context
+#17 transferring context: 190.20MB 226.6s
+#17 ...
+
+#46 [gateway 6/7] COPY src/ ./src/
+#46 DONE 2.0s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#47 [ms-auth  7/10] COPY services/ms-auth/src/ ./src/
+#47 DONE 1.9s
+
+#48 [ms-vehiculos  7/10] COPY services/ms-vehiculos/src/ ./src/
+#48 DONE 2.1s
+
+#49 [ms-auth  8/10] RUN ln -s /app/shared /shared || true
+#49 ...
+
+#50 [ms-parqueaderos  8/10] RUN ln -s /app/shared /shared || true
+#50 DONE 8.0s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#51 [ms-reservas  8/10] RUN ln -s /app/shared /shared || true
+#51 DONE 5.5s
+
+#17 [frontend internal] load build context
+#17 transferring context: 200.55MB 231.6s
+#17 ...
+
+#37 [ms-reportes  5/10] RUN npm install
+#37 223.8 npm warn deprecated @apollo/server-gateway-interface@1.1.1: @apollo/server-gateway-interface v1 is part of Apollo Server v4, which is deprecated and will transition to end-of-life on January 26, 2026. As long as you are already using a non-EOL version of Node.js, upgrading to v2 should take only a few minutes. See https://www.apollographql.com/docs/apollo-server/previous-versions for details.
+#37 ...
+
+#17 [frontend internal] load build context
+#17 ...
+
+#49 [ms-auth  8/10] RUN ln -s /app/shared /shared || true
+#49 DONE 7.6s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#52 [ms-vehiculos  8/10] RUN ln -s /app/shared /shared || true
+#52 DONE 8.4s
+
+#17 [frontend internal] load build context
+#17 transferring context: 202.96MB 236.8s
+#17 ...
+
+#53 [ms-parqueaderos  9/10] RUN ln -s /app/node_modules /shared/node_modules || true
+#53 DONE 7.1s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#54 [gateway 7/7] RUN npx tsc
+#54 ...
+
+#17 [frontend internal] load build context
+#17 ...
+
+#55 [ms-reservas  9/10] RUN ln -s /app/node_modules /shared/node_modules || true
+#55 DONE 8.0s
+
+#17 [frontend internal] load build context
+#17 transferring context: 205.23MB 241.8s
+#17 ...
+
+#56 [ms-auth  9/10] RUN ln -s /app/node_modules /shared/node_modules || true
+#56 DONE 7.3s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#57 [ms-vehiculos  9/10] RUN ln -s /app/node_modules /shared/node_modules || true
+#57 DONE 7.0s
+
+#17 [frontend internal] load build context
+#17 transferring context: 206.38MB 247.0s
+#17 ...
+
+#58 [ms-parqueaderos 10/10] RUN npx tsc
+#58 ...
+
+#17 [frontend internal] load build context
+#17 ...
+
+#59 [ms-reservas 10/10] RUN npx tsc
+#59 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 208.25MB 252.1s
+#17 ...
+
+#37 [ms-reportes  5/10] RUN npm install
+#37 240.9 npm warn deprecated @apollo/server@4.13.0: Apollo Server v4 is end-of-life since January 26, 2026. As long as you are already using a non-EOL version of Node.js, upgrading to v5 should take only a few minutes. See https://www.apollographql.com/docs/apollo-server/previous-versions for details.
+#37 ...
+
+#17 [frontend internal] load build context
+#17 ...
+
+#60 [ms-auth 10/10] RUN npx tsc
+#60 ...
+
+#17 [frontend internal] load build context
+#17 ...
+
+#61 [ms-vehiculos 10/10] RUN npx tsc
+#61 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 209.84MB 257.1s
+#17 ...
+
+#37 [ms-reportes  5/10] RUN npm install
+#37 256.0 
+#37 256.0 added 169 packages, and audited 170 packages in 4m
+#37 256.0 
+#37 256.0 30 packages are looking for funding
+#37 256.0   run `npm fund` for details
+#37 256.1 
+#37 256.1 1 moderate severity vulnerability
+#37 256.1 
+#37 256.1 To address all issues (including breaking changes), run:
+#37 256.1   npm audit fix --force
+#37 256.1 
+#37 256.1 Run `npm audit` for details.
+#37 256.1 npm notice
+#37 256.1 npm notice New major version of npm available! 10.8.2 -> 11.12.1
+#37 256.1 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+#37 256.1 npm notice To update run: npm install -g npm@11.12.1
+#37 256.1 npm notice
+#37 DONE 257.7s
+
+#17 [frontend internal] load build context
+#17 ...
+
+#62 [ms-reportes  6/10] COPY services/ms-reportes/tsconfig.json ./
+#62 DONE 2.6s
+
+#17 [frontend internal] load build context
+#17 transferring context: 209.98MB 262.3s
+#17 ...
+
+#63 [ms-reportes  7/10] COPY services/ms-reportes/src/ ./src/
+#63 DONE 1.1s
+
+#17 [frontend internal] load build context
+#17 transferring context: 210.11MB 267.5s
+#17 ...
+
+#64 [ms-reportes  8/10] RUN ln -s /app/shared /shared || true
+#64 DONE 5.4s
+
+#17 [frontend internal] load build context
+#17 transferring context: 211.03MB 272.5s
+#17 ...
+
+#65 [ms-reportes  9/10] RUN ln -s /app/node_modules /shared/node_modules || true
+#65 DONE 4.6s
+
+#17 [frontend internal] load build context
+#17 transferring context: 212.10MB 277.7s
+#17 transferring context: 214.37MB 282.7s
+#17 ...
+
+#66 [ms-reportes 10/10] RUN npx tsc
+#66 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 215.04MB 287.9s
+#17 transferring context: 215.63MB 293.0s
+#17 transferring context: 216.26MB 298.2s
+#17 transferring context: 217.04MB 303.2s
+#17 transferring context: 217.77MB 308.3s
+#17 transferring context: 217.80MB 313.3s
+#17 transferring context: 217.92MB 318.4s
+#17 transferring context: 218.23MB 323.5s
+#17 transferring context: 218.56MB 328.5s
+#17 transferring context: 219.08MB 333.5s
+#17 transferring context: 219.32MB 338.6s
+#17 ...
+
+#54 [gateway 7/7] RUN npx tsc
+#54 DONE 113.0s
+
+#17 [frontend internal] load build context
+#17 transferring context: 219.52MB 343.6s
+#17 transferring context: 219.69MB 348.8s
+#17 ...
+
+#67 [gateway] exporting to image
+#67 exporting layers
+#67 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 220.16MB 353.8s
+#17 transferring context: 220.37MB 358.9s
+#17 transferring context: 221.22MB 363.9s
+#17 transferring context: 222.62MB 368.9s
+#17 transferring context: 231.20MB 374.0s
+#17 transferring context: 237.40MB 379.1s
+#17 transferring context: 251.76MB 384.1s
+#17 ...
+
+#59 [ms-reservas 10/10] RUN npx tsc
+#59 145.9 src/controllers/reserva.controller.ts(16,56): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+#59 145.9   Type 'string[]' is not assignable to type 'string'.
+#59 146.0 src/controllers/reserva.controller.ts(27,56): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+#59 146.0   Type 'string[]' is not assignable to type 'string'.
+#59 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 263.86MB 390.6s
+#17 ...
+
+#59 [ms-reservas 10/10] RUN npx tsc
+#59 ERROR: process "/bin/sh -c npx tsc" did not complete successfully: exit code: 2
+
+#17 [frontend internal] load build context
+#17 ...
+
+#60 [ms-auth 10/10] RUN npx tsc
+#60 147.3 tsconfig.json(3,27): error TS5103: Invalid value for '--ignoreDeprecations'.
+#60 ...
+
+#17 [frontend internal] load build context
+#17 transferring context: 269.96MB 392.8s done
+#17 CANCELED
+
+#67 [gateway] exporting to image
+#67 exporting layers 52.2s done
+#67 CANCELED
+
+#58 [ms-parqueaderos 10/10] RUN npx tsc
+#58 155.7 src/controllers/parqueadero.controller.ts(13,63): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+#58 155.7   Type 'string[]' is not assignable to type 'string'.
+#58 155.7 src/controllers/parqueadero.controller.ts(21,61): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+#58 155.7   Type 'string[]' is not assignable to type 'string'.
+#58 155.7 src/controllers/parqueadero.controller.ts(25,57): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+#58 155.7   Type 'string[]' is not assignable to type 'string'.
+#58 155.7 src/controllers/parqueadero.controller.ts(29,64): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+#58 155.7   Type 'string[]' is not assignable to type 'string'.
+#58 ...
+
+#60 [ms-auth 10/10] RUN npx tsc
+#60 ERROR: process "/bin/sh -c npx tsc" did not complete successfully: exit code: 2
+
+#58 [ms-parqueaderos 10/10] RUN npx tsc
+#58 CANCELED
+
+#66 [ms-reportes 10/10] RUN npx tsc
+#66 CANCELED
+
+#61 [ms-vehiculos 10/10] RUN npx tsc
+------
+ > [ms-reservas 10/10] RUN npx tsc:
+145.9 src/controllers/reserva.controller.ts(16,56): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+145.9   Type 'string[]' is not assignable to type 'string'.
+146.0 src/controllers/reserva.controller.ts(27,56): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+146.0   Type 'string[]' is not assignable to type 'string'.
+------
+------
+ > [ms-auth 10/10] RUN npx tsc:
+147.3 tsconfig.json(3,27): error TS5103: Invalid value for '--ignoreDeprecations'.
+------
+Dockerfile:12
+
+--------------------
+
+  10 |     RUN ln -s /app/node_modules /shared/node_modules || true
+
+  11 |     
+
+  12 | >>> RUN npx tsc
+
+  13 |     EXPOSE 3004
+
+  14 |     CMD ["node", "dist/index.js"]
+
+--------------------
+
+target ms-reservas: failed to solve: process "/bin/sh -c npx tsc" did not 
+complete successfully: exit code: 2
+
+
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linu
+x/k4mj5ckhwpo75z9rn3pebsfsj
+

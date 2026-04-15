@@ -1,119 +1,214 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { apiFetch } from '@/lib/api';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import type { AppRole, UserProfile } from '@/types';
 
+interface AuthUser {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: string;
+}
+
+interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  user: AuthUser | null;
   profile: UserProfile | null;
   role: AppRole | null;
   tenantId: string | null;
   loading: boolean;
+  isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, nombre: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
-  updatePassword: (password: string) => Promise<{ error: Error | null }>;
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'auth_access_token',
+  REFRESH_TOKEN: 'auth_refresh_token',
+  USER: 'auth_user',
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    if (data) {
-      setProfile(data as unknown as UserProfile);
-    }
-  };
-
+  // Cargar sesión desde localStorage al montar
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
-        } else {
-          setProfile(null);
+    const initializeAuth = async () => {
+      try {
+        const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+
+        if (accessToken && storedUser) {
+          const parsedUser = JSON.parse(storedUser) as AuthUser;
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          
+          // Cargar perfil del usuario
+          try {
+            const profileData = await apiFetch<UserProfile>('/auth/me', {
+              method: 'GET',
+              auth: true,
+            });
+            setProfile(profileData);
+          } catch (err) {
+            console.error('Error al cargar perfil:', err);
+            // Si falla cargar el perfil, mantener el usuario autenticado
+          }
         }
+      } catch (err) {
+        console.error('Error al inicializar autenticación:', err);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    initializeAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    try {
+      const response = await apiFetch<{ user: AuthUser; tokens: TokenPair }>(
+        '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+          auth: false,
+        }
+      );
+
+      const { user: authUser, tokens } = response;
+
+      // Guardar en localStorage
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+
+      // Actualizar estado
+      setUser(authUser);
+      setIsAuthenticated(true);
+
+      // Cargar perfil
+      try {
+        const profileData = await apiFetch<UserProfile>('/auth/me', {
+          method: 'GET',
+          auth: true,
+        });
+        setProfile(profileData);
+      } catch (err) {
+        console.error('Error al cargar perfil:', err);
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+  const signUp = async (email: string, password: string, nombre: string) => {
+    try {
+      const response = await apiFetch<{ user: AuthUser; tokens: TokenPair }>(
+        '/auth/register',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email, password, nombre, rol: 'cliente' }),
+          auth: false,
+        }
+      );
+
+      const { user: authUser, tokens } = response;
+
+      // Guardar en localStorage
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+
+      // Actualizar estado
+      setUser(authUser);
+      setIsAuthenticated(true);
+
+      // Cargar perfil
+      try {
+        const profileData = await apiFetch<UserProfile>('/auth/me', {
+          method: 'GET',
+          auth: true,
+        });
+        setProfile(profileData);
+      } catch (err) {
+        console.error('Error al cargar perfil:', err);
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
   };
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      await apiFetch('/auth/logout', {
+        method: 'POST',
+        auth: true,
+      });
+    } catch (err) {
+      console.error('Error al logout:', err);
+    } finally {
+      // Limpiar state y localStorage
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      setUser(null);
+      setProfile(null);
+      setIsAuthenticated(false);
+    }
   }, []);
 
-  // Auto-logout after 2 hours of inactivity
-  useInactivityLogout(signOut, !!user);
+  const refreshAuth = useCallback(async () => {
+    try {
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshToken) return;
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error as Error | null };
-  };
+      const tokens = await apiFetch<TokenPair>('/auth/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+        auth: false,
+      });
 
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error: error as Error | null };
-  };
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+    } catch (err) {
+      console.error('Error al refrescar token:', err);
+      // Si falla el refresh, logout
+      await signOut();
+    }
+  }, [signOut]);
+
+  // Auto-logout después de 2 horas de inactividad
+  useInactivityLogout(signOut, isAuthenticated);
 
   return (
     <AuthContext.Provider
       value={{
-        session,
         user,
         profile,
-        role: profile?.role ?? null,
-        tenantId: profile?.tenant_id ?? null,
+        role: (profile?.role as AppRole) || null,
+        tenantId: profile?.tenant_id || null,
         loading,
+        isAuthenticated,
         signIn,
         signUp,
         signOut,
-        resetPassword,
-        updatePassword,
+        refreshAuth,
       }}
     >
       {children}

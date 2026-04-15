@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +14,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,23 +34,13 @@ export default function Register() {
 
     setLoading(true);
     try {
-      // Use edge function to create user with auto-confirmed email and conductor role
-      const { data, error } = await supabase.functions.invoke('register-conductor', {
-        body: { email, password, full_name: fullName },
-      });
+      // Register using the new auth service
+      const { error } = await signUp(email, password, fullName);
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
-      // Auto sign-in after successful registration
-      const { error: signInError } = await signIn(email, password);
-      if (signInError) {
-        toast.success('Cuenta creada. Inicia sesión con tus credenciales.');
-        navigate('/login');
-      } else {
-        toast.success('¡Bienvenido! Tu cuenta ha sido creada.');
-        navigate('/map');
-      }
+      toast.success('¡Bienvenido! Tu cuenta ha sido creada.');
+      navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.message || 'Error al crear la cuenta');
     } finally {

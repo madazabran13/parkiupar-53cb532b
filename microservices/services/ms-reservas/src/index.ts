@@ -1,22 +1,21 @@
 import express from 'express';
+import cors from 'cors';
 import { reservaRouter } from './routes/reserva.routes.js';
 import { errorHandler } from '../../../shared/src/middleware.js';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3004;
+const PORT = Number(process.env.PORT || 3004);
 
+app.use(cors());
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'up', service: 'ms-reservas', timestamp: new Date().toISOString() });
+  res.status(200).json({ ok: true, service: 'ms-reservas' });
 });
 
 app.use('/v1/reservations', reservaRouter);
-
 app.use(errorHandler);
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[MS-RESERVAS] Listening on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`[ms-reservas] listening on port ${PORT}`);
 });
-
-export default app;
