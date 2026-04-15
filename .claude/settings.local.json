@@ -4,7 +4,21 @@
       "Bash(npx tsc:*)",
       "Bash(\\\\.ts)",
       "Bash(\\\\.jsx)",
-      "Bash(\\\\.js\")"
+      "Bash(\\\\.js\")",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(curl -s -X POST 'https://xqgwetpzuslklycflebu.supabase.co/auth/v1/token?grant_type=password' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxZ3dldHB6dXNsa2x5Y2ZsZWJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NTg3MTQsImV4cCI6MjA4ODQzNDcxNH0.RCPe6oeIkulav9GjOzMYDJHSFyxuZJHAp2hyVSz-C2Y' -H 'Content-Type: application/json' -d '{\"email\":\"mimiguel2015@gmail.com\",\"password\":\"123456\"}')",
+      "Bash(python -m json.tool)",
+      "Bash(docker-compose up:*)",
+      "Bash(curl -s -X POST http://localhost:3001/v1/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"mimiguel2015@gmail.com\",\"password\":\"123456\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"mimiguel2015@gmail.com\",\"password\":\"123456\"}')",
+      "Bash(curl:*)",
+      "Bash(powershell:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo '{\"email\":\"mimiguel2015@gmail.com\",\"password\":\"123456\"}')",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(docker exec:*)",
+      "mcp__claude_ai_Supabase__get_publishable_keys"
     ]
   }
 }

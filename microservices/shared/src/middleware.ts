@@ -40,16 +40,20 @@ export function guardInternal(req: Request, res: Response, next: NextFunction): 
  */
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof DomainError) {
-    sendNoContent(res);
+    res.status(err.statusCode).json({ success: false, code: err.code, message: err.message });
     return;
   }
 
   if (err instanceof ZodError) {
-    const zodErr = err as ZodError;
-    sendNoContent(res);
+    res.status(400).json({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: err.errors[0]?.message ?? 'Datos inválidos',
+      errors: err.errors,
+    });
     return;
   }
 
   console.error('[ERROR]', err.message, err.stack);
-  sendNoContent(res);
+  res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: 'Error interno del servidor' });
 }

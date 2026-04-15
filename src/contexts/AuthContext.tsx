@@ -53,17 +53,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const parsedUser = JSON.parse(storedUser) as AuthUser;
           setUser(parsedUser);
           setIsAuthenticated(true);
-          
-          // Cargar perfil del usuario
+
+          // Cargar perfil completo desde user_profiles
           try {
-            const profileData = await apiFetch<UserProfile>('/auth/me', {
+            const profileData = await apiFetch<UserProfile>('/api/auth/me', {
               method: 'GET',
               auth: true,
             });
             setProfile(profileData);
           } catch (err) {
             console.error('Error al cargar perfil:', err);
-            // Si falla cargar el perfil, mantener el usuario autenticado
           }
         }
       } catch (err) {
@@ -79,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const response = await apiFetch<{ user: AuthUser; tokens: TokenPair }>(
-        '/auth/login',
+        '/api/auth/login',
         {
           method: 'POST',
           body: JSON.stringify({ email, password }),
@@ -89,18 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { user: authUser, tokens } = response;
 
-      // Guardar en localStorage
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
 
-      // Actualizar estado
       setUser(authUser);
       setIsAuthenticated(true);
 
-      // Cargar perfil
+      // Cargar perfil completo
       try {
-        const profileData = await apiFetch<UserProfile>('/auth/me', {
+        const profileData = await apiFetch<UserProfile>('/api/auth/me', {
           method: 'GET',
           auth: true,
         });
@@ -118,28 +115,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, nombre: string) => {
     try {
       const response = await apiFetch<{ user: AuthUser; tokens: TokenPair }>(
-        '/auth/register',
+        '/api/auth/register',
         {
           method: 'POST',
-          body: JSON.stringify({ email, password, nombre, rol: 'cliente' }),
+          body: JSON.stringify({ email, password, nombre, rol: 'viewer' }),
           auth: false,
         }
       );
 
       const { user: authUser, tokens } = response;
 
-      // Guardar en localStorage
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
 
-      // Actualizar estado
       setUser(authUser);
       setIsAuthenticated(true);
 
-      // Cargar perfil
       try {
-        const profileData = await apiFetch<UserProfile>('/auth/me', {
+        const profileData = await apiFetch<UserProfile>('/api/auth/me', {
           method: 'GET',
           auth: true,
         });
@@ -156,14 +150,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      await apiFetch('/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         auth: true,
       });
     } catch (err) {
       console.error('Error al logout:', err);
     } finally {
-      // Limpiar state y localStorage
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
@@ -178,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       if (!refreshToken) return;
 
-      const tokens = await apiFetch<TokenPair>('/auth/refresh', {
+      const tokens = await apiFetch<TokenPair>('/api/auth/refresh', {
         method: 'POST',
         body: JSON.stringify({ refreshToken }),
         auth: false,
@@ -188,7 +181,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
     } catch (err) {
       console.error('Error al refrescar token:', err);
-      // Si falla el refresh, logout
       await signOut();
     }
   }, [signOut]);

@@ -31,8 +31,20 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API error: ${response.status}`);
+    // Support both { message } and { error: { message } } shapes
+    const message =
+      errorData.message ||
+      errorData.error?.message ||
+      `API error: ${response.status}`;
+    throw new Error(message);
   }
 
-  return response.json();
+  const json = await response.json();
+
+  // Auto-unwrap { success: true, data: T } envelope returned by the gateway/microservices
+  if (json && typeof json === 'object' && json.success === true && 'data' in json) {
+    return json.data as T;
+  }
+
+  return json as T;
 }

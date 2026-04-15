@@ -1,30 +1,27 @@
 /**
  * Auth Service — Business logic. No Supabase imports here.
+ * Password verification is handled by Supabase Auth via the repository.
  */
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { ConflictError, NotFoundError, UnauthorizedError } from '@parkiupar/shared/errors';
-import type { RegisterDTO, LoginDTO, TokenPair, AuthUser } from '../types/auth.types.js';
+import type { RegisterDTO, LoginDTO, TokenPair, AuthUser, ProfileUser } from '../types/auth.types.js';
 
-const SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRY = '1h';
-const REFRESH_TOKEN_EXPIRY = '7d';
 
 export class AuthService {
   constructor(private readonly repo: AuthRepository) {}
 
   async register(dto: RegisterDTO): Promise<{ user: AuthUser; tokens: TokenPair }> {
-    const existing = await this.repo.findByEmail(dto.email);
-    if (existing) throw new ConflictError('El email ya está registrado');
+    const exists = await this.repo.emailExists(dto.email);
+    if (exists) throw new ConflictError('El email ya está registrado');
 
-    const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
     const user = await this.repo.create({
       nombre: dto.nombre,
       email: dto.email,
-      password_hash: passwordHash,
-      rol: dto.rol || 'cliente',
+      password: dto.password,
+      rol: dto.rol || 'viewer',
     });
 
     const tokens = this.generateTokens(user.id, user.email, user.rol);
@@ -37,11 +34,8 @@ export class AuthService {
   }
 
   async login(dto: LoginDTO): Promise<{ user: AuthUser; tokens: TokenPair }> {
-    const user = await this.repo.findByEmail(dto.email);
+    const user = await this.repo.verifyCredentials(dto.email, dto.password);
     if (!user) throw new UnauthorizedError('Credenciales inválidas');
-
-    const valid = await bcrypt.compare(dto.password, user.password_hash);
-    if (!valid) throw new UnauthorizedError('Credenciales inválidas');
 
     const tokens = this.generateTokens(user.id, user.email, user.rol);
     await this.repo.updateRefreshToken(user.id, tokens.refreshToken);
@@ -65,10 +59,11 @@ export class AuthService {
     await this.repo.updateRefreshToken(userId, null);
   }
 
-  async getMe(userId: string): Promise<AuthUser> {
-    const user = await this.repo.findById(userId);
-    if (!user) throw new NotFoundError('Usuario');
-    return { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol };
+  /** Returns full user_profiles row — matches the UserProfile type expected by the frontend. */
+  async getMe(userId: string): Promise<ProfileUser> {
+    const profile = await this.repo.findProfileById(userId);
+    if (!profile) throw new NotFoundError('Usuario');
+    return profile;
   }
 
   private generateTokens(sub: string, email: string, rol: string): TokenPair {
