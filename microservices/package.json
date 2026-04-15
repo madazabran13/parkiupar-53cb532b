@@ -1,0 +1,9 @@
+{
+  "name": "parkiupar-microservices",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "gateway",
+    "services/*"
+  ]
+}

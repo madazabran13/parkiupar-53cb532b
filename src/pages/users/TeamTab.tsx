@@ -39,7 +39,7 @@ const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
 ];
 
 export default function TeamUsers() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   const { tenant, planModules } = useTenant();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);

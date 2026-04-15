@@ -15,7 +15,7 @@ import MapLocationPicker from '@/components/MapLocationPicker';
 import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
-  const { profile, user, updatePassword, role, tenantId } = useAuth();
+  const { profile, user, role, tenantId } = useAuth();
   const { tenant, planModules } = useTenant();
   const { colorData, currentHex, isDirty, previewPreset, previewCustomHex, save: saveColor, revert: revertColor, presets } = useThemeColor();
   const queryClient = useQueryClient();
@@ -66,12 +66,14 @@ export default function SettingsPage() {
     onError: (e) => toast.error(`Error: ${e.message}`),
   });
 
+  // TODO: Implementar cambio de contraseña con endpoint del ms-auth
   const changePasswordMutation = useMutation({
     mutationFn: async () => {
-      if (!newPassword || newPassword.length < 6) throw new Error('Mínimo 6 caracteres');
-      if (newPassword !== confirmPassword) throw new Error('Las contraseñas no coinciden');
-      const { error } = await updatePassword(newPassword);
-      if (error) throw error;
+      throw new Error('Cambio de contraseña aún no disponible');
+      // if (!newPassword || newPassword.length < 6) throw new Error('Mínimo 6 caracteres');
+      // if (newPassword !== confirmPassword) throw new Error('Las contraseñas no coinciden');
+      // const { error } = await updatePassword(newPassword);
+      // if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Contraseña actualizada');

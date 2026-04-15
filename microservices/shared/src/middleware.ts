@@ -4,7 +4,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 import { DomainError } from './errors.js';
-import { sendError } from './response.js';
+import { sendNoContent } from './response.js';
 
 /**
  * Zod validation middleware factory.
@@ -28,7 +28,7 @@ export function validate(schema: ZodSchema): RequestHandler {
 export function guardInternal(req: Request, res: Response, next: NextFunction): void {
   const secret = req.headers['x-internal-secret'] as string | undefined;
   if (!secret || secret !== process.env.INTERNAL_SECRET) {
-    sendError(res, 403, 'FORBIDDEN', 'Acceso interno requerido');
+    sendNoContent(res);
     return;
   }
   next();
@@ -40,15 +40,20 @@ export function guardInternal(req: Request, res: Response, next: NextFunction): 
  */
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof DomainError) {
-    sendError(res, err.statusCode, err.code, err.message);
+    res.status(err.statusCode).json({ success: false, code: err.code, message: err.message });
     return;
   }
 
   if (err instanceof ZodError) {
-    sendError(res, 422, 'VALIDATION_FAILED', 'Error de validación', err.issues);
+    res.status(400).json({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: err.errors[0]?.message ?? 'Datos inválidos',
+      errors: err.errors,
+    });
     return;
   }
 
   console.error('[ERROR]', err.message, err.stack);
-  sendError(res, 500, 'INTERNAL_ERROR', 'Error interno del servidor');
+  res.status(500).json({ success: false, code: 'INTERNAL_ERROR', message: 'Error interno del servidor' });
 }

@@ -1,5 +1,5 @@
 import { ParqueaderoRepository } from '../repositories/parqueadero.repository.js';
-import { NotFoundError } from '../../../../shared/src/errors.js';
+import { NotFoundError } from '@parkiupar/shared/errors';
 import type { Parking, Spot, CreateParkingDTO, UpdateParkingDTO } from '../types/parqueadero.types.js';
 
 export class ParqueaderoService {

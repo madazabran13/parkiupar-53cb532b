@@ -10,7 +10,7 @@ interface ServiceConfig {
   name: string;
   path: string;
   target: string;
-  pathRewrite: Record<string, string>;
+  pathRewrite: Record<string, string> | ((path: string) => string);
 }
 
 const services: ServiceConfig[] = [
@@ -18,31 +18,34 @@ const services: ServiceConfig[] = [
     name: 'ms-auth',
     path: '/api/auth',
     target: 'http://ms-auth:3001',
-    pathRewrite: { '^/api/auth': '/v1/auth' },
+    // Express strips /api/auth before passing to the proxy, so req.url is e.g. /login.
+    // Prepend /v1/auth to reconstruct the full microservice path.
+    pathRewrite: { '^': '/v1/auth' },
   },
   {
     name: 'ms-vehiculos',
     path: '/api/vehicles',
     target: 'http://ms-vehiculos:3002',
-    pathRewrite: { '^/api/vehicles': '/v1/vehicles' },
+    pathRewrite: { '^': '/v1/vehicles' },
   },
   {
     name: 'ms-parqueaderos',
     path: '/api/parkings',
     target: 'http://ms-parqueaderos:3003',
-    pathRewrite: { '^/api/parkings': '/v1/parkings' },
+    pathRewrite: { '^': '/v1/parkings' },
   },
   {
     name: 'ms-reservas',
     path: '/api/reservations',
     target: 'http://ms-reservas:3004',
-    pathRewrite: { '^/api/reservations': '/v1/reservations' },
+    pathRewrite: { '^': '/v1/reservations' },
   },
   {
     name: 'ms-reportes',
     path: '/api/reports',
     target: 'http://ms-reportes:3005',
-    pathRewrite: { '^/api/reports/graphql': '/graphql', '^/api/reports': '/v1/reports' },
+    // /graphql stays as-is; everything else gets prefixed with /v1/reports
+    pathRewrite: (path) => path.startsWith('/graphql') ? path : `/v1/reports${path}`,
   },
 ];
 
@@ -76,6 +79,15 @@ export function createProxyRoutes(): Router {
       pathRewrite: service.pathRewrite,
       on: {
         proxyReq(proxyReq, req) {
+          // Re-attach body consumed by express.json() so the downstream service receives it.
+          const body = (req as Request).body;
+          if (body && Object.keys(body).length > 0) {
+            const bodyData = JSON.stringify(body);
+            proxyReq.setHeader('Content-Type', 'application/json');
+            proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+            proxyReq.write(bodyData);
+          }
+
           // Forward internal secret
           const internalSecret = (req as Request).headers['x-internal-secret'];
           if (internalSecret) {

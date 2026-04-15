@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { ReservaController } from '../controllers/reserva.controller.js';
 import { ReservaService } from '../services/reserva.service.js';
 import { ReservaRepository } from '../repositories/reserva.repository.js';
-import { validate } from '../../../../shared/src/middleware.js';
+import { validate } from '@parkiupar/shared/middleware';
 import { createReservationSchema } from '../schemas/reserva.schema.js';
 
 const repo = new ReservaRepository();

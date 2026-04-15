@@ -1,22 +1,19 @@
-/**
- * MS-Reportes — Apollo Server 4 standalone (NO Express).
- */
-import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
-import { typeDefs } from './schema/typeDefs.js';
-import { resolvers } from './resolvers/reportes.resolvers.js';
+import express from 'express';
+import cors from 'cors';
 
-const PORT = Number(process.env.PORT) || 3005;
-const isDev = process.env.NODE_ENV !== 'production';
+const app = express();
+const PORT = Number(process.env.PORT || 3005);
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  introspection: isDev,
+app.use(cors());
+app.use(express.json());
+
+app.get('/health', (_req, res) => {
+  res.status(200).json({ ok: true, service: 'ms-reportes' });
 });
 
-const { url } = await startStandaloneServer(server, {
-  listen: { port: PORT, host: '0.0.0.0' },
-});
+// aquí luego montas tus rutas reales
+// app.use('/reservations', reservationRoutes);
 
-console.log(`[MS-REPORTES] GraphQL server ready at ${url}`);
+app.listen(PORT, () => {
+  console.log(`[ms-reportes] listening on port ${PORT}`);
+});

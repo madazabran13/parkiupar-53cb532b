@@ -1,0 +1,25 @@
+{
+  "name": "@parkiupar/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./response": "./dist/response.js",
+    "./middleware": "./dist/middleware.js",
+    "./errors": "./dist/errors.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.10.1",
+    "@types/express": "^5.0.1"
+  }
+}
