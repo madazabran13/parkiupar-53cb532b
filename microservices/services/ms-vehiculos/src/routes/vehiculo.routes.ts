@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { VehiculoController } from '../controllers/vehiculo.controller.js';
 import { VehiculoService } from '../services/vehiculo.service.js';
 import { VehiculoRepository } from '../repositories/vehiculo.repository.js';
-import { validate } from '../../../../shared/src/middleware.js';
+import { validate } from '@parkiupar/shared/middleware';
 import { createVehicleSchema, updateVehicleSchema } from '../schemas/vehiculo.schema.js';
 
 const repo = new VehiculoRepository();

@@ -2,7 +2,7 @@
  * Reserva Service — Business logic with inter-service HTTP communication.
  */
 import { ReservaRepository } from '../repositories/reserva.repository.js';
-import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/src/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '@parkiupar/shared/errors';
 import type { Reservation, CreateReservationDTO, ReservationFilters } from '../types/reserva.types.js';
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || '';

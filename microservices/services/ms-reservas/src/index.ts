@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { reservaRouter } from './routes/reserva.routes.js';
-import { errorHandler } from '../../../shared/src/middleware.js';
+import { errorHandler } from '@parkiupar/shared/middleware';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);

@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository.js';
-import { ConflictError, NotFoundError, UnauthorizedError } from '../../../../shared/src/errors.js';
+import { ConflictError, NotFoundError, UnauthorizedError } from '@parkiupar/shared/errors';
 import type { RegisterDTO, LoginDTO, TokenPair, AuthUser } from '../types/auth.types.js';
 
 const SALT_ROUNDS = 10;

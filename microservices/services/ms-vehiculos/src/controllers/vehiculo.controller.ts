@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { VehiculoService } from '../services/vehiculo.service.js';
-import { sendSuccess, sendCreated, sendNoContent } from '../../../../shared/src/response.js';
+import { sendSuccess, sendCreated, sendNoContent } from '@parkiupar/shared/response';
 
 export class VehiculoController {
   constructor(private readonly service: VehiculoService) {}

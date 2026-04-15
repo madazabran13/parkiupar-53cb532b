@@ -8,11 +8,20 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@parkiupar/shared": "file:../../shared"
+    "@parkiupar/shared": "file:../../shared",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "@supabase/supabase-js": "^2.39.7",
+    "zod": "^3.23.8",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
     "@types/node": "^22.10.1",
-    "@types/express": "^5.0.1"
+    "@types/express": "^5.0.1",
+    "@types/cors": "^2.8.17",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/jsonwebtoken": "^9.0.8"
   }
 }

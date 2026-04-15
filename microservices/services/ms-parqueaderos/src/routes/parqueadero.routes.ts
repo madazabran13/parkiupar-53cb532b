@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { ParqueaderoController } from '../controllers/parqueadero.controller.js';
 import { ParqueaderoService } from '../services/parqueadero.service.js';
 import { ParqueaderoRepository } from '../repositories/parqueadero.repository.js';
-import { validate, guardInternal } from '../../../../shared/src/middleware.js';
+import { validate, guardInternal } from '@parkiupar/shared/middleware';
 import { createParkingSchema, updateParkingSchema, updateSpotStatusSchema } from '../schemas/parqueadero.schema.js';
 
 const repo = new ParqueaderoRepository();

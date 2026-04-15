@@ -1,5 +1,5 @@
 import { VehiculoRepository } from '../repositories/vehiculo.repository.js';
-import { ConflictError, NotFoundError } from '../../../../shared/src/errors.js';
+import { ConflictError, NotFoundError } from '@parkiupar/shared/errors';
 import type { Vehicle, CreateVehicleDTO, UpdateVehicleDTO } from '../types/vehiculo.types.js';
 
 export class VehiculoService {

@@ -3,7 +3,7 @@
  */
 import type { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service.js';
-import { sendSuccess, sendCreated, sendNoContent } from '../../../../shared/src/response.js';
+import { sendSuccess, sendCreated, sendNoContent } from '@parkiupar/shared/response';
 
 export class AuthController {
   constructor(private readonly service: AuthService) {}

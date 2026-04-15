@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller.js';
 import { AuthService } from '../services/auth.service.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
-import { validate } from '../../../../shared/src/middleware.js';
+import { validate } from '@parkiupar/shared/middleware';
 import { registerSchema, loginSchema, refreshSchema } from '../schemas/auth.schema.js';
 
 const repo = new AuthRepository();

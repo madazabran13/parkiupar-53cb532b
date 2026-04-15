@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ParqueaderoService } from '../services/parqueadero.service.js';
-import { sendSuccess, sendCreated, sendNoContent } from '../../../../shared/src/response.js';
+import { sendSuccess, sendCreated, sendNoContent } from '@parkiupar/shared/response';
 
 function getSingleString(value: unknown, field: string): string {
   if (typeof value === 'string') return value;

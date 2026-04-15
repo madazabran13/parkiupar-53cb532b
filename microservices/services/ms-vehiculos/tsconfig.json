@@ -2,23 +2,16 @@
   "compilerOptions": {
     "ignoreDeprecations": "5.0",
     "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "outDir": "dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "paths": {
-      "../../../../shared/src/*": ["./shared/src/*"],
-      "../../../shared/src/*": ["./shared/src/*"]
-    },
-    "baseUrl": "."
+    "declaration": true
   },
-  "include": [
-    "src/**/*",
-    "shared/src/**/*"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
