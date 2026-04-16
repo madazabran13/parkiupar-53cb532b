@@ -18,7 +18,8 @@
       "Bash(echo '{\"email\":\"mimiguel2015@gmail.com\",\"password\":\"123456\"}')",
       "Bash(echo \"EXIT:$?\")",
       "Bash(docker exec:*)",
-      "mcp__claude_ai_Supabase__get_publishable_keys"
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "Bash(docker compose *)"
     ]
   }
 }

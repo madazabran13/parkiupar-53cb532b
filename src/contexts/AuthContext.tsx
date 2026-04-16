@@ -27,6 +27,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, nombre: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -225,6 +227,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [signOut]);
 
+  const resetPassword = async (email: string): Promise<{ error: Error | null }> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error: error as Error | null };
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ error: Error | null }> => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error: error as Error | null };
+  };
+
   // Auto-logout después de 2 horas de inactividad
   useInactivityLogout(signOut, isAuthenticated);
 
@@ -241,6 +255,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         refreshAuth,
+        resetPassword,
+        updatePassword,
       }}
     >
       {children}
