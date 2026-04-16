@@ -14,6 +14,14 @@ import { healthRouter } from './routes/health.js';
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
 
+// ── Prevent gateway from crashing on unhandled promise rejections ──
+process.on('unhandledRejection', (reason) => {
+  console.error('[GATEWAY] UnhandledRejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[GATEWAY] UncaughtException:', err.message, err.stack);
+});
+
 // ── Security Headers ──
 app.use(helmet({ xPoweredBy: false }));
 app.disable('x-powered-by');

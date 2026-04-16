@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRealtime } from '@/hooks/useRealtime';
 import confetti from 'canvas-confetti';
+import { apiFetch } from '@/lib/api';
 
 export default function SuspendedAccount() {
   const { user, profile, signOut } = useAuth();
@@ -120,15 +121,15 @@ export default function SuspendedAccount() {
         throw new Error('ALREADY_ACTIVE');
       }
 
-      const { error } = await supabase.from('notifications').insert({
-        user_id: null, // global notification visible to superadmin
-        tenant_id: tenant?.id || null,
-        type: 'warning',
-        title: 'Solicitud de reactivación',
-        message: `El parqueadero "${tenant?.name || 'Desconocido'}" (admin: ${profile?.full_name || user?.email}) solicita la reactivación de su cuenta.`,
-        metadata: { tenant_id: tenant?.id, requester_id: user?.id },
+      await apiFetch('/api/auth/reactivation-request', {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantId: tenant?.id,
+          tenantName: tenant?.name || 'Desconocido',
+          requesterName: profile?.full_name || user?.email || 'Desconocido',
+        }),
+        auth: true,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       setRequestCount(prev => prev + 1);

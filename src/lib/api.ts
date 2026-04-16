@@ -39,6 +39,11 @@ export async function apiFetch<T>(
     throw new Error(message);
   }
 
+  // 204 No Content — no body to parse
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   const json = await response.json();
 
   // Auto-unwrap { success: true, data: T } envelope returned by the gateway/microservices

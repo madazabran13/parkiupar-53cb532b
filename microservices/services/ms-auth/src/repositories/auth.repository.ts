@@ -9,7 +9,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { ForbiddenError } from '@parkiupar/shared/errors';
-import type { User, ProfileUser } from '../types/auth.types.js';
+import type { User, ProfileUser, ReactivationRequestDTO } from '../types/auth.types.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -114,6 +114,18 @@ export class AuthRepository {
     if (profileError) throw profileError;
 
     return this.buildUser(data.user.id, data.user.email!, profile as Profile);
+  }
+
+  async createReactivationNotification(requesterId: string, dto: ReactivationRequestDTO): Promise<void> {
+    const { error } = await supabase.from('notifications').insert({
+      user_id: null,
+      tenant_id: dto.tenantId,
+      type: 'warning',
+      title: 'Solicitud de reactivación',
+      message: `El parqueadero "${dto.tenantName}" (admin: ${dto.requesterName}) solicita la reactivación de su cuenta.`,
+      metadata: { tenant_id: dto.tenantId, requester_id: requesterId },
+    });
+    if (error) throw error;
   }
 
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {

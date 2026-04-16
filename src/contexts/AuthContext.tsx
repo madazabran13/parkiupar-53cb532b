@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import type { AppRole, UserProfile } from '@/types';
 
@@ -51,8 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (accessToken && storedUser) {
           const parsedUser = JSON.parse(storedUser) as AuthUser;
-          setUser(parsedUser);
-          setIsAuthenticated(true);
 
           // Cargar perfil completo desde user_profiles
           try {
@@ -60,9 +59,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               method: 'GET',
               auth: true,
             });
+            setUser(parsedUser);
+            setIsAuthenticated(true);
             setProfile(profileData);
-          } catch (err) {
-            console.error('Error al cargar perfil:', err);
+          } catch (profileErr) {
+            console.warn('Token expirado, intentando refresh...', profileErr);
+            // Intentar renovar el token antes de cerrar sesión
+            const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            if (refreshToken) {
+              try {
+                const tokens = await apiFetch<TokenPair>('/api/auth/refresh', {
+                  method: 'POST',
+                  body: JSON.stringify({ refreshToken }),
+                  auth: false,
+                });
+                localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
+                localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+
+                // Reintentar /me con el nuevo token
+                const profileData = await apiFetch<UserProfile>('/api/auth/me', {
+                  method: 'GET',
+                  auth: true,
+                });
+                setUser(parsedUser);
+                setIsAuthenticated(true);
+                setProfile(profileData);
+              } catch (refreshErr) {
+                console.warn('Refresh fallido, cerrando sesión:', refreshErr);
+                localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+                localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+                localStorage.removeItem(STORAGE_KEYS.USER);
+              }
+            } else {
+              // No hay refresh token — limpiar sesión expirada
+              localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+              localStorage.removeItem(STORAGE_KEYS.USER);
+            }
           }
         }
       } catch (err) {
@@ -91,6 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+
+      // Establecer sesión Supabase para que el cliente pueda hacer queries directas (RLS)
+      await supabase.auth.signInWithPassword({ email, password });
 
       setUser(authUser);
       setIsAuthenticated(true);
@@ -129,6 +164,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
 
+      // Establecer sesión Supabase para que el cliente pueda hacer queries directas (RLS)
+      await supabase.auth.signInWithPassword({ email, password });
+
       setUser(authUser);
       setIsAuthenticated(true);
 
@@ -157,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Error al logout:', err);
     } finally {
+      // Cerrar sesión en Supabase también
+      await supabase.auth.signOut();
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
