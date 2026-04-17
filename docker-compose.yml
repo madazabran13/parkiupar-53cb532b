@@ -155,17 +155,6 @@ services:
     networks:
       - app-network
 
-  # ─────────────────────────────
-  # 📨 RABBITMQ
-  # ─────────────────────────────
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    networks:
-      - app-network
 
 networks:
   app-network:
