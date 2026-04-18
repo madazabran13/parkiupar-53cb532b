@@ -11,7 +11,7 @@ import type { RegisterDTO, LoginDTO, TokenPair, AuthUser, ProfileUser, Reactivat
 const ACCESS_TOKEN_EXPIRY = '1h';
 
 export class AuthService {
-  constructor(private readonly repo: AuthRepository) {}
+  constructor(private readonly repo: AuthRepository) { }
 
   async register(dto: RegisterDTO): Promise<{ user: AuthUser; tokens: TokenPair }> {
     const exists = await this.repo.emailExists(dto.email);
@@ -34,16 +34,33 @@ export class AuthService {
   }
 
   async login(dto: LoginDTO): Promise<{ user: AuthUser; tokens: TokenPair }> {
-    const user = await this.repo.verifyCredentials(dto.email, dto.password);
-    if (!user) throw new UnauthorizedError('Credenciales inválidas');
+    try {
+      const user = await this.repo.verifyCredentials(dto.email, dto.password);
 
-    const tokens = this.generateTokens(user.id, user.email, user.rol);
-    await this.repo.updateRefreshToken(user.id, tokens.refreshToken);
+      if (!user) {
+        throw new UnauthorizedError('Credenciales inválidas');
+      }
 
-    return {
-      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol },
-      tokens,
-    };
+      const tokens = this.generateTokens(user.id, user.email, user.rol);
+      await this.repo.updateRefreshToken(user.id, tokens.refreshToken);
+
+      return { user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol }, tokens };
+
+    } catch (error: any) {
+      const isNetworkError =
+        error?.cause?.code === 'ECONNRESET' ||
+        error?.message?.toLowerCase().includes('fetch failed') ||
+        error?.message?.includes('TLS') ||
+        error?.message?.includes('socket disconnected') ||
+        error?.status === 0;
+
+      if (isNetworkError) {
+        console.error('[AuthService] Error de conexión con Supabase Auth:', error);
+        throw new Error('Error temporal de conexión. Inténtalo de nuevo en unos segundos.');
+      }
+
+      throw error; // UnauthorizedError u otros se propagan normalmente
+    }
   }
 
   async refresh(refreshToken: string): Promise<TokenPair> {
