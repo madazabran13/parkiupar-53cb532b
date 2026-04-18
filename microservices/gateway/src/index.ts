@@ -33,9 +33,19 @@ app.use((_req, res, next) => {
   next();
 });
 
-// ── CORS — Only allow frontend origin ──
+// ── CORS ──
+const isDev = process.env.NODE_ENV !== 'production';
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim());
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // In development allow any origin so any PC on the network can access the API
+    if (isDev) return callback(null, true);
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -62,7 +72,7 @@ app.use(createProxyRoutes());
 // ── Start ──
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[GATEWAY] Listening on port ${PORT}`);
-  console.log(`[GATEWAY] CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
+  console.log(`[GATEWAY] CORS origins: ${allowedOrigins.join(', ')}`);
 });
 
 export default app;

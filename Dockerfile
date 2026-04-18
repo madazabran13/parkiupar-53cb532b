@@ -6,6 +6,10 @@ RUN npm install --production=false
 
 COPY . .
 
+# Receive API URL at build time so Vite can bake it into the JS bundle
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 RUN npm run build
 
 EXPOSE 5173

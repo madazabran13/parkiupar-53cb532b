@@ -7,11 +7,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Use the host machine IP so browsers outside Docker can reach the gateway
+        - VITE_API_URL=http://${HOST_IP:-172.20.10.4}:8080
     container_name: frontend
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://gateway:8080
     depends_on:
       - gateway
     networks:
