@@ -37,7 +37,7 @@ export default function Login() {
     setLoading(false);
 
     if (error) {
-      toast.error('Credenciales inválidas');
+      toast.error(error.message || 'Error al conectar con el servidor');
       return;
     }
 

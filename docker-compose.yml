@@ -7,14 +7,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        # Use the host machine IP so browsers outside Docker can reach the gateway
-        - VITE_API_URL=http://${HOST_IP:-192.168.1.2}:8080
     container_name: frontend
     ports:
       - "5173:5173"
     depends_on:
       - gateway
+    networks:
+      - app-network
+
+  # ─────────────────────────────
+  # 🌐 TUNNEL (acceso desde cualquier red)
+  # ─────────────────────────────
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://frontend:5173
+    depends_on:
+      - frontend
     networks:
       - app-network
 

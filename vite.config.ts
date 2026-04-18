@@ -2,11 +2,24 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
+import os from "os";
+
+function getLocalIP(): string {
+  for (const ifaces of Object.values(os.networkInterfaces())) {
+    for (const iface of ifaces ?? []) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return "localhost";
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const gatewayUrl = env.GATEWAY_URL || 'http://192.168.1.2:8080';
+  const localIP = getLocalIP();
+  const gatewayUrl = env.GATEWAY_URL || `http://${localIP}:8080`;
 
   return {
     server: {

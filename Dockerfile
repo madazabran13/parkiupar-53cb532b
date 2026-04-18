@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# ── Build ──────────────────────────────────────────────
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -6,11 +7,13 @@ RUN npm install --production=false
 
 COPY . .
 
-# Receive API URL at build time so Vite can bake it into the JS bundle
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
+# Empty VITE_API_URL = relative URLs → nginx proxies /api to gateway internally
+ENV VITE_API_URL=""
 RUN npm run build
 
-EXPOSE 5173
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]
+# ── Serve ───────────────────────────────────────────────
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

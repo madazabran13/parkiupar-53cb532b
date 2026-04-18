@@ -145,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (err) {
+      console.error('[Auth] signIn failed:', err);
       return { error: err as Error };
     }
   };
