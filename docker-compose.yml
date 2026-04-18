@@ -10,10 +10,21 @@ services:
     container_name: frontend
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://gateway:8080
     depends_on:
       - gateway
+    networks:
+      - app-network
+
+  # ─────────────────────────────
+  # 🌐 TUNNEL (acceso desde cualquier red)
+  # ─────────────────────────────
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://frontend:5173
+    depends_on:
+      - frontend
     networks:
       - app-network
 
@@ -152,18 +163,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  # ─────────────────────────────
-  # 📨 RABBITMQ
-  # ─────────────────────────────
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     networks:
       - app-network
 

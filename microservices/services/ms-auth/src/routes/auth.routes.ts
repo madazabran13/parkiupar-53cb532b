@@ -3,7 +3,7 @@ import { AuthController } from '../controllers/auth.controller.js';
 import { AuthService } from '../services/auth.service.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { validate } from '@parkiupar/shared/middleware';
-import { registerSchema, loginSchema, refreshSchema } from '../schemas/auth.schema.js';
+import { registerSchema, loginSchema, refreshSchema, reactivationRequestSchema } from '../schemas/auth.schema.js';
 
 const repo = new AuthRepository();
 const service = new AuthService(repo);
@@ -16,5 +16,6 @@ router.post('/login', validate(loginSchema), controller.login);
 router.post('/refresh', validate(refreshSchema), controller.refresh);
 router.post('/logout', controller.logout);
 router.get('/me', controller.me);
+router.post('/reactivation-request', validate(reactivationRequestSchema), controller.requestReactivation);
 
 export { router as authRouter };

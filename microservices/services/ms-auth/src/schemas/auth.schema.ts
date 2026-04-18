@@ -15,3 +15,9 @@ export const loginSchema = z.object({
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token requerido'),
 });
+
+export const reactivationRequestSchema = z.object({
+  tenantId: z.string().uuid('ID de tenant inválido'),
+  tenantName: z.string().min(1, 'Nombre del parqueadero requerido'),
+  requesterName: z.string().min(1, 'Nombre del solicitante requerido'),
+});

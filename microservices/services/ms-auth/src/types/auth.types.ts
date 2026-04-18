@@ -43,3 +43,9 @@ export interface AuthUser {
   email: string;
   rol: string;
 }
+
+export interface ReactivationRequestDTO {
+  tenantId: string;
+  tenantName: string;
+  requesterName: string;
+}

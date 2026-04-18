@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 interface FetchOptions {
   method?: string;
@@ -23,7 +23,7 @@ export async function apiFetch<T>(
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const response = await fetch(`${API_URL}${url}`, {
     method,
     headers,
     body,
@@ -37,6 +37,11 @@ export async function apiFetch<T>(
       errorData.error?.message ||
       `API error: ${response.status}`;
     throw new Error(message);
+  }
+
+  // 204 No Content — no body to parse
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   const json = await response.json();

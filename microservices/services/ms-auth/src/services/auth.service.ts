@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { ConflictError, NotFoundError, UnauthorizedError } from '@parkiupar/shared/errors';
-import type { RegisterDTO, LoginDTO, TokenPair, AuthUser, ProfileUser } from '../types/auth.types.js';
+import type { RegisterDTO, LoginDTO, TokenPair, AuthUser, ProfileUser, ReactivationRequestDTO } from '../types/auth.types.js';
 
 const ACCESS_TOKEN_EXPIRY = '1h';
 
@@ -64,6 +64,10 @@ export class AuthService {
     const profile = await this.repo.findProfileById(userId);
     if (!profile) throw new NotFoundError('Usuario');
     return profile;
+  }
+
+  async requestReactivation(userId: string, dto: ReactivationRequestDTO): Promise<void> {
+    await this.repo.createReactivationNotification(userId, dto);
   }
 
   private generateTokens(sub: string, email: string, rol: string): TokenPair {

@@ -44,4 +44,12 @@ export class AuthController {
       sendSuccess(res, user);
     } catch (err) { next(err); }
   };
+
+  requestReactivation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      await this.service.requestReactivation(userId, req.body);
+      sendNoContent(res);
+    } catch (err) { next(err); }
+  };
 }

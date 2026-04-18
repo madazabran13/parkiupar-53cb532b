@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,12 +12,33 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // const { updatePassword } = useAuth(); // TODO: Implementar cambio de contraseña con endpoint del ms-auth
+  const [sessionReady, setSessionReady] = useState(false);
+  const { updatePassword } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // PKCE flow: el código llega como ?code=XXX en query params
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    // Implicit flow fallback: el token llega en el hash #type=recovery
     const hash = window.location.hash;
-    if (!hash.includes('type=recovery')) {
+    const isImplicit = hash.includes('type=recovery');
+
+    if (code) {
+      // PKCE: intercambiar code por sesión
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          toast.error('Enlace expirado o inválido');
+          navigate('/login');
+        } else {
+          setSessionReady(true);
+        }
+      });
+    } else if (isImplicit) {
+      // Implicit: Supabase detecta el hash automáticamente
+      setSessionReady(true);
+    } else {
       toast.error('Enlace de recuperación inválido');
       navigate('/login');
     }
@@ -42,6 +64,14 @@ export default function ResetPassword() {
       navigate('/login');
     }
   };
+
+  if (!sessionReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted">
+        <p className="text-muted-foreground text-sm">Verificando enlace...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted px-4">
