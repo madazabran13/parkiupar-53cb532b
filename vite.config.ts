@@ -6,7 +6,7 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const gatewayUrl = env.GATEWAY_URL || 'http://172.20.10.4:8080';
+  const gatewayUrl = env.GATEWAY_URL || 'http://192.168.1.2:8080';
 
   return {
     server: {
