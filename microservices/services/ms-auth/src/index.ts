@@ -3,7 +3,6 @@ import cors from 'cors';
 import { authRouter } from './routes/auth.routes.js';
 import { errorHandler } from '@parkiupar/shared/middleware';
 
-
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 
