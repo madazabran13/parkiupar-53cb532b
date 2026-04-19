@@ -1,4 +1,4 @@
-import { hydrateRoot, createRoot } from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppContent from './AppContent.tsx';
@@ -12,20 +12,22 @@ if (
   document.documentElement.classList.add('dark');
 }
 
+// ── Offline check BEFORE React mounts ──────────────────────────────────────
+// If the browser is offline (including on page reload), redirect the URL to
+// /no-internet immediately so the router renders that page on the first paint
+// with no flash of other content.
+if (!navigator.onLine && window.location.pathname !== '/no-internet') {
+  sessionStorage.setItem('no-internet-return', window.location.pathname);
+  window.history.replaceState(null, '', '/no-internet');
+}
+
 const queryClient = new QueryClient();
 const root = document.getElementById('root')!;
-const app = (
+
+createRoot(root).render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AppContent />
     </BrowserRouter>
   </QueryClientProvider>
 );
-
-// In production the SSR server pre-renders HTML → hydrate.
-// In dev (vite serve) there is no pre-rendered HTML → createRoot.
-if (import.meta.env.PROD && root.innerHTML.trim() !== '') {
-  hydrateRoot(root, app);
-} else {
-  createRoot(root).render(app);
-}

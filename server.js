@@ -8,6 +8,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 5173);
 const GATEWAY_URL = process.env.GATEWAY_URL || 'http://gateway:8080';
 
+// Prevent SSR module-load errors from crashing the process — CSR fallback handles them
+process.on('unhandledRejection', (reason) => {
+  console.warn('[frontend] Unhandled rejection (SSR):', reason?.message ?? reason);
+});
+process.on('uncaughtException', (err) => {
+  console.warn('[frontend] Uncaught exception (SSR):', err.message);
+});
+
 const app = express();
 
 // ── Security headers ─────────────────────────────────────
@@ -18,11 +26,13 @@ app.use((_req, res, next) => {
 });
 
 // ── API proxy → gateway ──────────────────────────────────
+// Using pathFilter instead of app.use('/api', ...) so Express does NOT
+// strip the /api prefix — the gateway needs the full path to match routes.
 app.use(
-  '/api',
   createProxyMiddleware({
     target: GATEWAY_URL,
     changeOrigin: true,
+    pathFilter: '/api',
   }),
 );
 
@@ -44,7 +54,7 @@ const ssrEntryPath = path.resolve(__dirname, 'dist/ssr/entry-server.js');
 // Libraries like Leaflet, Framer-Motion, etc. access browser globals at module-load time.
 if (typeof globalThis.window === 'undefined') {
   const noop = () => {};
-  const noopEl = () => ({ style: {}, classList: { add: noop, remove: noop, contains: () => false }, setAttribute: noop, getAttribute: () => null });
+  const noopEl = () => ({ style: { appendChild: noop }, classList: { add: noop, remove: noop, contains: () => false }, setAttribute: noop, getAttribute: () => null, appendChild: noop });
   const doc = {
     createElement: noopEl,
     createElementNS: noopEl,
@@ -63,12 +73,14 @@ if (typeof globalThis.window === 'undefined') {
   };
   globalThis.window = globalThis;
   globalThis.document = doc;
-  globalThis.navigator = { userAgent: 'node', platform: 'node', language: 'es' };
+  globalThis.navigator = { userAgent: 'node', platform: 'node', language: 'es', onLine: true };
   globalThis.location = { href: '/', pathname: '/', search: '', hash: '', origin: 'http://localhost', hostname: 'localhost', protocol: 'http:' };
   globalThis.self = globalThis;
+  globalThis.devicePixelRatio = 1;
+  globalThis.screen = { deviceXDPI: 96, logicalXDPI: 96, width: 1920, height: 1080, availWidth: 1920, availHeight: 1080, colorDepth: 24, pixelDepth: 24 };
   globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 16);
   globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
-  globalThis.matchMedia = () => ({ matches: false, addListener: noop, removeEventListener: noop });
+  globalThis.matchMedia = () => ({ matches: false, addListener: noop, removeEventListener: noop, addEventListener: noop, removeEventListener: noop });
   globalThis.getComputedStyle = () => ({});
   globalThis.ResizeObserver = class { observe = noop; unobserve = noop; disconnect = noop; };
   globalThis.MutationObserver = class { observe = noop; disconnect = noop; takeRecords = () => []; };
@@ -93,7 +105,7 @@ try {
   renderFn = () => ''; // CSR fallback: serve empty shell, client takes over
 }
 
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
   try {
     const appHtml = renderFn(req.originalUrl);
     const html = template.replace('<!--ssr-outlet-->', appHtml);

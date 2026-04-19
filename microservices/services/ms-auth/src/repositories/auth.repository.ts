@@ -105,19 +105,15 @@ export class AuthRepository {
  * Verifies credentials with aggressive retry for network/TLS issues
  */
   async verifyCredentials(email: string, password: string): Promise<User | null> {
-    const maxRetries = 4;           // más intentos
+    const maxRetries = 2; // solo 1 reintento para errores transitorios (ECONNRESET, TLS)
     let lastError: any;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const { data, error } = await supabaseAuth.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
 
         if (error) {
-          console.error(`[AUTH] signInWithPassword failed (attempt ${attempt}/${maxRetries}):`, error.message, `(status: ${error.status || 0})`);
-
+          console.error(`[AUTH] signInWithPassword failed (attempt ${attempt}):`, error.message);
           if (
             error.message.includes('Invalid login credentials') ||
             error.message.includes('Email not confirmed') ||
@@ -130,43 +126,44 @@ export class AuthRepository {
         }
 
         if (!data?.user) return null;
-
         const profile = await this.getProfile(data.user.id);
         if (!profile) return null;
 
-        console.log(`[AUTH] Login exitoso para ${email} (attempt ${attempt})`);
         return this.buildUser(data.user.id, data.user.email!, profile);
 
       } catch (err: any) {
         lastError = err;
 
-        const isNetworkError =
+        // DNS errors (EAI_AGAIN, ENOTFOUND) are not transient — fail immediately
+        const isDnsError =
+          err?.cause?.code === 'EAI_AGAIN' ||
+          err?.cause?.code === 'EAI_NODATA' ||
+          err?.cause?.code === 'ENOTFOUND';
+
+        if (isDnsError) {
+          console.error('[AUTH] DNS resolution failed — no retries:', err.cause?.code);
+          break;
+        }
+
+        // Transient network errors: retry once with a short delay
+        const isTransientError =
           err?.cause?.code === 'ECONNRESET' ||
           err?.message?.includes('fetch failed') ||
           err?.message?.includes('TLS') ||
           err?.message?.includes('socket disconnected') ||
-          err?.status === 0 ||
           err?.name === 'AuthRetryableFetchError';
 
-        if (isNetworkError) {
-          console.error(`[AUTH] Network/TLS error (attempt ${attempt}/${maxRetries}):`, err.message || err);
-
-          if (attempt < maxRetries) {
-            // Backoff exponencial más largo: 800ms → 1600ms → 3200ms → 5000ms
-            const delay = Math.min(attempt * 800, 5000);
-            console.log(`[AUTH] Reintentando en ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-        } else {
-          console.error('[AUTH] Error no reintentable en verifyCredentials:', err);
+        if (isTransientError && attempt < maxRetries) {
+          console.error(`[AUTH] Transient error (attempt ${attempt}), retrying in 500ms:`, err.message);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          continue;
         }
+
         break;
       }
     }
 
-    // Si llegó aquí después de todos los reintentos
-    console.error('[AUTH] Todos los reintentos fallaron. Último error:', lastError);
+    console.error('[AUTH] verifyCredentials failed. Last error:', lastError?.cause?.code || lastError?.message);
     throw lastError;
   }
 

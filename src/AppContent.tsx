@@ -6,6 +6,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import NetworkGuard from "@/components/NetworkGuard";
+import NoInternetConnection from "@/pages/auth/NoInternetConnection";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 import ResetPassword from "@/pages/auth/ResetPassword";
@@ -38,6 +40,7 @@ export default function AppContent() {
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <NetworkGuard />
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -91,6 +94,7 @@ export default function AppContent() {
 
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/suspended" element={<SuspendedAccount />} />
+          <Route path="/no-internet" element={<NoInternetConnection />} />
           <Route path="/spaces" element={<Navigate to="/capacity" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
