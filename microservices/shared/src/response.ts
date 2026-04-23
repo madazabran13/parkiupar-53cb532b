@@ -16,6 +16,7 @@ export function sendSuccess(
     success: true,
     message,
     data,
+    instance: process.env.INSTANCE_NAME || 'unknown',
     ...(meta !== undefined ? { meta } : {}),
   });
 }
@@ -31,6 +32,7 @@ export function sendCreated(
     success: true,
     message,
     data,
+    instance: process.env.INSTANCE_NAME || 'unknown',
     ...(meta !== undefined ? { meta } : {}),
   });
 }

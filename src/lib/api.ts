@@ -68,6 +68,17 @@ export async function apiFetch<T>(
 
   const json = await response.json();
 
+  // Log visual para la consola del navegador
+  if (json && typeof json === 'object' && json.instance) {
+    console.log(`%c[LB] Request to ${url} processed by: %c${json.instance}`, 
+      'color: #3b82f6; font-weight: bold;', 
+      'color: #ef4444; font-weight: bold; background: #fee2e2; padding: 2px 4px; border-radius: 4px;');
+    
+    if (typeof window !== 'undefined') {
+      (window as any).__last_lb_instance = json.instance;
+    }
+  }
+
   if (json && typeof json === 'object' && json.success === true && 'data' in json) {
     return json.data as T;
   }

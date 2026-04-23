@@ -29,9 +29,17 @@ export class ParqueaderoRepository {
   }
 
   async findSpotsByParking(parkingId: string): Promise<Spot[]> {
-    const { data, error } = await supabase.from('ms_spots').select('*').eq('parking_id', parkingId).order('numero');
+    const { data, error } = await supabase.from('parking_spaces').select('*').eq('tenant_id', parkingId).order('space_number');
     if (error) throw error;
-    return (data || []) as Spot[];
+    return (data || []).map(d => ({
+      id: d.id,
+      parking_id: d.tenant_id,
+      numero: d.space_number,
+      estado: d.status,
+      tipo: 'car',
+      created_at: d.created_at,
+      updated_at: d.updated_at
+    })) as any;
   }
 
   async findSpotById(id: string): Promise<Spot | null> {

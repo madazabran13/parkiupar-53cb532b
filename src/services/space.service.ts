@@ -3,17 +3,34 @@
  * Single Responsibility: manages space state transitions.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { apiFetch } from '@/lib/api';
 import type { ParkingSpace } from '@/types';
 
 export const SpaceService = {
   async getSpaces(tenantId: string): Promise<ParkingSpace[]> {
-    const { data, error } = await supabase
-      .from('parking_spaces')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .order('space_number');
-    if (error) throw error;
-    return (data || []) as unknown as ParkingSpace[];
+    try {
+      // Intentamos usar el microservicio balanceado primero
+      const spots = await apiFetch<any[]>(`/parking/spots?tenantId=${tenantId}`);
+      // Mapeamos de vuelta al formato de ParkingSpace si es necesario
+      return spots.map(s => ({
+        id: s.id,
+        tenant_id: s.parking_id,
+        space_number: s.numero,
+        status: s.estado,
+        created_at: s.created_at,
+        updated_at: s.updated_at
+      })) as unknown as ParkingSpace[];
+    } catch (e) {
+      // Fallback a Supabase si el microservicio no está disponible
+      console.warn('Fallback to Supabase for getSpaces');
+      const { data, error } = await supabase
+        .from('parking_spaces')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('space_number');
+      if (error) throw error;
+      return (data || []) as unknown as ParkingSpace[];
+    }
   },
 
   async findByNumber(tenantId: string, spaceNumber: string): Promise<ParkingSpace | null> {

@@ -1,6 +1,22 @@
 services:
 
   # ─────────────────────────────
+  # ⚖️ LOAD BALANCER (NGINX)
+  # ─────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:5173"
+    depends_on:
+      - ms-parqueaderos-1
+      - ms-parqueaderos-2
+    networks:
+      - app-network
+
+  # ─────────────────────────────
   # 🌐 FRONTEND
   # ─────────────────────────────
   frontend:
@@ -42,7 +58,7 @@ services:
       PORT: 8080
       MS_AUTH_URL: http://ms-auth:3001
       MS_VEHICULOS_URL: http://ms-vehiculos:3002
-      MS_PARQUEADEROS_URL: http://ms-parqueaderos:3003
+      MS_PARQUEADEROS_URL: http://ms-parqueaderos-1:3003
       MS_RESERVAS_URL: http://ms-reservas:3004
       MS_REPORTES_URL: http://ms-reportes:3005
       JWT_SECRET: ${JWT_SECRET}
@@ -50,7 +66,8 @@ services:
     depends_on:
       - ms-auth
       - ms-vehiculos
-      - ms-parqueaderos
+      - ms-parqueaderos-1
+      - ms-parqueaderos-2
       - ms-reservas
       - ms-reportes
     networks:
@@ -71,6 +88,7 @@ services:
       - 8.8.8.8
     environment:
       PORT: 3001
+      INSTANCE_NAME: "ms-auth"
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
@@ -93,6 +111,7 @@ services:
       - 8.8.8.8
     environment:
       PORT: 3002
+      INSTANCE_NAME: "ms-vehiculos"
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
@@ -101,18 +120,40 @@ services:
     networks:
       - app-network
 
-  ms-parqueaderos:
+  ms-parqueaderos-1:
     build:
       context: ./microservices
       dockerfile: services/ms-parqueaderos/Dockerfile
-    container_name: ms-parqueaderos
+    container_name: ms-parqueaderos-1
     ports:
-      - "3003:3003"
+      - "30031:3003"
     dns:
       - 1.1.1.1
       - 8.8.8.8
     environment:
       PORT: 3003
+      INSTANCE_NAME: "ms-parqueaderos-1"
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  ms-parqueaderos-2:
+    build:
+      context: ./microservices
+      dockerfile: services/ms-parqueaderos/Dockerfile
+    container_name: ms-parqueaderos-2
+    ports:
+      - "30032:3003"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      PORT: 3003
+      INSTANCE_NAME: "ms-parqueaderos-2"
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
@@ -133,15 +174,17 @@ services:
       - 8.8.8.8
     environment:
       PORT: 3004
+      INSTANCE_NAME: "ms-reservas"
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
       MS_VEHICULOS_URL: http://ms-vehiculos:3002
-      MS_PARQUEADEROS_URL: http://ms-parqueaderos:3003
+      MS_PARQUEADEROS_URL: http://ms-parqueaderos-1:3003
       INTERNAL_SECRET: ${INTERNAL_SECRET}
     depends_on:
       - postgres
       - ms-vehiculos
-      - ms-parqueaderos
+      - ms-parqueaderos-1
+      - ms-parqueaderos-2
     networks:
       - app-network
 
@@ -157,6 +200,7 @@ services:
       - 8.8.8.8
     environment:
       PORT: 3005
+      INSTANCE_NAME: "ms-reportes"
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
       INTERNAL_SECRET: ${INTERNAL_SECRET}

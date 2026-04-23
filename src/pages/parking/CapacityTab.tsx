@@ -161,6 +161,8 @@ export default function Capacity() {
 
   const availableSpacesList = gridSpaces.filter(s => !s.occupied && s.status !== 'reserved').map(s => s.num);
 
+  const lastInstance = (typeof window !== 'undefined' && (window as any).__last_lb_instance) || 'Supabase Direct';
+
   const getRemainingTime = (expiresAt: string | null): string => {
     if (!expiresAt) return '';
     const diff = new Date(expiresAt).getTime() - now;
@@ -347,6 +349,12 @@ export default function Capacity() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Aforo</h1>
           <p className="text-sm text-muted-foreground">Gestión de espacios, reservas y entradas/salidas en tiempo real</p>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge variant="outline" className="text-xs font-mono">
+              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+              LB Instance: {lastInstance}
+            </Badge>
+          </div>
         </div>
         <Button variant="outline" size="sm" onClick={() => { setNewCapacity(String(totalSpaces)); setConfigOpen(true); }} className="text-xs">
           <Settings className="h-3.5 w-3.5 mr-1" /> Capacidad

@@ -27,8 +27,6 @@ export class ParqueaderoService {
   }
 
   async findSpots(parkingId: string): Promise<Spot[]> {
-    const parking = await this.repo.findParkingById(parkingId);
-    if (!parking) throw new NotFoundError('Parqueadero');
     return this.repo.findSpotsByParking(parkingId);
   }
 

@@ -51,8 +51,22 @@ export class ParqueaderoController {
 
   findSpots = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const id = getSingleString(req.params.id, 'id');
-      sendSuccess(res, await this.service.findSpots(id));
+      // El frontend envía el tenantId como query param o como id de parking
+      const rawId = req.query.tenantId || req.params.id;
+      let id: string;
+      
+      if (Array.isArray(rawId)) {
+        id = rawId[0] as string;
+      } else if (typeof rawId === 'string') {
+        id = rawId;
+      } else {
+        id = String(rawId);
+      }
+      
+      if (!id || id === 'undefined') throw new Error('Tenant ID es requerido');
+      
+      const spots = await this.service.findSpots(id);
+      sendSuccess(res, spots);
     } catch (err) {
       next(err);
     }

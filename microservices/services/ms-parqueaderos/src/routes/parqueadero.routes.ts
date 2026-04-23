@@ -12,6 +12,7 @@ const controller = new ParqueaderoController(service);
 const router = Router();
 
 router.get('/', controller.findAllParkings);
+router.get('/spots', controller.findSpots); // Nueva ruta para el balanceador
 router.get('/:id', controller.findParkingById);
 router.post('/', validate(createParkingSchema), controller.createParking);
 router.put('/:id', validate(updateParkingSchema), controller.updateParking);

@@ -11,7 +11,11 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
-  res.status(200).json({ ok: true, service: 'ms-parqueaderos' });
+  res.status(200).json({ 
+    ok: true, 
+    service: 'ms-parqueaderos',
+    instance: process.env.INSTANCE_NAME || 'unknown'
+  });
 });
 
 app.use('/v1/parqueaderos', parqueaderoRouter);
