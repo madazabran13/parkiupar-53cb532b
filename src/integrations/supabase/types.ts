@@ -266,33 +266,42 @@ export type Database = {
       }
       notifications: {
         Row: {
+          action_route: string | null
           created_at: string
+          created_by: string | null
           id: string
           is_read: boolean
           message: string
           metadata: Json | null
+          target_role: string | null
           tenant_id: string | null
           title: string
           type: string
           user_id: string | null
         }
         Insert: {
+          action_route?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           is_read?: boolean
           message: string
           metadata?: Json | null
+          target_role?: string | null
           tenant_id?: string | null
           title: string
           type?: string
           user_id?: string | null
         }
         Update: {
+          action_route?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           is_read?: boolean
           message?: string
           metadata?: Json | null
+          target_role?: string | null
           tenant_id?: string | null
           title?: string
           type?: string
@@ -894,6 +903,7 @@ export type Database = {
           id: string
           is_active: boolean
           phone: string | null
+          refresh_token: string | null
           role: Database["public"]["Enums"]["app_role"]
           tenant_id: string | null
           updated_at: string
@@ -906,7 +916,8 @@ export type Database = {
           id: string
           is_active?: boolean
           phone?: string | null
-          role?: Database["public"]["Enums"]["app_role"]
+          refresh_token?: string | null
+          role: Database["public"]["Enums"]["app_role"]
           tenant_id?: string | null
           updated_at?: string
           user_modules?: Json | null
@@ -918,6 +929,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           phone?: string | null
+          refresh_token?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           tenant_id?: string | null
           updated_at?: string
@@ -1089,15 +1101,18 @@ export type Database = {
         }
         Returns: number
       }
-      get_user_role: {
-        Args: { _user_id: string }
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
+      get_user_id_by_email: { Args: { p_email: string }; Returns: string }
+      get_user_role:
+        | { Args: never; Returns: string }
+        | {
+            Args: { user_id: string }
+            Returns: Database["public"]["Enums"]["app_role"]
+          }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+          required_role: Database["public"]["Enums"]["app_role"]
+          user_id: string
         }
         Returns: boolean
       }
@@ -1109,14 +1124,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role:
-        | "superadmin"
-        | "admin"
-        | "operator"
-        | "viewer"
-        | "cajero"
-        | "portero"
-        | "conductor"
+      app_role: "superadmin" | "admin" | "conductor"
       license_type: "basic" | "pro" | "enterprise"
       session_status: "active" | "completed" | "cancelled"
       vehicle_type: "car" | "motorcycle" | "truck" | "bicycle"
@@ -1247,15 +1255,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "superadmin",
-        "admin",
-        "operator",
-        "viewer",
-        "cajero",
-        "portero",
-        "conductor",
-      ],
+      app_role: ["superadmin", "admin", "conductor"],
       license_type: ["basic", "pro", "enterprise"],
       session_status: ["active", "completed", "cancelled"],
       vehicle_type: ["car", "motorcycle", "truck", "bicycle"],
