@@ -66,9 +66,13 @@ services:
     container_name: ms-auth
     ports:
       - "3001:3001"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       PORT: 3001
       SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
       JWT_SECRET: ${JWT_SECRET}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
@@ -84,6 +88,9 @@ services:
     container_name: ms-vehiculos
     ports:
       - "3002:3002"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       PORT: 3002
       SUPABASE_URL: ${SUPABASE_URL}
@@ -101,6 +108,9 @@ services:
     container_name: ms-parqueaderos
     ports:
       - "3003:3003"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       PORT: 3003
       SUPABASE_URL: ${SUPABASE_URL}
@@ -118,6 +128,9 @@ services:
     container_name: ms-reservas
     ports:
       - "3004:3004"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       PORT: 3004
       SUPABASE_URL: ${SUPABASE_URL}
@@ -139,6 +152,9 @@ services:
     container_name: ms-reportes
     ports:
       - "3005:3005"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       PORT: 3005
       SUPABASE_URL: ${SUPABASE_URL}

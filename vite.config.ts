@@ -16,12 +16,15 @@ function getLocalIP(): string {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const localIP = getLocalIP();
   const gatewayUrl = env.GATEWAY_URL || `http://${localIP}:8080`;
 
   return {
+    build: isSsrBuild
+      ? { outDir: 'dist/ssr' }
+      : { outDir: 'dist/client' },
     server: {
       host: true,
       port: 5173,
@@ -38,7 +41,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      VitePWA({
+      ...(!isSsrBuild ? [VitePWA({
         registerType: 'autoUpdate',
         devOptions: {
           enabled: false, // Disable service worker in dev to avoid caching API requests
@@ -73,7 +76,7 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-      }),
+      })] : []),
     ],
     resolve: {
       alias: {

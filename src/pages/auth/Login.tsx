@@ -37,7 +37,14 @@ export default function Login() {
     setLoading(false);
 
     if (error) {
-      toast.error(error.message || 'Error al conectar con el servidor');
+      const isNetworkError = /sin conexión|servidor|failed to fetch|network/i.test(error.message ?? '');
+      if (isNetworkError) {
+        // NetworkGuard may have already redirected via pub/sub; navigate directly as fallback
+        sessionStorage.setItem('no-internet-return', '/login');
+        navigate('/no-internet', { replace: true });
+        return;
+      }
+      toast.error(error.message || 'Error al iniciar sesión');
       return;
     }
 

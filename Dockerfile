@@ -7,13 +7,25 @@ RUN npm install --production=false
 
 COPY . .
 
-# Empty VITE_API_URL = relative URLs → nginx proxies /api to gateway internally
+# Empty VITE_API_URL = relative URLs → server.js proxies /api to gateway internally
 ENV VITE_API_URL=""
-RUN npm run build
+# Build client bundle (dist/client) + SSR bundle (dist/ssr)
+RUN npm run build:all
 
 # ── Serve ───────────────────────────────────────────────
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM node:20-alpine
+WORKDIR /app
 
-EXPOSE 80
+# Only copy production dependencies
+COPY package*.json ./
+RUN npm install --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.js ./server.js
+
+ENV PORT=5173
+ENV NODE_ENV=production
+
+EXPOSE 5173
+
+CMD ["node", "server.js"]
