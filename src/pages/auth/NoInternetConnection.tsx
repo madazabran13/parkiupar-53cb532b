@@ -7,9 +7,14 @@ import { WifiOff, RefreshCw, ArrowLeft } from 'lucide-react';
 
 async function testConnectivity(): Promise<boolean> {
   try {
-    const res = await fetch('/api/health', {
-      method: 'GET',
-      cache: 'no-store',
+    // Test connectivity by pinging Supabase
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) return navigator.onLine;
+    const res = await fetch(`${supabaseUrl}/rest/v1/`, {
+      method: 'HEAD',
+      headers: {
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+      },
       signal: AbortSignal.timeout(5000),
     });
     return res.ok || res.status < 500;

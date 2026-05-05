@@ -1,23 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { apiFetch } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import type { AppRole, UserProfile } from '@/types';
-
-interface AuthUser {
-  id: string;
-  nombre: string;
-  email: string;
-  rol: string;
-}
-
-interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
-}
+import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
   profile: UserProfile | null;
   role: AppRole | null;
   tenantId: string | null;
@@ -33,156 +21,78 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'auth_access_token',
-  REFRESH_TOKEN: 'auth_refresh_token',
-  USER: 'auth_user',
-};
+async function fetchProfile(userId: string): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error || !data) return null;
+  return data as unknown as UserProfile;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Cargar sesión desde localStorage al montar
+  // Initialize auth state
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-        const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-
-        if (accessToken && storedUser) {
-          const parsedUser = JSON.parse(storedUser) as AuthUser;
-
-          // Cargar perfil completo desde user_profiles
-          try {
-            const profileData = await apiFetch<UserProfile>('/api/auth/me', {
-              method: 'GET',
-              auth: true,
-            });
-            setUser(parsedUser);
-            setIsAuthenticated(true);
-            setProfile(profileData);
-          } catch (profileErr) {
-            console.warn('Token expirado, intentando refresh...', profileErr);
-            // Intentar renovar el token antes de cerrar sesión
-            const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-            if (refreshToken) {
-              try {
-                const tokens = await apiFetch<TokenPair>('/api/auth/refresh', {
-                  method: 'POST',
-                  body: JSON.stringify({ refreshToken }),
-                  auth: false,
-                });
-                localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-                localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-
-                // Reintentar /me con el nuevo token
-                const profileData = await apiFetch<UserProfile>('/api/auth/me', {
-                  method: 'GET',
-                  auth: true,
-                });
-                setUser(parsedUser);
-                setIsAuthenticated(true);
-                setProfile(profileData);
-              } catch (refreshErr) {
-                console.warn('Refresh fallido, cerrando sesión:', refreshErr);
-                localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-                localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-                localStorage.removeItem(STORAGE_KEYS.USER);
-              }
-            } else {
-              // No hay refresh token — limpiar sesión expirada
-              localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-              localStorage.removeItem(STORAGE_KEYS.USER);
-            }
-          }
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          // Use setTimeout to avoid Supabase deadlock on initial load
+          setTimeout(async () => {
+            const p = await fetchProfile(session.user.id);
+            setProfile(p);
+          }, 0);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setIsAuthenticated(false);
         }
-      } catch (err) {
-        console.error('Error al inicializar autenticación:', err);
-      } finally {
-        setLoading(false);
       }
-    };
+    );
 
-    initializeAuth();
+    // THEN check existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        setIsAuthenticated(true);
+        const p = await fetchProfile(session.user.id);
+        setProfile(p);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const response = await apiFetch<{ user: AuthUser; tokens: TokenPair }>(
-        '/api/auth/login',
-        {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-          auth: false,
-        }
-      );
-
-      const { user: authUser, tokens } = response;
-
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
-
-      // Establecer sesión Supabase para que el cliente pueda hacer queries directas (RLS)
-      await supabase.auth.signInWithPassword({ email, password });
-
-      setUser(authUser);
-      setIsAuthenticated(true);
-
-      // Cargar perfil completo
-      try {
-        const profileData = await apiFetch<UserProfile>('/api/auth/me', {
-          method: 'GET',
-          auth: true,
-        });
-        setProfile(profileData);
-      } catch (err) {
-        console.error('Error al cargar perfil:', err);
-      }
-
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: new Error(error.message) };
       return { error: null };
     } catch (err) {
-      console.error('[Auth] signIn failed:', err);
       return { error: err as Error };
     }
   };
 
   const signUp = async (email: string, password: string, nombre: string) => {
     try {
-      const response = await apiFetch<{ user: AuthUser; tokens: TokenPair }>(
-        '/api/auth/register',
-        {
-          method: 'POST',
-          body: JSON.stringify({ email, password, nombre, rol: 'viewer' }),
-          auth: false,
-        }
-      );
-
-      const { user: authUser, tokens } = response;
-
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
-
-      // Establecer sesión Supabase para que el cliente pueda hacer queries directas (RLS)
-      await supabase.auth.signInWithPassword({ email, password });
-
-      setUser(authUser);
-      setIsAuthenticated(true);
-
-      try {
-        const profileData = await apiFetch<UserProfile>('/api/auth/me', {
-          method: 'GET',
-          auth: true,
-        });
-        setProfile(profileData);
-      } catch (err) {
-        console.error('Error al cargar perfil:', err);
-      }
-
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: nombre },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) return { error: new Error(error.message) };
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -190,43 +100,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = useCallback(async () => {
-    try {
-      await apiFetch('/api/auth/logout', {
-        method: 'POST',
-        auth: true,
-      });
-    } catch (err) {
-      console.error('Error al logout:', err);
-    } finally {
-      // Cerrar sesión en Supabase también
-      await supabase.auth.signOut();
-      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER);
-      setUser(null);
-      setProfile(null);
-      setIsAuthenticated(false);
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+    setIsAuthenticated(false);
   }, []);
 
   const refreshAuth = useCallback(async () => {
-    try {
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-      if (!refreshToken) return;
-
-      const tokens = await apiFetch<TokenPair>('/api/auth/refresh', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-        auth: false,
-      });
-
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-    } catch (err) {
-      console.error('Error al refrescar token:', err);
-      await signOut();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const p = await fetchProfile(session.user.id);
+      setProfile(p);
     }
-  }, [signOut]);
+  }, []);
 
   const resetPassword = async (email: string): Promise<{ error: Error | null }> => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -240,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
-  // Auto-logout después de 2 horas de inactividad
+  // Auto-logout after 2 hours of inactivity
   useInactivityLogout(signOut, isAuthenticated);
 
   return (
