@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Car, Map, Grid3X3, BarChart3, Users, DollarSign,
   UserCog, Shield, Settings, Wallet, CreditCard, MoreHorizontal, Building2,
-  Clock, LogOut, Moon, Sun, CalendarDays, MessageSquare, Bug,
+  Clock, LogOut, Moon, Sun, CalendarDays, MessageSquare, Bug, History,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
@@ -30,32 +30,34 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/settings': 'settings',
   '/monthly-subscriptions': 'monthly_subscriptions',
   '/testimonials': 'testimonials',
+  '/visits': 'visits',
 };
 
 const ALL_NAV_ITEMS = [
-  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
-  { label: 'Vehículos', icon: Car, path: '/parking', module: 'parking', roles: ['admin', 'portero', 'cajero'] },
-  { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'portero', 'cajero', 'conductor'] },
-  { label: 'Aforo', icon: Grid3X3, path: '/capacity', module: 'capacity', roles: ['admin', 'portero', 'cajero'] },
+  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin', 'admin'] },
+  { label: 'Vehículos', icon: Car, path: '/parking', module: 'parking', roles: ['admin'] },
+  { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'conductor'] },
+  { label: 'Mis Visitas', icon: History, path: '/visits', module: 'visits', roles: ['conductor'] },
+  { label: 'Aforo', icon: Grid3X3, path: '/capacity', module: 'capacity', roles: ['admin'] },
   { label: 'Reportes', icon: BarChart3, path: '/reports', module: 'reports', roles: ['admin'] },
-  { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin', 'portero', 'cajero'] },
+  { label: 'Clientes', icon: Users, path: '/customers', module: 'customers', roles: ['admin'] },
   { label: 'Tarifas', icon: DollarSign, path: '/rates', module: 'rates', roles: ['admin'] },
   { label: 'Horarios', icon: Clock, path: '/schedules', module: 'schedules', roles: ['admin'] },
-  { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', module: 'monthly_subscriptions', roles: ['admin', 'portero', 'cajero'] },
+  { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', module: 'monthly_subscriptions', roles: ['admin'] },
   { label: 'Equipo', icon: UserCog, path: '/team', module: 'team', roles: ['admin'] },
   { label: 'Auditoría', icon: Shield, path: '/audit', module: 'audit', roles: ['admin'] },
   { label: 'Config', icon: Settings, path: '/settings', module: 'settings', roles: ['admin', 'conductor'] },
   { label: 'Pagos', icon: Wallet, path: '/payments', module: 'payments', roles: ['admin'] },
   { label: 'Mi Plan', icon: CreditCard, path: '/my-plan', module: 'my_plan', roles: ['admin'] },
-  { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', module: 'testimonials', roles: ['admin', 'portero', 'cajero', 'conductor'] },
-  { label: 'Incidencias', icon: Bug, path: '/incidents', module: 'incidents', roles: ['admin', 'portero', 'cajero', 'conductor'] },
+  { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', module: 'testimonials', roles: ['admin', 'conductor'] },
+  { label: 'Incidencias', icon: Bug, path: '/incidents', module: 'incidents', roles: ['admin', 'conductor'] },
 ];
 
 const SUPERADMIN_NAV_ITEMS = [
   { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Parqueaderos', icon: Building2, path: '/superadmin', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Planes', icon: CreditCard, path: '/superadmin/plans', module: 'dashboard', roles: ['superadmin'] },
-  { label: 'Pagos', icon: Wallet, path: '/payments', module: 'dashboard', roles: ['superadmin'] },
+  { label: 'Pagos', icon: Wallet, path: '/superadmin/payments', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Usuarios', icon: Users, path: '/superadmin/users', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Config', icon: Settings, path: '/superadmin/settings', module: 'dashboard', roles: ['superadmin'] },
 ];
@@ -72,7 +74,7 @@ export function MobileBottomNav() {
   if (!role) return null;
 
   const isSuperadmin = role === 'superadmin';
-  const effectiveRole = role === 'operator' ? 'portero' : (role === 'viewer' ? 'conductor' : role);
+  const effectiveRole = role;
   const itemSource = isSuperadmin ? SUPERADMIN_NAV_ITEMS : ALL_NAV_ITEMS;
 
   const userModules = profile && (profile as any).user_modules;
@@ -95,8 +97,6 @@ export function MobileBottomNav() {
 
   const getRoleDisplay = (r: string | null) => {
     if (!r) return '';
-    if (r === 'operator') return 'Portero';
-    if (r === 'viewer' || r === 'conductor') return 'Conductor';
     return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
   };
 

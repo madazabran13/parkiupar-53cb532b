@@ -112,7 +112,11 @@ export default function MapPage() {
   const markersRef = useRef<L.Marker[]>([]);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const tenantsRef = useRef<Tenant[]>([]);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isLoggedConductor = !!user && profile?.role === 'conductor';
+  const sessionPhone = profile?.phone?.trim() || '';
+  const sessionName = profile?.full_name?.trim() || '';
+  const useSessionContact = isLoggedConductor && !!sessionPhone;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -166,8 +170,8 @@ export default function MapPage() {
     setReserveTenant(tenant);
     setDetailTenant(tenant);
     setReservePlate('');
-    setReservePhone('');
-    setReserveName('');
+    setReservePhone(useSessionContact ? sessionPhone : '');
+    setReserveName(useSessionContact ? sessionName : '');
     setReserveDialogOpen(true);
   };
 
@@ -181,29 +185,24 @@ export default function MapPage() {
         : availableSpaces[0];
       if (!targetSpace) throw new Error('No hay cupos disponibles');
       if (!reservePlate.trim()) throw new Error('La placa es obligatoria');
-      if (!reservePhone.trim()) throw new Error('El teléfono es obligatorio');
+
+      const phoneToUse = useSessionContact ? sessionPhone : reservePhone.trim();
+      const nameToUse = useSessionContact ? sessionName : reserveName.trim();
+
+      if (!phoneToUse) throw new Error('El teléfono es obligatorio');
+      if (!useSessionContact && !nameToUse) throw new Error('El nombre es obligatorio');
+
       const tenantSettings = (reserveTenant.settings || {}) as Record<string, unknown>;
       const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
-      const expiresAt = new Date(Date.now() + timeoutMins * 60 * 1000).toISOString();
 
-      // Create reservation
-      const { error: resError } = await supabase.from('space_reservations').insert({
-        tenant_id: reserveTenant.id,
-        space_id: targetSpace.id,
-        customer_name: reserveName || null,
-        customer_phone: reservePhone,
-        plate: reservePlate.toUpperCase(),
-        status: 'pending',
-        expires_at: expiresAt,
+      const { error } = await supabase.rpc('reserve_parking_space', {
+        p_tenant_id: reserveTenant.id,
+        p_space_id: targetSpace.id,
+        p_plate: reservePlate.toUpperCase(),
+        p_customer_phone: phoneToUse,
+        p_customer_name: nameToUse || null,
+        p_timeout_minutes: timeoutMins,
       });
-      if (resError) throw resError;
-
-      // Update space status
-      const { error } = await supabase.from('parking_spaces').update({
-        status: 'reserved',
-        reserved_at: new Date().toISOString(),
-        reservation_expires_at: expiresAt,
-      }).eq('id', targetSpace.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -799,16 +798,24 @@ export default function MapPage() {
               <Label>Placa del vehículo *</Label>
               <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-lg tracking-wider h-12" />
             </div>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Teléfono *</Label>
-                <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} className="h-12 text-base" />
+            {useSessionContact ? (
+              <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-sm space-y-1">
+                <p className="font-semibold text-primary text-xs uppercase tracking-wide">A nombre de</p>
+                <p className="font-medium text-foreground">{sessionName || 'Conductor'}</p>
+                <p className="text-muted-foreground text-xs">Tel: {sessionPhone}</p>
               </div>
-              <div className="space-y-2">
-                <Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label>
-                <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} className="h-12 text-base" />
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Teléfono *</Label>
+                  <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} className="h-12 text-base" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nombre *</Label>
+                  <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} className="h-12 text-base" />
+                </div>
               </div>
-            </div>
+            )}
             <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 p-3 text-sm flex items-start gap-3">
               <Timer className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
@@ -820,7 +827,7 @@ export default function MapPage() {
           <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-lg safe-bottom">
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
+              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0}
               className="w-full h-14 text-base gap-2 rounded-xl"
               size="lg"
             >
@@ -879,16 +886,24 @@ export default function MapPage() {
               <Label>Placa del vehículo *</Label>
               <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-base tracking-wider" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Teléfono *</Label>
-                <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} />
+            {useSessionContact ? (
+              <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-sm space-y-1">
+                <p className="font-semibold text-primary text-xs uppercase tracking-wide">A nombre de</p>
+                <p className="font-medium text-foreground">{sessionName || 'Conductor'}</p>
+                <p className="text-muted-foreground text-xs">Tel: {sessionPhone}</p>
               </div>
-              <div className="space-y-2">
-                <Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label>
-                <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Teléfono *</Label>
+                  <Input placeholder="3001234567" value={reservePhone} onChange={(e) => setReservePhone(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nombre *</Label>
+                  <Input placeholder="Tu nombre" value={reserveName} onChange={(e) => setReserveName(e.target.value)} />
+                </div>
               </div>
-            </div>
+            )}
             <div className="rounded-xl border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 p-3 text-sm flex items-start gap-3">
               <Timer className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
@@ -901,7 +916,7 @@ export default function MapPage() {
             <Button variant="outline" onClick={() => { setReserveDialogOpen(false); setSelectedSpaceId(null); setDetailTenant(null); }}>Cancelar</Button>
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={!reservePlate.trim() || !reservePhone.trim() || reserveMutation.isPending || availableSpaces.length === 0}
+              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0}
               className="gap-2"
             >
               <BookmarkCheck className="h-4 w-4" />

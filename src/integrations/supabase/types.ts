@@ -1122,6 +1122,17 @@ export type Database = {
         Args: { _tenant_id: string }
         Returns: undefined
       }
+      reserve_parking_space: {
+        Args: {
+          p_customer_name?: string
+          p_customer_phone: string
+          p_plate: string
+          p_space_id: string
+          p_tenant_id: string
+          p_timeout_minutes?: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "superadmin" | "admin" | "conductor"

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       throw new Error("No se pudo validar el parqueadero");
     }
 
-    if (!["superadmin", "admin", "operator", "portero", "cajero"].includes(profile.role)) {
+    if (!["superadmin", "admin"].includes(profile.role)) {
       throw new Error("No tienes permisos para actualizar la capacidad");
     }
 

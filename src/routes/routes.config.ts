@@ -1,8 +1,8 @@
 import { lazy, type LazyExoticComponent, type ComponentType } from 'react';
 import type { AppRole } from '@/types';
 
-const ADMIN_STAFF: AppRole[] = ['admin', 'portero', 'cajero'];
-const ALL_TENANT_ROLES: AppRole[] = ['admin', 'portero', 'cajero', 'conductor'];
+const ADMIN_ONLY: AppRole[] = ['admin'];
+const ALL_TENANT_ROLES: AppRole[] = ['admin', 'conductor'];
 
 export type RouteAccess = 'public' | 'public-only' | 'protected' | 'utility';
 
@@ -49,6 +49,8 @@ const AuditLog = lazy(() => import('@/pages/reports/AuditLogTab'));
 
 const SuperAdmin = lazy(() => import('@/pages/admin/SuperAdmin'));
 
+const Visits = lazy(() => import('@/pages/visits/VisitsTab'));
+
 export const PUBLIC_ROUTES: RouteDefinition[] = [
   { path: '/', component: LandingPage, access: 'public' },
   { path: '/map-public', component: MapPage, access: 'public' },
@@ -80,13 +82,14 @@ export const PROTECTED_ROUTES: RouteDefinition[] = [
   { path: '/payments', component: Payments, access: 'protected', allowedRoles: ['admin'], withLayout: true },
   { path: '/my-plan', component: MyPlan, access: 'protected', allowedRoles: ['admin'], withLayout: true },
 
-  { path: '/dashboard', component: Dashboard, access: 'protected', allowedRoles: ADMIN_STAFF, withLayout: true },
-  { path: '/parking', component: Parking, access: 'protected', allowedRoles: ADMIN_STAFF, withLayout: true },
-  { path: '/capacity', component: Capacity, access: 'protected', allowedRoles: ADMIN_STAFF, withLayout: true },
-  { path: '/customers', component: Customers, access: 'protected', allowedRoles: ADMIN_STAFF, withLayout: true },
-  { path: '/monthly-subscriptions', component: MonthlySubscriptions, access: 'protected', allowedRoles: ADMIN_STAFF, withLayout: true },
+  { path: '/dashboard', component: Dashboard, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
+  { path: '/parking', component: Parking, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
+  { path: '/capacity', component: Capacity, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
+  { path: '/customers', component: Customers, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
+  { path: '/monthly-subscriptions', component: MonthlySubscriptions, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
 
   { path: '/map', component: MapPage, access: 'protected', allowedRoles: ALL_TENANT_ROLES, withLayout: true },
+  { path: '/visits', component: Visits, access: 'protected', allowedRoles: ['conductor'], withLayout: true },
   { path: '/settings', component: SettingsPage, access: 'protected', allowedRoles: ALL_TENANT_ROLES, withLayout: true },
   { path: '/testimonials', component: Testimonials, access: 'protected', allowedRoles: ALL_TENANT_ROLES, withLayout: true },
   { path: '/incidents', component: IncidentReports, access: 'protected', allowedRoles: ALL_TENANT_ROLES, withLayout: true },

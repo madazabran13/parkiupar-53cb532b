@@ -860,7 +860,7 @@ export default function SuperAdmin() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2"><Label>Precio mensual (COP)</Label><Input type="number" value={pPrice} onChange={(e) => setPPrice(e.target.value)} /></div>
               <div className="space-y-2"><Label>Max espacios</Label><Input type="number" value={pMaxSpaces} onChange={(e) => setPMaxSpaces(e.target.value)} /></div>
-              <div className="space-y-2"><Label>Max usuarios (portero/cajero)</Label><Input type="number" value={pMaxUsers} onChange={(e) => setPMaxUsers(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Max conductores</Label><Input type="number" value={pMaxUsers} onChange={(e) => setPMaxUsers(e.target.value)} /></div>
             </div>
             <div className="space-y-2">
               <Label>Módulos incluidos</Label>
@@ -914,8 +914,6 @@ function SuperAdminUsers({ tenants }: { tenants: Tenant[] }) {
   const ALL_ROLES = [
     { value: 'superadmin', label: 'Super Admin' },
     { value: 'admin', label: 'Administrador' },
-    { value: 'cajero', label: 'Cajero' },
-    { value: 'portero', label: 'Portero' },
     { value: 'conductor', label: 'Conductor' },
   ];
 

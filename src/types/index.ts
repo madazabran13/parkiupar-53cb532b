@@ -1,17 +1,13 @@
-export type AppRole = 'superadmin' | 'admin' | 'operator' | 'viewer' | 'cajero' | 'portero' | 'conductor';
+export type AppRole = 'superadmin' | 'admin' | 'conductor';
 export type VehicleType = 'car' | 'motorcycle' | 'truck' | 'bicycle';
 export type SessionStatus = 'active' | 'completed' | 'cancelled';
 export type SpaceStatus = 'available' | 'occupied' | 'reserved';
 export type ReservationStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled';
 export type DayGroup = 'weekday' | 'saturday' | 'sunday';
 
-export const ROLE_LABELS: Record<string, string> = {
+export const ROLE_LABELS: Record<AppRole, string> = {
   superadmin: 'Super Admin',
   admin: 'Administrador',
-  operator: 'Portero',
-  viewer: 'Conductor',
-  cajero: 'Cajero',
-  portero: 'Portero',
   conductor: 'Conductor',
 };
 
@@ -34,6 +30,7 @@ export const MODULE_LABELS_ES: Record<string, string> = {
   printing: 'Impresión de Recibos',
   monthly_subscriptions: 'Mensualidades',
   testimonials: 'Testimonios',
+  visits: 'Mis Visitas',
 };
 
 export interface Plan {

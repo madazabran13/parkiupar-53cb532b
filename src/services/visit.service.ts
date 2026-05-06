@@ -1,0 +1,100 @@
+import { supabase } from '@/integrations/supabase/client';
+
+export interface VisitRecord {
+  id: string;
+  plate: string;
+  vehicle_type: string;
+  entry_time: string;
+  exit_time: string | null;
+  hours_parked: number | null;
+  total_amount: number | null;
+  status: string;
+  space_number: string | null;
+  notes: string | null;
+  tenant: {
+    id: string;
+    name: string;
+    address: string | null;
+    city: string;
+    phone: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+}
+
+export type ReservationStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled';
+
+export interface ReservationRecord {
+  id: string;
+  plate: string | null;
+  status: ReservationStatus | string;
+  reserved_at: string;
+  expires_at: string;
+  confirmed_at: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  space: {
+    id: string;
+    space_number: string;
+  } | null;
+  tenant: {
+    id: string;
+    name: string;
+    address: string | null;
+    city: string;
+    phone: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
+}
+
+export const VisitService = {
+  async listForConductor(phone: string | null): Promise<VisitRecord[]> {
+    if (!phone) return [];
+
+    const { data, error } = await supabase
+      .from('parking_sessions')
+      .select(`
+        id,
+        plate,
+        vehicle_type,
+        entry_time,
+        exit_time,
+        hours_parked,
+        total_amount,
+        status,
+        space_number,
+        notes,
+        tenant:tenants!parking_sessions_tenant_id_fkey ( id, name, address, city, phone, latitude, longitude )
+      `)
+      .eq('customer_phone', phone)
+      .order('entry_time', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as unknown as VisitRecord[];
+  },
+
+  async listReservationsForConductor(phone: string | null): Promise<ReservationRecord[]> {
+    if (!phone) return [];
+
+    const { data, error } = await supabase
+      .from('space_reservations')
+      .select(`
+        id,
+        plate,
+        status,
+        reserved_at,
+        expires_at,
+        confirmed_at,
+        customer_name,
+        customer_phone,
+        space:parking_spaces!space_reservations_space_id_fkey ( id, space_number ),
+        tenant:tenants!space_reservations_tenant_id_fkey ( id, name, address, city, phone, latitude, longitude )
+      `)
+      .eq('customer_phone', phone)
+      .order('reserved_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as unknown as ReservationRecord[];
+  },
+};

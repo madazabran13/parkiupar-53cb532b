@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock, CalendarDays, Printer, MessageSquare, Bug,
+  Clock, CalendarDays, Printer, MessageSquare, Bug, History,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +36,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/schedules': 'schedules',
   '/monthly-subscriptions': 'monthly_subscriptions',
   '/testimonials': 'testimonials',
+  '/visits': 'visits',
 };
 
 type MenuItem = {
@@ -49,17 +50,18 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
   {
     label: 'Principal',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin', 'portero', 'cajero'] },
-      { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'portero', 'cajero', 'conductor'] },
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin'] },
+      { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'conductor'] },
+      { label: 'Mis Visitas', icon: History, path: '/visits', roles: ['conductor'] },
     ],
   },
   {
     label: 'Operaciones',
     items: [
-      { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin', 'portero', 'cajero'] },
-      { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin', 'portero', 'cajero'] },
-      { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'portero', 'cajero'] },
-      { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', roles: ['admin', 'portero', 'cajero'] },
+      { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin'] },
+      { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin'] },
+      { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin'] },
+      { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', roles: ['admin'] },
     ],
   },
   {
@@ -83,8 +85,8 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
   {
     label: 'Comunidad',
     items: [
-      { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', roles: ['admin', 'portero', 'cajero', 'conductor'] },
-      { label: 'Incidencias', icon: Bug, path: '/incidents', roles: ['admin', 'portero', 'cajero', 'conductor'] },
+      { label: 'Testimonios', icon: MessageSquare, path: '/testimonials', roles: ['admin', 'conductor'] },
+      { label: 'Incidencias', icon: Bug, path: '/incidents', roles: ['admin', 'conductor'] },
     ],
   },
 ];
@@ -172,7 +174,7 @@ export function AppSidebar() {
   };
 
   const isSuperadmin = role === 'superadmin';
-  const effectiveRole = role === 'operator' ? 'portero' : (role === 'viewer' ? 'conductor' : role);
+  const effectiveRole = role;
   const userModules = profile && (profile as any).user_modules;
 
   const handleSignOut = async () => {
@@ -182,8 +184,6 @@ export function AppSidebar() {
 
   const getRoleDisplay = (r: string | null) => {
     if (!r) return '';
-    if (r === 'operator') return 'Portero';
-    if (r === 'viewer') return 'Conductor';
     return ROLE_LABELS[r as keyof typeof ROLE_LABELS] || r;
   };
 
@@ -219,7 +219,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
-          <Link to={isSuperadmin ? '/superadmin' : role === 'conductor' || role === 'viewer' ? '/map' : '/dashboard'} className="flex items-center gap-2 flex-1 min-w-0">
+          <Link to={isSuperadmin ? '/superadmin' : role === 'conductor' ? '/map' : '/dashboard'} className="flex items-center gap-2 flex-1 min-w-0">
             <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8 rounded object-contain flex-shrink-0" />
             <span className="font-bold text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
               {tenant?.name || 'ParkiUpar'}

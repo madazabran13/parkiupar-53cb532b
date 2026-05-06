@@ -33,8 +33,6 @@ interface TeamUser {
 }
 
 const ASSIGNABLE_ROLES: { value: string; label: string }[] = [
-  { value: 'portero', label: 'Portero' },
-  { value: 'cajero', label: 'Cajero' },
   { value: 'conductor', label: 'Conductor' },
 ];
 
@@ -46,7 +44,7 @@ export default function TeamUsers() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState('portero');
+  const [newRole, setNewRole] = useState('conductor');
   const [newModules, setNewModules] = useState<string[]>([]);
 
   // Module edit dialog
@@ -66,7 +64,7 @@ export default function TeamUsers() {
   });
 
   const maxUsers = planData?.max_users || 10;
-  const staffUsers = users.filter((u: any) => ['portero', 'cajero', 'operator'].includes(u.role) && u.is_active);
+  const staffUsers = users.filter((u: any) => u.role === 'conductor' && u.is_active);
   const isAtLimit = staffUsers.length >= maxUsers;
 
   const availableModules = planModules.filter(m => !['dashboard', 'settings', 'my_plan'].includes(m));
@@ -77,7 +75,7 @@ export default function TeamUsers() {
     },
     onSuccess: () => {
       toast.success('Usuario creado exitosamente');
-      setDialogOpen(false); setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('portero'); setNewModules([]);
+      setDialogOpen(false); setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('conductor'); setNewModules([]);
       queryClient.invalidateQueries({ queryKey: ['team-users'] });
     },
     onError: (e) => toast.error(`Error: ${e.message}`),
@@ -106,11 +104,7 @@ export default function TeamUsers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-users'] }),
   });
 
-  const getRoleLabel = (role: string) => {
-    if (role === 'operator') return 'Portero';
-    if (role === 'viewer' || role === 'conductor') return 'Conductor';
-    return ROLE_LABELS[role as AppRole] || role;
-  };
+  const getRoleLabel = (role: string) => ROLE_LABELS[role as AppRole] || role;
 
   const openModuleEdit = (user: TeamUser) => {
     setModuleEditUser(user);

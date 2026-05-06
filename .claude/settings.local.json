@@ -25,7 +25,9 @@
       "Bash(xargs grep *)",
       "Bash(npm install *)",
       "Bash(npm ls *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__generate_typescript_types"
     ]
   }
 }

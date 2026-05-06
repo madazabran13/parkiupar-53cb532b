@@ -107,8 +107,8 @@ export default function ProfileSettings() {
         </CardContent>
       </Card>
 
-      {/* Theme Color - hidden for viewer role */}
-      {profile?.role !== 'viewer' && profile?.role !== 'conductor' && (
+      {/* Theme Color - hidden for conductor */}
+      {profile?.role !== 'conductor' && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

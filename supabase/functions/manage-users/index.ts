@@ -48,20 +48,20 @@ Deno.serve(async (req) => {
         throw new Error("No puedes crear usuarios con ese rol");
       }
 
-      const allowedAdminRoles = ["portero", "cajero", "operator", "viewer", "conductor"];
+      const allowedAdminRoles = ["conductor"];
       if (callerProfile.role === "admin" && !allowedAdminRoles.includes(role)) {
         throw new Error("No puedes crear usuarios con ese rol");
       }
 
-      if (callerProfile.role === "admin" && targetTenant && ["portero", "cajero", "conductor"].includes(role)) {
+      if (callerProfile.role === "admin" && targetTenant && role === "conductor") {
         const { data: tenantData } = await supabaseAdmin.from("tenants").select("plan_id").eq("id", targetTenant).single();
         if (tenantData?.plan_id) {
           const { data: planData } = await supabaseAdmin.from("plans").select("max_users").eq("id", tenantData.plan_id).single();
           if (planData?.max_users) {
             const { count } = await supabaseAdmin.from("user_profiles").select("id", { count: "exact", head: true })
-              .eq("tenant_id", targetTenant).in("role", ["portero", "cajero", "operator"]).eq("is_active", true);
+              .eq("tenant_id", targetTenant).eq("role", "conductor").eq("is_active", true);
             if ((count || 0) >= planData.max_users) {
-              throw new Error(`Has alcanzado el límite de ${planData.max_users} usuarios del personal para tu plan.`);
+              throw new Error(`Has alcanzado el límite de ${planData.max_users} conductores para tu plan.`);
             }
           }
         }
@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
     if (action === "get_staff_count") {
       const tenantId = callerProfile.role === "superadmin" ? payload.tenant_id : callerProfile.tenant_id;
       const { count } = await supabaseAdmin.from("user_profiles").select("id", { count: "exact", head: true })
-        .eq("tenant_id", tenantId).in("role", ["portero", "cajero", "operator"]).eq("is_active", true);
+        .eq("tenant_id", tenantId).eq("role", "conductor").eq("is_active", true);
       return jsonResponse({ count: count || 0 });
     }
 
