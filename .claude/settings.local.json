@@ -24,7 +24,8 @@
       "Bash(npm run *)",
       "Bash(xargs grep *)",
       "Bash(npm install *)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(git check-ignore *)"
     ]
   }
 }
