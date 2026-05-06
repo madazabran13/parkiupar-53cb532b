@@ -2,8 +2,13 @@
  * ParkingService — Repository pattern for parking sessions.
  * Single Responsibility: only handles parking session CRUD operations.
  * Open/Closed: extend via composition, not modification.
+ *
+ * Cuando VITE_USE_GATEWAY=true las operaciones expuestas por el BFF
+ * (`/api/parking/sessions`) van por el gateway; el resto cae al cliente
+ * Supabase directo hasta que se migren.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { apiClient, USE_GATEWAY } from '@/lib/apiClient';
 import type { ParkingSession } from '@/types';
 
 export interface CreateSessionDTO {
@@ -26,8 +31,24 @@ export interface CompleteSessionDTO {
   totalAmount: number;
 }
 
+interface GatewayList<T> {
+  data: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+interface GatewayItem<T> {
+  data: T;
+}
+
 export const ParkingService = {
   async getActiveSessions(tenantId: string): Promise<ParkingSession[]> {
+    if (USE_GATEWAY) {
+      const res = await apiClient.get<GatewayList<ParkingSession>>('/parking/sessions', {
+        query: { status: 'active', pageSize: 100 },
+      });
+      return res.data ?? [];
+    }
     const { data, error } = await supabase
       .from('parking_sessions')
       .select('*')
@@ -39,6 +60,14 @@ export const ParkingService = {
   },
 
   async getActiveSessionsBySpace(tenantId: string): Promise<ParkingSession[]> {
+    if (USE_GATEWAY) {
+      const res = await apiClient.get<GatewayList<ParkingSession>>('/parking/sessions', {
+        query: { status: 'active', pageSize: 100 },
+      });
+      return [...(res.data ?? [])].sort((a, b) =>
+        (a.space_number ?? '').localeCompare(b.space_number ?? ''),
+      );
+    }
     const { data, error } = await supabase
       .from('parking_sessions')
       .select('*')
@@ -52,6 +81,12 @@ export const ParkingService = {
   async getTodayCompleted(tenantId: string): Promise<ParkingSession[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    if (USE_GATEWAY) {
+      const res = await apiClient.get<GatewayList<ParkingSession>>('/parking/sessions', {
+        query: { status: 'completed', from: today.toISOString(), pageSize: 100 },
+      });
+      return res.data ?? [];
+    }
     const { data, error } = await supabase
       .from('parking_sessions')
       .select('*')
@@ -74,6 +109,20 @@ export const ParkingService = {
   },
 
   async createSession(dto: CreateSessionDTO): Promise<void> {
+    if (USE_GATEWAY) {
+      await apiClient.post<GatewayItem<ParkingSession>>('/parking/sessions', {
+        plate: dto.plate.toUpperCase(),
+        vehicle_type: dto.vehicleType,
+        vehicle_id: dto.vehicleId,
+        customer_id: dto.customerId,
+        customer_name: dto.customerName,
+        customer_phone: dto.customerPhone,
+        space_number: dto.spaceNumber,
+        rate_per_hour: dto.ratePerHour,
+        notes: dto.notes,
+      });
+      return;
+    }
     const { error } = await supabase.from('parking_sessions').insert({
       tenant_id: dto.tenantId,
       vehicle_id: dto.vehicleId || null,
@@ -91,6 +140,17 @@ export const ParkingService = {
   },
 
   async completeSession(dto: CompleteSessionDTO): Promise<void> {
+    if (USE_GATEWAY) {
+      await apiClient.patch<GatewayItem<ParkingSession>>(
+        `/parking/sessions/${encodeURIComponent(dto.sessionId)}/close`,
+        {
+          exit_time: dto.exitTime,
+          hours_parked: dto.hoursParked,
+          total_amount: dto.totalAmount,
+        },
+      );
+      return;
+    }
     const { error } = await supabase.from('parking_sessions').update({
       exit_time: dto.exitTime,
       hours_parked: dto.hoursParked,

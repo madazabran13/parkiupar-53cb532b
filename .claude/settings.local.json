@@ -21,7 +21,10 @@
       "mcp__claude_ai_Supabase__get_publishable_keys",
       "Bash(docker compose *)",
       "Bash(grep -E \"Built|error|ERROR|DONE.*s$\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(xargs grep *)",
+      "Bash(npm install *)",
+      "Bash(npm ls *)"
     ]
   }
 }
