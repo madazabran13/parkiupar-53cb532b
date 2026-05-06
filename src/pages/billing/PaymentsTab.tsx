@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BillingService } from '@/services/billing.service';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { Card, CardContent } from '@/components/ui/card';
@@ -128,7 +129,6 @@ export default function Payments() {
 
   const checkExpirations = useMutation({
     mutationFn: async () => {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.functions.invoke('check-expirations');
       if (error) throw error;
       return data;
