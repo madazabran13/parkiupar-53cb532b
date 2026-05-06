@@ -35,6 +35,10 @@ import IncidentReports from "./pages/incidents/index";
 import TenantView from "./pages/parking/TenantView";
 import SettingsPage from "@/pages/users/SettingsTab";
 
+// ── Role definitions for route guards ──────────────────────────────
+const ADMIN_STAFF = ['admin', 'portero', 'cajero'] as const;
+const ALL_TENANT_ROLES = ['admin', 'portero', 'cajero', 'conductor'] as const;
+
 export default function AppContent() {
   return (
     <TooltipProvider>
@@ -43,6 +47,7 @@ export default function AppContent() {
       <NetworkGuard />
       <AuthProvider>
         <Routes>
+          {/* ── Public routes ─────────────────────────────────────── */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
@@ -50,31 +55,7 @@ export default function AppContent() {
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/map-public" element={<MapPage />} />
 
-          <Route
-            element={
-              <ProtectedRoute allowedRoles={['superadmin', 'admin', 'operator', 'viewer', 'cajero', 'portero', 'conductor']}>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/parking" element={<Parking />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/rates" element={<Rates />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/capacity" element={<Capacity />} />
-            <Route path="/team" element={<TeamUsers />} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/schedules" element={<Schedules />} />
-            <Route path="/monthly-subscriptions" element={<MonthlySubscriptions />} />
-            <Route path="/testimonials" element={<Testimonials />} />
-            <Route path="/my-plan" element={<MyPlan />} />
-            <Route path="/audit" element={<AuditLog />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/incidents" element={<IncidentReports />} />
-          </Route>
-
+          {/* ── SuperAdmin exclusive routes ────────────────────────── */}
           <Route
             element={
               <ProtectedRoute allowedRoles={['superadmin']}>
@@ -92,6 +73,53 @@ export default function AppContent() {
             <Route path="/superadmin/tenant/:tenantId" element={<TenantView />} />
           </Route>
 
+          {/* ── Admin-only routes (configuration & administration) ── */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/rates" element={<Rates />} />
+            <Route path="/schedules" element={<Schedules />} />
+            <Route path="/team" element={<TeamUsers />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/audit" element={<AuditLog />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/my-plan" element={<MyPlan />} />
+          </Route>
+
+          {/* ── Admin + staff operational routes ───────────────────── */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={[...ADMIN_STAFF]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/parking" element={<Parking />} />
+            <Route path="/capacity" element={<Capacity />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/monthly-subscriptions" element={<MonthlySubscriptions />} />
+          </Route>
+
+          {/* ── All tenant roles (map, settings, community) ────────── */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={[...ALL_TENANT_ROLES]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/testimonials" element={<Testimonials />} />
+            <Route path="/incidents" element={<IncidentReports />} />
+          </Route>
+
+          {/* ── Utility routes ────────────────────────────────────── */}
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/suspended" element={<SuspendedAccount />} />
           <Route path="/no-internet" element={<NoInternetConnection />} />
