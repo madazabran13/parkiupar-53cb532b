@@ -69,6 +69,7 @@ export const PROTECTED_ROUTES: RouteDefinition[] = [
   { path: '/superadmin/faqs', component: SuperAdmin, access: 'protected', allowedRoles: ['superadmin'], withLayout: true },
   { path: '/superadmin/settings', component: SuperAdmin, access: 'protected', allowedRoles: ['superadmin'], withLayout: true },
   { path: '/superadmin/incidents', component: IncidentReports, access: 'protected', allowedRoles: ['superadmin'], withLayout: true },
+  { path: '/superadmin/payments', component: Payments, access: 'protected', allowedRoles: ['superadmin'], withLayout: true },
   { path: '/superadmin/tenant/:tenantId', component: TenantView, access: 'protected', allowedRoles: ['superadmin'], withLayout: true },
 
   { path: '/rates', component: Rates, access: 'protected', allowedRoles: ['admin'], withLayout: true },

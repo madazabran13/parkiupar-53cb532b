@@ -109,7 +109,7 @@ const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.
   {
     label: 'Sistema',
     items: [
-      { label: 'Pagos', icon: Wallet, path: '/payments' },
+      { label: 'Pagos', icon: Wallet, path: '/superadmin/payments' },
       { label: 'Usuarios', icon: Users, path: '/superadmin/users' },
       { label: 'Configuración', icon: Settings, path: '/superadmin/settings' },
     ],
