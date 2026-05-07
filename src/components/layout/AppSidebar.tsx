@@ -51,7 +51,7 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
   {
     label: 'Principal',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['superadmin', 'admin'] },
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin'] },
       { label: 'Mapa', icon: Map, path: '/map', roles: ['admin', 'conductor'] },
       { label: 'Mis Visitas', icon: History, path: '/visits', roles: ['conductor'] },
     ],
@@ -97,7 +97,6 @@ const SUPERADMIN_SECTIONS: { label: string; items: { label: string; icon: React.
   {
     label: 'Gestión Global',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
       { label: 'Parqueaderos', icon: Building2, path: '/superadmin' },
       { label: 'Planes', icon: CreditCard, path: '/superadmin/plans' },
     ],

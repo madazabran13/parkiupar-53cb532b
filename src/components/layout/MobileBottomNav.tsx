@@ -34,7 +34,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
 };
 
 const ALL_NAV_ITEMS = [
-  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin', 'admin'] },
+  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['admin'] },
   { label: 'Vehículos', icon: Car, path: '/parking', module: 'parking', roles: ['admin'] },
   { label: 'Mapa', icon: Map, path: '/map', module: 'map', roles: ['admin', 'conductor'] },
   { label: 'Mis Visitas', icon: History, path: '/visits', module: 'visits', roles: ['conductor'] },
@@ -54,7 +54,6 @@ const ALL_NAV_ITEMS = [
 ];
 
 const SUPERADMIN_NAV_ITEMS = [
-  { label: 'Inicio', icon: LayoutDashboard, path: '/dashboard', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Parqueaderos', icon: Building2, path: '/superadmin', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Planes', icon: CreditCard, path: '/superadmin/plans', module: 'dashboard', roles: ['superadmin'] },
   { label: 'Pagos', icon: Wallet, path: '/superadmin/payments', module: 'dashboard', roles: ['superadmin'] },
