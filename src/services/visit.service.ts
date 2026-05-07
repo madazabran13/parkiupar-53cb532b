@@ -85,9 +85,9 @@ export const VisitService = {
   async listReservationsForConductor(phone: string | null): Promise<ReservationRecord[]> {
     if (!phone) return [];
 
-    // Excluyo 'completed': cuando la sesión cierra, el trigger DB la marca completed
-    // y ya hay un VisitRecord con la info real (monto, horas, salida). Mostrar la
-    // reserva además sería duplicado.
+    // Traigo TODAS las reservas (incluyendo completed). En el frontend, si la
+    // reserva tiene una visita vinculada, se hidrata con los datos reales de la
+    // visita pero se mantiene como tipo "Reserva" en el listado.
     const { data, error } = await supabase
       .from('space_reservations')
       .select(`
@@ -104,7 +104,6 @@ export const VisitService = {
         tenant:tenants!space_reservations_tenant_id_fkey ( id, name, address, city, phone, latitude, longitude )
       `)
       .eq('customer_phone', phone)
-      .neq('status', 'completed')
       .order('reserved_at', { ascending: false });
 
     if (error) throw error;

@@ -80,29 +80,38 @@ function visitToItem(v: VisitRecord): CombinedItem {
   };
 }
 
-function reservationToItem(r: ReservationRecord): CombinedItem {
-  const expired = new Date(r.expires_at).getTime() <= Date.now();
+function reservationToItem(r: ReservationRecord, linkedVisit?: VisitRecord): CombinedItem {
+  // Estado: si hay visit vinculada, deriva del visit (refleja la realidad).
+  // Si no hay visit, deriva de la reserva (pending/confirmed/expired/cancelled).
   let state: StateFilter;
-  if (r.status === 'cancelled') state = 'cancelled';
-  else if (r.status === 'expired') state = 'expired';
-  else if ((r.status === 'pending' || r.status === 'confirmed') && expired) state = 'expired';
-  else state = 'active'; // pending, confirmed, arrived no expiradas
+  if (linkedVisit) {
+    if (linkedVisit.status === 'active') state = 'active';
+    else if (linkedVisit.status === 'cancelled') state = 'cancelled';
+    else state = 'completed';
+  } else {
+    const expired = new Date(r.expires_at).getTime() <= Date.now();
+    if (r.status === 'cancelled') state = 'cancelled';
+    else if (r.status === 'expired') state = 'expired';
+    else if ((r.status === 'pending' || r.status === 'confirmed') && expired) state = 'expired';
+    else state = 'active'; // pending, confirmed no expiradas
+  }
   return {
     id: `r-${r.id}`,
     kind: 'reservation',
     state,
     state_label: STATE_LABEL[state],
-    raw_status: r.status,
+    raw_status: linkedVisit?.status || r.status,
     tenant: r.tenant,
     tenant_name: r.tenant?.name || '',
-    plate: r.plate || '—',
-    vehicle_type_label: VEHICLE_TYPE_LABELS[r.vehicle_type as VehicleType] || r.vehicle_type || 'Carro',
-    space_number: r.space?.space_number || '',
-    date: r.reserved_at,
-    total_amount: null,
-    hours_parked: null,
-    exit_time: null,
+    plate: r.plate || linkedVisit?.plate || '—',
+    vehicle_type_label: VEHICLE_TYPE_LABELS[(linkedVisit?.vehicle_type || r.vehicle_type) as VehicleType] || r.vehicle_type || 'Carro',
+    space_number: linkedVisit?.space_number || r.space?.space_number || '',
+    date: linkedVisit?.entry_time || r.reserved_at,
+    total_amount: linkedVisit?.total_amount ?? null,
+    hours_parked: linkedVisit?.hours_parked ?? null,
+    exit_time: linkedVisit?.exit_time ?? null,
     expires_at: r.expires_at,
+    raw_visit: linkedVisit,
     raw_reservation: r,
   };
 }
@@ -159,16 +168,20 @@ export default function VisitsTab() {
   });
 
   const items = useMemo<CombinedItem[]>(() => {
-    // Dedup: si una visita está vinculada a una reserva (space_reservation_id),
-    // la reserva ya está representada por la visita. Mostrar ambas sería duplicado.
-    const linkedReservationIds = new Set(
-      visits.map(v => v.space_reservation_id).filter((x): x is string => !!x)
+    // Política: si una visita nació de una reserva (space_reservation_id != null),
+    // se muestra como "Reserva" enriquecida con los datos reales de la visita.
+    // Solo las visitas walk-in (sin reserva previa) aparecen como "Visita".
+    const visitByReservationId = new Map<string, VisitRecord>();
+    for (const v of visits) {
+      if (v.space_reservation_id) visitByReservationId.set(v.space_reservation_id, v);
+    }
+    const reservationItems = reservations.map(r =>
+      reservationToItem(r, visitByReservationId.get(r.id))
     );
-    const reservationsDeduped = reservations.filter(r => !linkedReservationIds.has(r.id));
-    const all = [
-      ...visits.map(visitToItem),
-      ...reservationsDeduped.map(reservationToItem),
-    ];
+    const walkInVisitItems = visits
+      .filter(v => !v.space_reservation_id)
+      .map(visitToItem);
+    const all = [...reservationItems, ...walkInVisitItems];
     all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return all;
   }, [visits, reservations]);
@@ -269,7 +282,7 @@ export default function VisitsTab() {
       key: 'total_amount',
       label: 'Monto',
       render: (r) =>
-        r.kind === 'visit' && r.total_amount != null
+        r.total_amount != null
           ? <span className="font-semibold text-foreground">{formatCurrency(r.total_amount)}</span>
           : <span className="text-muted-foreground">—</span>,
     },
@@ -515,7 +528,15 @@ function DetailDialog({ item, onClose }: { item: CombinedItem | null; onClose: (
           {t?.phone && <Row label="Teléfono" value={t.phone} />}
           <Row label="Placa" value={<span className="font-mono">{item.plate}</span>} />
           <Row label="Tipo de vehículo" value={item.vehicle_type_label} />
-          {isVisit && v && (
+          {!isVisit && r && (
+            <>
+              <Row label="Reservada" value={formatDateTime(r.reserved_at)} />
+              <Row label="Expira" value={formatDateTime(r.expires_at)} />
+              {r.confirmed_at && <Row label="Confirmada" value={formatDateTime(r.confirmed_at)} />}
+              {r.customer_name && <Row label="A nombre de" value={r.customer_name} />}
+            </>
+          )}
+          {v && (
             <>
               <Row label="Entrada" value={formatDateTime(v.entry_time)} />
               {v.exit_time && <Row label="Salida" value={formatDateTime(v.exit_time)} />}
@@ -525,14 +546,6 @@ function DetailDialog({ item, onClose }: { item: CombinedItem | null; onClose: (
                   <strong className="text-green-600 dark:text-green-400">{formatCurrency(v.total_amount)}</strong>
                 } />
               )}
-            </>
-          )}
-          {!isVisit && r && (
-            <>
-              <Row label="Reservada" value={formatDateTime(r.reserved_at)} />
-              <Row label="Expira" value={formatDateTime(r.expires_at)} />
-              {r.confirmed_at && <Row label="Confirmada" value={formatDateTime(r.confirmed_at)} />}
-              {r.customer_name && <Row label="A nombre de" value={r.customer_name} />}
             </>
           )}
         </div>
