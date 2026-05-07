@@ -834,7 +834,7 @@ export default function MapPage() {
                 <SelectTrigger className="h-12 text-base">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[10000]">
                   {(Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]).map((vt) => (
                     <SelectItem key={vt} value={vt}>{VEHICLE_TYPE_LABELS[vt]}</SelectItem>
                   ))}
@@ -937,7 +937,7 @@ export default function MapPage() {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[10000]">
                     {(Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]).map((vt) => (
                       <SelectItem key={vt} value={vt}>{VEHICLE_TYPE_LABELS[vt]}</SelectItem>
                     ))}
