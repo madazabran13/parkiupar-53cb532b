@@ -67,15 +67,6 @@ const adminBenefits = [
   'Roles y permisos para tu equipo de trabajo',
 ];
 
-const porteroBenefits = [
-  'Registrar entradas y salidas rápidamente',
-  'Imprimir tickets de parqueo',
-  'Consultar tarifas de forma automática',
-  'Ver espacios disponibles en tiempo real',
-  'Cierre de turno con resumen detallado',
-  'Gestión simplificada sin complicaciones',
-];
-
 const conductorBenefits = [
   'Consultar disponibilidad de espacios en tiempo real',
   'Reservar un espacio desde tu celular',
@@ -641,11 +632,11 @@ export default function LandingPage() {
               <span className="text-primary">muy fácil</span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Nuestro sistema se adapta a tres perfiles principales
+              Nuestro sistema se adapta a dos perfiles principales
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {/* Admin card */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -667,38 +658,6 @@ export default function LandingPage() {
                 </div>
                 <ul className="space-y-3">
                   {adminBenefits.map(b => (
-                    <li key={b} className="flex items-start gap-2.5 text-sm">
-                      <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="h-3 w-3 text-primary" />
-                      </div>
-                      <span className="text-muted-foreground">{b}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-
-            {/* Portero card */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-              className="rounded-2xl border border-border bg-card p-6 md:p-8 relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-40 h-40 bg-accent/10 rounded-full blur-3xl" />
-              <div className="relative">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Portero</h3>
-                    <p className="text-xs text-muted-foreground font-semibold">Operación de entradas y salidas</p>
-                  </div>
-                </div>
-                <ul className="space-y-3">
-                  {porteroBenefits.map(b => (
                     <li key={b} className="flex items-start gap-2.5 text-sm">
                       <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                         <Check className="h-3 w-3 text-primary" />
