@@ -17,11 +17,12 @@ interface ReservationDetailDialogProps {
   onCancel: () => void;
   onConfirmArrival: () => void;
   cancelLoading: boolean;
+  confirmLoading?: boolean;
 }
 
 export default function ReservationDetailDialog({
   space, reservation, getRemainingTime,
-  onClose, onCancel, onConfirmArrival, cancelLoading,
+  onClose, onCancel, onConfirmArrival, cancelLoading, confirmLoading = false,
 }: ReservationDetailDialogProps) {
   const isAdminConfirmed = reservation?.status === 'confirmed';
   return (
@@ -84,12 +85,12 @@ export default function ReservationDetailDialog({
           </div>
         )}
         <DialogFooter className="flex-col sm:flex-row gap-3">
-          <Button variant="destructive" size="sm" onClick={onCancel} disabled={cancelLoading}>
+          <Button variant="destructive" size="sm" onClick={onCancel} disabled={cancelLoading || confirmLoading}>
             <X className="h-4 w-4 mr-1" /> Cancelar
           </Button>
-          <Button size="sm" onClick={onConfirmArrival}>
+          <Button size="sm" onClick={onConfirmArrival} disabled={confirmLoading || cancelLoading}>
             <Check className="h-4 w-4 mr-1" />
-            {isAdminConfirmed ? 'Registrar llegada' : 'Confirmar'}
+            {confirmLoading ? 'Registrando...' : 'Confirmar y registrar llegada'}
           </Button>
         </DialogFooter>
       </DialogContent>

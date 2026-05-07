@@ -296,6 +296,22 @@ export default function Capacity() {
     onError: () => toast.error('Error al cancelar'),
   });
 
+  const confirmArrivalMutation = useMutation({
+    mutationFn: async () => {
+      if (!reservationDetail?.id) throw new Error('Sin reserva asociada');
+      const { error } = await supabase.rpc('confirm_reservation', { p_reservation_id: reservationDetail.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Llegada registrada y reserva confirmada');
+      setReservationDetailSpace(null);
+      setReservationDetail(null);
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
+    },
+    onError: (e: any) => toast.error(e?.message || 'Error al registrar la llegada'),
+  });
+
   // Handlers
   const handleGridClick = (space: GridSpace) => {
     if (space.status === 'reserved' && space.parkingSpace) {
@@ -325,17 +341,11 @@ export default function Capacity() {
   };
 
   const handleConfirmArrival = () => {
-    if (!reservationDetailSpace) return;
-    const spaceNum = parseInt(reservationDetailSpace.space_number);
-    setSelectedSpace(spaceNum);
-    setEntryPrefill({
-      plate: reservationDetail?.plate || undefined,
-      name: reservationDetail?.customer_name || undefined,
-      phone: reservationDetail?.customer_phone || undefined,
-    });
-    setReservationDetailSpace(null);
-    setReservationDetail(null);
-    setEntryOpen(true);
+    if (!reservationDetail?.id) {
+      toast.error('No hay reserva asociada a este espacio');
+      return;
+    }
+    confirmArrivalMutation.mutate();
   };
 
   const handleEntrySubmit = (data: any) => {
@@ -427,6 +437,7 @@ export default function Capacity() {
       <ReservationDetailDialog
         space={reservationDetailSpace}
         reservation={reservationDetail}
+        confirmLoading={confirmArrivalMutation.isPending}
         getRemainingTime={getRemainingTime}
         onClose={() => { setReservationDetailSpace(null); setReservationDetail(null); }}
         onCancel={() => setConfirmCancelReserve(reservationDetailSpace)}
