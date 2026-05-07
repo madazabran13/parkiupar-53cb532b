@@ -126,32 +126,71 @@ export default function VisitsTab() {
 
   useEffect(() => {
     if (!user?.id) return;
-    const channel = supabase
-      .channel(`conductor-notifications:${user.id}`)
-      .on(
+    const channel = supabase.channel(`conductor-notifications:${user.id}`);
+
+    // 1) Notificaciones explícitas con título humano
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      },
+      (payload: any) => {
+        const title: string = payload?.new?.title || '';
+        const message: string = payload?.new?.message || '';
+        if (title === 'Reserva confirmada' || title === 'Reserva rechazada' || title === 'Reserva cancelada') {
+          queryClient.invalidateQueries({ queryKey: ['conductor-reservations'] });
+          queryClient.invalidateQueries({ queryKey: ['conductor-visits'] });
+          if (title === 'Reserva confirmada') toast.success(title, { description: message });
+          else toast.warning(title, { description: message });
+        }
+      }
+    );
+
+    // 2) Reacción directa a parking_sessions del conductor (cubre reservas guest
+    //    sin reserved_by y walk-ins). El INSERT con status=active dispara cuando
+    //    el admin confirma la llegada y crea la sesión.
+    if (phone) {
+      channel.on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
+          table: 'parking_sessions',
+          filter: `customer_phone=eq.${phone}`,
         },
         (payload: any) => {
-          const title: string = payload?.new?.title || '';
-          const message: string = payload?.new?.message || '';
-          if (title === 'Reserva confirmada' || title === 'Reserva rechazada' || title === 'Reserva cancelada') {
-            queryClient.invalidateQueries({ queryKey: ['conductor-reservations'] });
-            queryClient.invalidateQueries({ queryKey: ['conductor-visits'] });
-            if (title === 'Reserva confirmada') toast.success(title, { description: message });
-            else toast.warning(title, { description: message });
+          queryClient.invalidateQueries({ queryKey: ['conductor-visits'] });
+          queryClient.invalidateQueries({ queryKey: ['conductor-reservations'] });
+          if (payload?.eventType === 'INSERT' && payload?.new?.status === 'active') {
+            toast.success('Llegada registrada', { description: 'Tu vehículo ya figura adentro.' });
           }
         }
-      )
-      .subscribe();
+      );
+
+      // 3) Cambios en space_reservations (cancel admin, expiración por cron).
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'space_reservations',
+          filter: `customer_phone=eq.${phone}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['conductor-reservations'] });
+          queryClient.invalidateQueries({ queryKey: ['conductor-visits'] });
+        }
+      );
+    }
+
+    channel.subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient]);
+  }, [user?.id, phone, queryClient]);
 
   const { data: visits = [], isLoading: loadingVisits } = useQuery({
     queryKey: ['conductor-visits', phone],
