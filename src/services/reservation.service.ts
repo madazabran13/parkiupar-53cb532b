@@ -35,7 +35,7 @@ export const ReservationService = {
       .from('space_reservations')
       .select('*')
       .eq('space_id', spaceId)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'confirmed'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();

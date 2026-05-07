@@ -1,11 +1,12 @@
 /**
  * useRateStrategy — Strategy pattern for resolving parking rates.
- * 
- * Rate resolution hierarchy:
- * 1. vehicle_rates (by vehicle_type)
- * 2. vehicle_categories (by icon/name match)
- * 3. Session stored rate (fallback)
- * 
+ *
+ * Rate resolution hierarchy (tarifa congelada al momento de entrada):
+ * 1. Sesión (rate_per_hour + fraction_minutes guardados al ingresar)
+ * 2. vehicle_categories por id (vehicle_category_id de la sesión)
+ * 3. vehicle_rates legacy por vehicle_type
+ * 4. vehicle_categories por icon match (legacy / sesiones antiguas)
+ *
  * Single Responsibility: only resolves rates.
  * Open/Closed: add new strategies without modifying existing ones.
  */
@@ -19,6 +20,30 @@ export interface ResolvedRate {
 }
 
 type RateStrategy = (session: ParkingSession) => ResolvedRate | null;
+
+function sessionFrozenStrategy(session: ParkingSession): ResolvedRate | null {
+  if (!session.rate_per_hour || session.rate_per_hour <= 0) return null;
+  return {
+    ratePerHour: session.rate_per_hour,
+    fractionMinutes: (session as any).fraction_minutes || 15,
+    source: 'session',
+  };
+}
+
+function createCategoryByIdStrategy(categories: VehicleCategory[]): RateStrategy {
+  const byId = new Map(categories.map(c => [c.id, c]));
+  return (session) => {
+    const id = (session as any).vehicle_category_id as string | null | undefined;
+    if (!id) return null;
+    const cat = byId.get(id);
+    if (!cat) return null;
+    return {
+      ratePerHour: cat.rate_per_hour,
+      fractionMinutes: cat.fraction_minutes,
+      source: 'vehicle_categories',
+    };
+  };
+}
 
 function createVehicleRateStrategy(rates: VehicleRate[]): RateStrategy {
   const rateMap = new Map(rates.map(r => [r.vehicle_type, r]));
@@ -47,22 +72,12 @@ function createCategoryStrategy(categories: VehicleCategory[]): RateStrategy {
   };
 }
 
-function sessionFallbackStrategy(session: ParkingSession): ResolvedRate | null {
-  if (session.rate_per_hour && session.rate_per_hour > 0) {
-    return {
-      ratePerHour: session.rate_per_hour,
-      fractionMinutes: 15,
-      source: 'session',
-    };
-  }
-  return null;
-}
-
 export function useRateStrategy(rates: VehicleRate[], categories: VehicleCategory[]) {
   const strategies = useMemo<RateStrategy[]>(() => [
+    sessionFrozenStrategy,
+    createCategoryByIdStrategy(categories),
     createVehicleRateStrategy(rates),
     createCategoryStrategy(categories),
-    sessionFallbackStrategy,
   ], [rates, categories]);
 
   const resolveRate = useMemo(() => {

@@ -21,6 +21,8 @@ export interface CreateSessionDTO {
   customerPhone?: string;
   spaceNumber?: string;
   ratePerHour: number;
+  fractionMinutes?: number;
+  vehicleCategoryId?: string;
   notes?: string;
 }
 
@@ -119,6 +121,8 @@ export const ParkingService = {
         customer_phone: dto.customerPhone,
         space_number: dto.spaceNumber,
         rate_per_hour: dto.ratePerHour,
+        fraction_minutes: dto.fractionMinutes,
+        vehicle_category_id: dto.vehicleCategoryId,
         notes: dto.notes,
       });
       return;
@@ -133,6 +137,8 @@ export const ParkingService = {
       customer_phone: dto.customerPhone || null,
       space_number: dto.spaceNumber || null,
       rate_per_hour: dto.ratePerHour,
+      fraction_minutes: dto.fractionMinutes ?? null,
+      vehicle_category_id: dto.vehicleCategoryId ?? null,
       notes: dto.notes || null,
       status: 'active',
     });

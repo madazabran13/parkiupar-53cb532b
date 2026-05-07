@@ -25,12 +25,18 @@ export default function ExitDialog({
 }: ExitDialogProps) {
   if (!session) return null;
 
+  // Preferir la categoría exacta guardada en la sesión.
+  // Si no, caer al match por icono (sólo legacy / sesiones antiguas).
+  const sessionCategoryId = (session as any).vehicle_category_id as string | null | undefined;
   const category =
+    (sessionCategoryId && categories.find(c => c.id === sessionCategoryId)) ||
     categories.find(c => c.name.toLowerCase() === session.vehicle_type?.toLowerCase()) ||
     categories.find(c => c.icon === session.vehicle_type);
 
-  const ratePerHour = category?.rate_per_hour || session.rate_per_hour || 0;
-  const fractionMin = category?.fraction_minutes || 15;
+  // La tarifa real ya quedó congelada en la sesión al momento de la entrada.
+  // Sólo usamos la categoría como fallback para sesiones sin rate_per_hour.
+  const ratePerHour = session.rate_per_hour || category?.rate_per_hour || 0;
+  const fractionMin = (session as any).fraction_minutes || category?.fraction_minutes || 15;
   const fee = calculateParkingFee(session.entry_time, new Date().toISOString(), ratePerHour, fractionMin);
   const categoryLabel = category?.name || session.vehicle_type;
 

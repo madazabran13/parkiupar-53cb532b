@@ -9,15 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Car, Bike, Truck } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { VehicleService, CustomerService } from '@/services';
 import type { VehicleCategory, Vehicle } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  car: Car, motorcycle: Bike, truck: Truck, bicycle: Bike,
-};
+import { resolveVehicleIcon } from '@/lib/icons/vehicleIcons';
 
 interface EntryDialogProps {
   open: boolean;
@@ -153,7 +150,7 @@ export default function EntryDialog({
               <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                 <SelectContent>{categories.map((cat) => {
-                  const Icon = ICON_MAP[cat.icon] || Car;
+                  const Icon = resolveVehicleIcon(cat.icon);
                   return <SelectItem key={cat.id} value={cat.id}><span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {cat.name} — {formatCurrency(cat.rate_per_hour)}/h</span></SelectItem>;
                 })}</SelectContent>
               </Select>

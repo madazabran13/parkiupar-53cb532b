@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { useRealtime } from '@/hooks/useRealtime';
+import { useVehicleCategories } from '@/hooks/useVehicleCategories';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { ParkingSession, VehicleRate, VehicleCategory, VehicleType } from '@/types';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
+import { resolveVehicleIcon, resolveVehicleType } from '@/lib/icons/vehicleIcons';
 
 export default function Parking() {
   const { tenantId } = useAuth();
@@ -51,6 +53,7 @@ export default function Parking() {
 
   const [plate, setPlate] = useState('');
   const [vehicleType, setVehicleType] = useState<VehicleType>('car');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [spaceNumber, setSpaceNumber] = useState('');
@@ -88,6 +91,7 @@ export default function Parking() {
 
   const [editPlate, setEditPlate] = useState('');
   const [editVehicleType, setEditVehicleType] = useState<VehicleType>('car');
+  const [editCategoryId, setEditCategoryId] = useState<string>('');
   const [editCustomerName, setEditCustomerName] = useState('');
   const [editCustomerPhone, setEditCustomerPhone] = useState('');
   const [editSpaceNumber, setEditSpaceNumber] = useState('');
@@ -99,6 +103,21 @@ export default function Parking() {
     setEditSession(session); setEditPlate(session.plate); setEditVehicleType(session.vehicle_type);
     setEditCustomerName(session.customer_name || ''); setEditCustomerPhone(session.customer_phone || '');
     setEditSpaceNumber(session.space_number || ''); setEditNotes(session.notes || '');
+    setEditCategoryId('');
+  };
+
+  const handleSelectEntryCategory = (categoryId: string) => {
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return;
+    setSelectedCategoryId(categoryId);
+    setVehicleType(resolveVehicleType(cat.icon));
+  };
+
+  const handleSelectEditCategory = (categoryId: string) => {
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return;
+    setEditCategoryId(categoryId);
+    setEditVehicleType(resolveVehicleType(cat.icon));
   };
 
   const { data: rates = [] } = useQuery({
@@ -106,19 +125,49 @@ export default function Parking() {
     queryFn: async () => { const { data } = await supabase.from('vehicle_rates').select('*').eq('tenant_id', tenantId!).eq('is_active', true); return (data || []) as unknown as VehicleRate[]; },
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['vehicle-categories', tenantId], enabled: !!tenantId,
-    queryFn: async () => { const { data } = await supabase.from('vehicle_categories').select('*').eq('tenant_id', tenantId!).eq('is_active', true); return (data || []) as unknown as VehicleCategory[]; },
-  });
+  const { data: categories = [] } = useVehicleCategories(tenantId, { activeOnly: true });
+
+  useEffect(() => {
+    if (!entryOpen) return;
+    if (categories.length === 0) { setSelectedCategoryId(''); return; }
+    const stillValid = categories.some((c) => c.id === selectedCategoryId);
+    if (!stillValid) {
+      setSelectedCategoryId(categories[0].id);
+      setVehicleType(resolveVehicleType(categories[0].icon));
+    }
+  }, [entryOpen, categories, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!editSession) return;
+    if (categories.length === 0) { setEditCategoryId(''); return; }
+    const matchByType = categories.find((c) => resolveVehicleType(c.icon) === editSession.vehicle_type);
+    const stillValid = categories.some((c) => c.id === editCategoryId);
+    if (!stillValid) {
+      const next = matchByType || categories[0];
+      setEditCategoryId(next.id);
+      setEditVehicleType(resolveVehicleType(next.icon));
+    }
+  }, [editSession, categories, editCategoryId]);
 
   const rateMap = Object.fromEntries(rates.map((r) => [r.vehicle_type, r]));
 
   const getSessionRate = (session: ParkingSession) => {
+    // 1) La tarifa congelada en la sesión es la fuente de verdad
+    //    (lo que se le prometió al cliente al entrar).
+    const sessionRate = session.rate_per_hour && session.rate_per_hour > 0 ? session.rate_per_hour : null;
+    const sessionFraction = (session as any).fraction_minutes as number | null | undefined;
+    if (sessionRate) {
+      return { rate_per_hour: sessionRate, fraction_minutes: sessionFraction || 15 };
+    }
+    // 2) Sesión sin tarifa: resolver por categoría guardada.
+    const sessionCategoryId = (session as any).vehicle_category_id as string | null | undefined;
+    const fromCatById = sessionCategoryId ? categories.find((c) => c.id === sessionCategoryId) : null;
+    if (fromCatById) return { rate_per_hour: fromCatById.rate_per_hour, fraction_minutes: fromCatById.fraction_minutes };
+    // 3) Fallbacks legacy.
     const fromRates = rateMap[session.vehicle_type];
     if (fromRates) return { rate_per_hour: fromRates.rate_per_hour, fraction_minutes: fromRates.fraction_minutes };
     const fromCat = categories.find((c) => c.icon === session.vehicle_type);
     if (fromCat) return { rate_per_hour: fromCat.rate_per_hour, fraction_minutes: fromCat.fraction_minutes };
-    if (session.rate_per_hour && session.rate_per_hour > 0) return { rate_per_hour: session.rate_per_hour, fraction_minutes: 15 };
     return null;
   };
 
@@ -146,8 +195,11 @@ export default function Parking() {
       const { data: ev } = await supabase.from('vehicles').select('id').eq('tenant_id', tenantId!).eq('plate', plate.toUpperCase()).single();
       vehicleId = ev?.id ?? null;
       if (!vehicleId) { const { data: nv } = await supabase.from('vehicles').insert({ tenant_id: tenantId!, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_id: customerId }).select('id').single(); vehicleId = nv?.id ?? null; }
-      const rate = rateMap[vehicleType];
-      const { error } = await supabase.from('parking_sessions').insert({ tenant_id: tenantId!, vehicle_id: vehicleId, customer_id: customerId, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_name: customerName || null, customer_phone: customerPhone || null, space_number: spaceNumber || null, rate_per_hour: rate?.rate_per_hour || 0, notes: notes || null, status: 'active' });
+      const selectedCat = categories.find((c) => c.id === selectedCategoryId);
+      const rate = selectedCat
+        ? { rate_per_hour: selectedCat.rate_per_hour, fraction_minutes: selectedCat.fraction_minutes }
+        : rateMap[vehicleType];
+      const { error } = await supabase.from('parking_sessions').insert({ tenant_id: tenantId!, vehicle_id: vehicleId, customer_id: customerId, plate: plate.toUpperCase(), vehicle_type: vehicleType, customer_name: customerName || null, customer_phone: customerPhone || null, space_number: spaceNumber || null, rate_per_hour: rate?.rate_per_hour || 0, fraction_minutes: rate?.fraction_minutes || null, vehicle_category_id: selectedCat?.id || null, notes: notes || null, status: 'active' });
       if (error) throw error;
     },
     onSuccess: () => { toast.success('Vehículo registrado'); setEntryOpen(false); resetForm(); queryClient.invalidateQueries({ queryKey: ['sessions-active'] }); },
@@ -195,16 +247,22 @@ export default function Parking() {
   const editMutation = useMutation({
     mutationFn: async () => {
       if (!editSession) return; if (!canEdit(editSession)) throw new Error('TIMEOUT');
-      const rate = rateMap[editVehicleType];
-      const { error } = await supabase.from('parking_sessions').update({ plate: editPlate.toUpperCase(), vehicle_type: editVehicleType, customer_name: editCustomerName || null, customer_phone: editCustomerPhone || null, space_number: editSpaceNumber || null, notes: editNotes || null, rate_per_hour: rate?.rate_per_hour || 0 }).eq('id', editSession.id);
+      const editCat = categories.find((c) => c.id === editCategoryId);
+      const rate = editCat
+        ? { rate_per_hour: editCat.rate_per_hour, fraction_minutes: editCat.fraction_minutes }
+        : rateMap[editVehicleType];
+      const { error } = await supabase.from('parking_sessions').update({ plate: editPlate.toUpperCase(), vehicle_type: editVehicleType, customer_name: editCustomerName || null, customer_phone: editCustomerPhone || null, space_number: editSpaceNumber || null, notes: editNotes || null, rate_per_hour: rate?.rate_per_hour || 0, fraction_minutes: rate?.fraction_minutes || null, vehicle_category_id: editCat?.id || null }).eq('id', editSession.id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success('Vehículo actualizado'); setEditSession(null); queryClient.invalidateQueries({ queryKey: ['sessions-active'] }); },
     onError: (err: any) => { if (err.message === 'TIMEOUT') { toast.error('Ya pasaron más de 2 minutos'); setEditSession(null); } else toast.error('Error al actualizar'); },
   });
 
-  const resetForm = () => { setPlate(''); setVehicleType('car'); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes(''); setCustomerSearch(''); setShowCustomerSuggestions(false); };
-  const previewRate = rateMap[vehicleType];
+  const resetForm = () => { setPlate(''); setVehicleType('car'); setSelectedCategoryId(''); setCustomerName(''); setCustomerPhone(''); setSpaceNumber(''); setNotes(''); setCustomerSearch(''); setShowCustomerSuggestions(false); };
+  const selectedCategory = categories.find((c) => c.id === selectedCategoryId) || null;
+  const previewRate = selectedCategory
+    ? { rate_per_hour: selectedCategory.rate_per_hour, fraction_minutes: selectedCategory.fraction_minutes }
+    : rateMap[vehicleType];
 
   const activeColumns: Column<ParkingSession>[] = [
     { key: 'plate', label: 'Placa', render: (r) => <Badge variant="outline" className="font-mono text-xs">{r.plate}</Badge> },
@@ -282,9 +340,29 @@ export default function Parking() {
               )}
             </div>
             <div className="space-y-2"><Label>Tipo de vehículo *</Label>
-              <Select value={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-              </Select>
+              {categories.length === 0 ? (
+                <p className="text-xs text-muted-foreground rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2">
+                  No hay categorías. Créalas en <strong>Tarifas</strong>.
+                </p>
+              ) : (
+                <Select value={selectedCategoryId} onValueChange={handleSelectEntryCategory}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => {
+                      const Icon = resolveVehicleIcon(c.icon);
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            <span className="font-medium">{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{formatCurrency(c.rate_per_hour)}/h</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2 relative">
@@ -375,9 +453,27 @@ export default function Parking() {
           <div className="space-y-4">
             <div className="space-y-2"><Label>Placa *</Label><Input value={editPlate} onChange={(e) => setEditPlate(e.target.value.toUpperCase())} className="uppercase" /></div>
             <div className="space-y-2"><Label>Tipo de vehículo *</Label>
-              <Select value={editVehicleType} onValueChange={(v) => setEditVehicleType(v as VehicleType)}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(VEHICLE_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-              </Select>
+              {categories.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sin categorías disponibles.</p>
+              ) : (
+                <Select value={editCategoryId} onValueChange={handleSelectEditCategory}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => {
+                      const Icon = resolveVehicleIcon(c.icon);
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            <span className="font-medium">{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{formatCurrency(c.rate_per_hour)}/h</span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2"><Label>Nombre <span className="text-muted-foreground text-xs">(opcional)</span></Label><Input value={editCustomerName} onChange={(e) => setEditCustomerName(e.target.value)} /></div>
             <div className="space-y-2"><Label>Teléfono <span className="text-muted-foreground text-xs">(opcional)</span></Label><Input value={editCustomerPhone} onChange={(e) => setEditCustomerPhone(e.target.value)} /></div>

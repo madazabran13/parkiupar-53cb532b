@@ -17,12 +17,13 @@ import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { VehicleType, SessionStatus } from '@/types';
 import { useCountdown } from '@/hooks/useCountdown';
 
-type ReservationFilter = 'all' | 'confirmed' | 'expired' | 'cancelled';
+type ReservationFilter = 'all' | 'confirmed' | 'arrived' | 'expired' | 'cancelled';
 type VisitFilter = 'all' | 'completed' | 'active' | 'cancelled';
 
 const RES_STATUS_LABEL: Record<string, string> = {
   pending: 'Activa',
   confirmed: 'Confirmada',
+  arrived: 'Concretada',
   expired: 'Expirada',
   cancelled: 'Rechazada',
 };
@@ -30,6 +31,7 @@ const RES_STATUS_LABEL: Record<string, string> = {
 const RES_STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40',
   confirmed: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/40',
+  arrived: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/40',
   expired: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
   cancelled: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
 };
@@ -44,7 +46,8 @@ interface ReservationRow extends ReservationRecord {
 
 function flattenReservation(r: ReservationRecord): ReservationRow {
   const expired = new Date(r.expires_at).getTime() <= Date.now();
-  const effective = r.status === 'pending' && expired ? 'expired' : r.status;
+  const effective =
+    (r.status === 'pending' || r.status === 'confirmed') && expired ? 'expired' : r.status;
   return {
     ...r,
     tenant_name: r.tenant?.name || '',
@@ -79,16 +82,18 @@ export default function VisitsTab() {
     const now = Date.now();
     const active: ReservationRow[] = [];
     const history: ReservationRow[] = [];
-    const counts = { all: 0, confirmed: 0, expired: 0, cancelled: 0 };
+    const counts = { all: 0, confirmed: 0, arrived: 0, expired: 0, cancelled: 0 };
     for (const r of reservations) {
       const flat = flattenReservation(r);
       const expired = new Date(r.expires_at).getTime() <= now;
-      if (r.status === 'pending' && !expired) {
+      const isActive = (r.status === 'pending' || r.status === 'confirmed') && !expired;
+      if (isActive) {
         active.push(flat);
       } else {
         history.push(flat);
         counts.all++;
         if (flat.effective_status === 'confirmed') counts.confirmed++;
+        else if (flat.effective_status === 'arrived') counts.arrived++;
         else if (flat.effective_status === 'expired') counts.expired++;
         else if (flat.effective_status === 'cancelled') counts.cancelled++;
       }
@@ -379,6 +384,9 @@ export default function VisitsTab() {
                       </ToggleGroupItem>
                       <ToggleGroupItem value="confirmed" aria-label="Confirmadas" className="text-xs h-8 px-2.5">
                         Confirmadas ({historyCounts.confirmed})
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="arrived" aria-label="Concretadas" className="text-xs h-8 px-2.5">
+                        Concretadas ({historyCounts.arrived})
                       </ToggleGroupItem>
                       <ToggleGroupItem value="expired" aria-label="Expiradas" className="text-xs h-8 px-2.5">
                         Expiradas ({historyCounts.expired})

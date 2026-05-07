@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useCountdown } from '@/hooks/useCountdown';
+import { useVehicleCategories } from '@/hooks/useVehicleCategories';
+import { formatCurrency } from '@/lib/utils/formatters';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +32,7 @@ interface AdminReservation {
   space_id: string;
   plate: string | null;
   vehicle_type: string;
+  vehicle_category_id: string | null;
   customer_name: string | null;
   customer_phone: string | null;
   status: string;
@@ -47,6 +50,7 @@ interface AdminReservation {
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendiente',
   confirmed: 'Confirmada',
+  arrived: 'Llegó',
   expired: 'Expirada',
   cancelled: 'Rechazada',
 };
@@ -54,6 +58,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40',
   confirmed: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/40',
+  arrived: 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/40',
   expired: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
   cancelled: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
 };
@@ -70,6 +75,7 @@ function flatten(r: AdminReservation, effectiveStatus?: string): AdminReservatio
 export default function ReservationsTab() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
+  const { data: categories = [] } = useVehicleCategories(tenantId);
 
   const [verifyTarget, setVerifyTarget] = useState<AdminReservation | null>(null);
   const [rejectTarget, setRejectTarget] = useState<AdminReservation | null>(null);
@@ -88,7 +94,8 @@ export default function ReservationsTab() {
       const { data, error } = await supabase
         .from('space_reservations')
         .select(`
-          id, tenant_id, space_id, plate, vehicle_type, customer_name, customer_phone,
+          id, tenant_id, space_id, plate, vehicle_type, vehicle_category_id,
+          customer_name, customer_phone,
           status, reserved_at, expires_at, confirmed_at, reserved_by,
           space:parking_spaces!space_reservations_space_id_fkey ( id, space_number )
         `)
@@ -108,9 +115,13 @@ export default function ReservationsTab() {
     for (const r of reservations) {
       const expired = new Date(r.expires_at).getTime() <= now;
       if (r.status === 'pending' && !expired) pending.push(flatten(r, 'pending'));
-      else if (r.status === 'confirmed') confirmed.push(flatten(r, 'confirmed'));
+      else if (r.status === 'confirmed' && !expired) confirmed.push(flatten(r, 'confirmed'));
       else {
-        const eff = r.status === 'pending' && expired ? 'expired' : r.status;
+        const eff = r.status === 'pending' && expired
+          ? 'expired'
+          : r.status === 'confirmed' && expired
+            ? 'expired'
+            : r.status;
         history.push(flatten(r, eff));
       }
     }
@@ -123,13 +134,14 @@ export default function ReservationsTab() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Reserva confirmada — espacio marcado como ocupado');
+      toast.success('Reserva aceptada — entrada registrada en el aforo');
       setVerifyTarget(null);
       queryClient.invalidateQueries({ queryKey: ['admin-reservations', tenantId || ''] });
       queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
       queryClient.invalidateQueries({ queryKey: ['capacity'] });
+      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
     },
-    onError: (e: any) => toast.error(e?.message || 'No se pudo confirmar la reserva'),
+    onError: (e: any) => toast.error(e?.message || 'No se pudo aceptar la reserva'),
   });
 
   const cancelMutation = useMutation({
@@ -138,11 +150,12 @@ export default function ReservationsTab() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Reserva rechazada y cupo liberado');
+      toast.success('Reserva cancelada — cupo y entrada revertidos');
       setRejectTarget(null);
       queryClient.invalidateQueries({ queryKey: ['admin-reservations', tenantId || ''] });
       queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
       queryClient.invalidateQueries({ queryKey: ['capacity'] });
+      queryClient.invalidateQueries({ queryKey: ['capacity-sessions'] });
     },
     onError: (e: any) => toast.error(e?.message || 'No se pudo rechazar la reserva'),
   });
@@ -349,6 +362,7 @@ export default function ReservationsTab() {
 
       <VerifyDialog
         reservation={verifyTarget}
+        categories={categories}
         onClose={() => setVerifyTarget(null)}
         onConfirm={(id) => confirmMutation.mutate(id)}
         loading={confirmMutation.isPending}
@@ -357,12 +371,12 @@ export default function ReservationsTab() {
       <AlertDialog open={!!rejectTarget} onOpenChange={(o) => { if (!o) setRejectTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Rechazar esta reserva?</AlertDialogTitle>
+            <AlertDialogTitle>¿Cancelar esta reserva?</AlertDialogTitle>
             <AlertDialogDescription>
-              El cupo se liberará automáticamente y quedará disponible para otros conductores.
+              El cupo se liberará y la entrada del vehículo se revertirá si ya estaba registrada.
               {rejectTarget?.plate && (
                 <> La reserva de la placa <strong className="font-mono">{rejectTarget.plate}</strong> en el espacio
-                  #{rejectTarget.space?.space_number || '—'} se marcará como rechazada.</>
+                  #{rejectTarget.space?.space_number || '—'} quedará cancelada.</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -373,7 +387,7 @@ export default function ReservationsTab() {
               onClick={() => rejectTarget && cancelMutation.mutate(rejectTarget.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {cancelMutation.isPending ? 'Rechazando...' : 'Sí, rechazar'}
+              {cancelMutation.isPending ? 'Cancelando...' : 'Sí, cancelar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -400,9 +414,10 @@ function CountdownCell({ expiresAt }: { expiresAt: string }) {
 }
 
 function VerifyDialog({
-  reservation, onClose, onConfirm, loading,
+  reservation, categories, onClose, onConfirm, loading,
 }: {
   reservation: AdminReservation | null;
+  categories: { id: string; name: string; rate_per_hour: number; fraction_minutes: number }[];
   onClose: () => void;
   onConfirm: (id: string) => void;
   loading: boolean;
@@ -411,8 +426,16 @@ function VerifyDialog({
 
   if (!reservation) return null;
 
+  const matchedCategory =
+    (reservation.vehicle_category_id &&
+      categories.find((c) => c.id === reservation.vehicle_category_id)) ||
+    null;
+
   const vehicleLabel =
-    VEHICLE_TYPE_LABELS[reservation.vehicle_type as VehicleType] || reservation.vehicle_type || 'Carro';
+    matchedCategory?.name ||
+    VEHICLE_TYPE_LABELS[reservation.vehicle_type as VehicleType] ||
+    reservation.vehicle_type ||
+    'Carro';
 
   return (
     <Dialog open={!!reservation} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -423,7 +446,7 @@ function VerifyDialog({
             Verificar reserva
           </DialogTitle>
           <DialogDescription>
-            Revisa la información del conductor antes de confirmar el cupo.
+            Al aceptar, se registra automáticamente la llegada del vehículo y el espacio queda ocupado en el aforo.
           </DialogDescription>
         </DialogHeader>
 
@@ -442,6 +465,17 @@ function VerifyDialog({
                 <Car className="h-3 w-3" /> {vehicleLabel}
               </Badge>
             </DetailLine>
+            {matchedCategory && (
+              <DetailLine label="Tarifa">
+                <span className="font-semibold text-primary">
+                  {formatCurrency(matchedCategory.rate_per_hour)}
+                  <span className="text-muted-foreground font-normal"> /hora</span>
+                  <span className="text-xs text-muted-foreground font-normal ml-1">
+                    · fracción {matchedCategory.fraction_minutes} min
+                  </span>
+                </span>
+              </DetailLine>
+            )}
             <DetailLine label="Cliente">
               <span className="font-medium">{reservation.customer_name || '—'}</span>
             </DetailLine>
@@ -495,7 +529,7 @@ function VerifyDialog({
             className="gap-1.5"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {loading ? 'Confirmando...' : 'Confirmar reserva'}
+            {loading ? 'Aceptando...' : 'Aceptar y registrar llegada'}
           </Button>
         </DialogFooter>
       </DialogContent>

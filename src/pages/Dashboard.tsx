@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useRateStrategy } from '@/hooks/useRateStrategy';
+import { useVehicleCategories } from '@/hooks/useVehicleCategories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -69,11 +70,7 @@ export default function Dashboard() {
     queryFn: () => VehicleService.getActiveRates(tenantId!),
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['vehicle-categories', tenantId],
-    enabled: !!tenantId,
-    queryFn: () => VehicleService.getActiveCategories(tenantId!),
-  });
+  const { data: categories = [] } = useVehicleCategories(tenantId, { activeOnly: true });
 
   // Strategy pattern for rate resolution
   const { resolveRate } = useRateStrategy(rates, categories);

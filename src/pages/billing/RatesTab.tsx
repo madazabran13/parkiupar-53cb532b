@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BillingService } from '@/services/billing.service';
 import { useAuth } from '@/contexts/AuthContext';
+import { useVehicleCategories } from '@/hooks/useVehicleCategories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,24 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Car, Bike, Truck } from 'lucide-react';
+import { Plus, Edit, Trash2, Car } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import type { VehicleCategory } from '@/types';
 import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
-
-const ICON_OPTIONS = [
-  { value: 'car', label: 'Carro', icon: Car },
-  { value: 'motorcycle', label: 'Moto', icon: Bike },
-  { value: 'truck', label: 'Camión', icon: Truck },
-  { value: 'bicycle', label: 'Bicicleta', icon: Bike },
-];
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  car: Car,
-  motorcycle: Bike,
-  truck: Truck,
-  bicycle: Bike,
-};
+import { VEHICLE_ICON_OPTIONS, resolveVehicleIcon } from '@/lib/icons/vehicleIcons';
 
 export default function Rates() {
   const { tenantId } = useAuth();
@@ -46,13 +34,7 @@ export default function Rates() {
   const [fractionMinutes, setFractionMinutes] = useState('15');
   const [minimumMinutes, setMinimumMinutes] = useState('15');
 
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['vehicle-categories', tenantId],
-    enabled: !!tenantId,
-    queryFn: async () => {
-      return await BillingService.getCategories(tenantId!) as unknown as VehicleCategory[];
-    },
-  });
+  const { data: categories = [], isLoading } = useVehicleCategories(tenantId);
 
   const resetForm = () => {
     setName('');
@@ -149,7 +131,7 @@ export default function Rates() {
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {categories.map((cat) => {
-            const IconComponent = ICON_MAP[cat.icon] || Car;
+            const IconComponent = resolveVehicleIcon(cat.icon);
             return (
               <Card key={cat.id} className={!cat.is_active ? 'opacity-50' : ''}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -222,7 +204,7 @@ export default function Rates() {
               <Select value={icon} onValueChange={setIcon}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {ICON_OPTIONS.map((opt) => (
+                  {VEHICLE_ICON_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       <span className="flex items-center gap-2">
                         <opt.icon className="h-4 w-4" /> {opt.label}

@@ -325,6 +325,7 @@ export type Database = {
           customer_phone: string | null
           entry_time: string
           exit_time: string | null
+          fraction_minutes: number | null
           hours_parked: number | null
           id: string
           notes: string | null
@@ -335,6 +336,7 @@ export type Database = {
           tenant_id: string
           total_amount: number | null
           updated_at: string
+          vehicle_category_id: string | null
           vehicle_id: string | null
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -345,6 +347,7 @@ export type Database = {
           customer_phone?: string | null
           entry_time?: string
           exit_time?: string | null
+          fraction_minutes?: number | null
           hours_parked?: number | null
           id?: string
           notes?: string | null
@@ -355,6 +358,7 @@ export type Database = {
           tenant_id: string
           total_amount?: number | null
           updated_at?: string
+          vehicle_category_id?: string | null
           vehicle_id?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -365,6 +369,7 @@ export type Database = {
           customer_phone?: string | null
           entry_time?: string
           exit_time?: string | null
+          fraction_minutes?: number | null
           hours_parked?: number | null
           id?: string
           notes?: string | null
@@ -375,6 +380,7 @@ export type Database = {
           tenant_id?: string
           total_amount?: number | null
           updated_at?: string
+          vehicle_category_id?: string | null
           vehicle_id?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -391,6 +397,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parking_sessions_vehicle_category_id_fkey"
+            columns: ["vehicle_category_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_categories"
             referencedColumns: ["id"]
           },
           {
@@ -634,6 +647,7 @@ export type Database = {
           status: string
           tenant_id: string
           updated_at: string
+          vehicle_category_id: string | null
           vehicle_type: string
         }
         Insert: {
@@ -650,6 +664,7 @@ export type Database = {
           status?: string
           tenant_id: string
           updated_at?: string
+          vehicle_category_id?: string | null
           vehicle_type?: string
         }
         Update: {
@@ -666,6 +681,7 @@ export type Database = {
           status?: string
           tenant_id?: string
           updated_at?: string
+          vehicle_category_id?: string | null
           vehicle_type?: string
         }
         Relationships: [
@@ -681,6 +697,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_reservations_vehicle_category_id_fkey"
+            columns: ["vehicle_category_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -1110,7 +1133,7 @@ export type Database = {
       }
       confirm_reservation: {
         Args: { p_reservation_id: string }
-        Returns: undefined
+        Returns: string
       }
       get_user_id_by_email: { Args: { p_email: string }; Returns: string }
       get_user_role:
@@ -1135,6 +1158,7 @@ export type Database = {
       }
       reserve_parking_space: {
         Args: {
+          p_category_id?: string
           p_customer_name?: string
           p_customer_phone: string
           p_plate: string

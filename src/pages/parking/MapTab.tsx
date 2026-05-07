@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw, LogOut, BookmarkCheck, Timer } from 'lucide-react';
 import type { Tenant, VehicleCategory, TenantSchedule, ParkingSpace, VehicleType } from '@/types';
 import { VEHICLE_TYPE_LABELS } from '@/types';
+import { resolveVehicleIcon, resolveVehicleType } from '@/lib/icons/vehicleIcons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
@@ -132,6 +133,7 @@ export default function MapPage() {
   const [reservePhone, setReservePhone] = useState('');
   const [reserveName, setReserveName] = useState('');
   const [reserveVehicleType, setReserveVehicleType] = useState<VehicleType>('car');
+  const [reserveCategoryId, setReserveCategoryId] = useState<string>('');
   const [isDesktop, setIsDesktop] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 640px)').matches : true,
   );
@@ -185,6 +187,7 @@ export default function MapPage() {
     setReservePhone(useSessionContact ? sessionPhone : '');
     setReserveName(useSessionContact ? sessionName : '');
     setReserveVehicleType('car');
+    setReserveCategoryId('');
     setReserveDialogOpen(true);
   };
 
@@ -204,6 +207,7 @@ export default function MapPage() {
 
       if (!phoneToUse) throw new Error('El teléfono es obligatorio');
       if (!useSessionContact && !nameToUse) throw new Error('El nombre es obligatorio');
+      if (reserveTenantRates.length > 0 && !reserveCategoryId) throw new Error('Selecciona el tipo de vehículo');
 
       const tenantSettings = (reserveTenant.settings || {}) as Record<string, unknown>;
       const timeoutMins = (tenantSettings.reservation_timeout_minutes as number) || 15;
@@ -216,6 +220,7 @@ export default function MapPage() {
         p_vehicle_type: reserveVehicleType,
         p_customer_name: nameToUse || null,
         p_timeout_minutes: timeoutMins,
+        p_category_id: reserveCategoryId || undefined,
       });
       if (error) throw error;
     },
@@ -288,32 +293,34 @@ export default function MapPage() {
     return ratesMap[reserveTenant.id] || [];
   }, [reserveTenant, ratesMap]);
 
-  const matchedReserveRate = useMemo(() => {
-    if (reserveTenantRates.length === 0) return null;
-    const normalize = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-    const synonyms: Record<VehicleType, string[]> = {
-      car: ['carro', 'auto', 'automovil', 'vehiculo', 'particular'],
-      motorcycle: ['moto', 'motocicleta', 'motos'],
-      truck: ['camion', 'camiones', 'pesado', 'truck'],
-      bicycle: ['bicicleta', 'bici', 'bike'],
-    };
-    const candidates = synonyms[reserveVehicleType] || [
-      normalize(VEHICLE_TYPE_LABELS[reserveVehicleType]),
-    ];
-    const normalizedRates = reserveTenantRates.map((r) => ({ rate: r, n: normalize(r.name) }));
-    for (const cand of candidates) {
-      const exact = normalizedRates.find((nr) => nr.n === cand);
-      if (exact) return exact.rate;
+  const matchedReserveRate = useMemo<VehicleCategory | null>(() => {
+    if (!reserveCategoryId) return null;
+    return reserveTenantRates.find((r) => r.id === reserveCategoryId) || null;
+  }, [reserveTenantRates, reserveCategoryId]);
+
+  // Auto-seleccionar primera categoría cuando carguen las del parqueadero
+  useEffect(() => {
+    if (!reserveDialogOpen) return;
+    if (reserveTenantRates.length === 0) {
+      setReserveCategoryId('');
+      return;
     }
-    for (const cand of candidates) {
-      const partial = normalizedRates.find(
-        (nr) => nr.n.includes(cand) || cand.includes(nr.n),
-      );
-      if (partial) return partial.rate;
+    const stillValid = reserveTenantRates.some((r) => r.id === reserveCategoryId);
+    if (!stillValid) {
+      setReserveCategoryId(reserveTenantRates[0].id);
+      setReserveVehicleType(resolveVehicleType(reserveTenantRates[0].icon));
     }
-    return null;
-  }, [reserveTenantRates, reserveVehicleType]);
+  }, [reserveDialogOpen, reserveTenantRates, reserveCategoryId]);
+
+  const handleSelectReserveCategory = useCallback(
+    (categoryId: string) => {
+      const cat = reserveTenantRates.find((r) => r.id === categoryId);
+      if (!cat) return;
+      setReserveCategoryId(categoryId);
+      setReserveVehicleType(resolveVehicleType(cat.icon));
+    },
+    [reserveTenantRates],
+  );
 
   const allCategoryNames = useMemo(() => {
     const names = new Set<string>();
@@ -846,16 +853,33 @@ export default function MapPage() {
             </div>
             <div className="space-y-2">
               <Label>Tipo de vehículo *</Label>
-              <Select value={reserveVehicleType} onValueChange={(v) => setReserveVehicleType(v as VehicleType)}>
-                <SelectTrigger className="h-12 text-base">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-[10000]">
-                  {(Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]).map((vt) => (
-                    <SelectItem key={vt} value={vt}>{VEHICLE_TYPE_LABELS[vt]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {reserveTenantRates.length === 0 ? (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-400">
+                  Este parqueadero aún no tiene tarifas registradas. No es posible reservar.
+                </div>
+              ) : (
+                <Select value={reserveCategoryId} onValueChange={handleSelectReserveCategory}>
+                  <SelectTrigger className="h-12 text-base">
+                    <SelectValue placeholder="Elige una categoría" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[10000]">
+                    {reserveTenantRates.map((cat) => {
+                      const Icon = resolveVehicleIcon(cat.icon);
+                      return (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            <span className="font-medium">{cat.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ${Number(cat.rate_per_hour).toLocaleString()}/h
+                            </span>
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              )}
               <RateInfo rate={matchedReserveRate} hasRates={reserveTenantRates.length > 0} vehicleType={reserveVehicleType} />
             </div>
             {useSessionContact ? (
@@ -887,7 +911,7 @@ export default function MapPage() {
           <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-lg safe-bottom">
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0}
+              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0 || (reserveTenantRates.length > 0 && !reserveCategoryId) || reserveTenantRates.length === 0}
               className="w-full h-14 text-base gap-2 rounded-xl"
               size="lg"
             >
@@ -949,16 +973,33 @@ export default function MapPage() {
               </div>
               <div className="space-y-2">
                 <Label>Tipo de vehículo *</Label>
-                <Select value={reserveVehicleType} onValueChange={(v) => setReserveVehicleType(v as VehicleType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[10000]">
-                    {(Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]).map((vt) => (
-                      <SelectItem key={vt} value={vt}>{VEHICLE_TYPE_LABELS[vt]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {reserveTenantRates.length === 0 ? (
+                  <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs text-amber-800 dark:text-amber-400">
+                    Sin tarifas registradas en este parqueadero.
+                  </div>
+                ) : (
+                  <Select value={reserveCategoryId} onValueChange={handleSelectReserveCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Elige una categoría" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[10000]">
+                      {reserveTenantRates.map((cat) => {
+                        const Icon = resolveVehicleIcon(cat.icon);
+                        return (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <span className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              <span className="font-medium">{cat.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ${Number(cat.rate_per_hour).toLocaleString()}/h
+                              </span>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
             <RateInfo rate={matchedReserveRate} hasRates={reserveTenantRates.length > 0} vehicleType={reserveVehicleType} />
@@ -992,7 +1033,7 @@ export default function MapPage() {
             <Button variant="outline" onClick={() => { setReserveDialogOpen(false); setSelectedSpaceId(null); setDetailTenant(null); }}>Cancelar</Button>
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0}
+              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0 || (reserveTenantRates.length > 0 && !reserveCategoryId) || reserveTenantRates.length === 0}
               className="gap-2"
             >
               <BookmarkCheck className="h-4 w-4" />

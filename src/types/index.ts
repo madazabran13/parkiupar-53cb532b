@@ -2,7 +2,7 @@ export type AppRole = 'superadmin' | 'admin' | 'conductor';
 export type VehicleType = 'car' | 'motorcycle' | 'truck' | 'bicycle';
 export type SessionStatus = 'active' | 'completed' | 'cancelled';
 export type SpaceStatus = 'available' | 'occupied' | 'reserved';
-export type ReservationStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled';
+export type ReservationStatus = 'pending' | 'confirmed' | 'arrived' | 'expired' | 'cancelled';
 export type DayGroup = 'weekday' | 'saturday' | 'sunday';
 
 export const ROLE_LABELS: Record<AppRole, string> = {

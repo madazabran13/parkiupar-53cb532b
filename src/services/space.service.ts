@@ -97,12 +97,16 @@ export const SpaceService = {
       .eq('status', 'pending');
   },
 
+  /**
+   * Marca como 'arrived' la reserva pendiente o confirmada del espacio.
+   * Se llama cuando se registra la entrada del vehículo (cliente llegó).
+   */
   async confirmReservation(spaceId: string): Promise<void> {
     await supabase
       .from('space_reservations')
-      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+      .update({ status: 'arrived', confirmed_at: new Date().toISOString() })
       .eq('space_id', spaceId)
-      .eq('status', 'pending');
+      .in('status', ['pending', 'confirmed']);
   },
 
   async cancelReservation(spaceId: string): Promise<void> {
@@ -111,6 +115,6 @@ export const SpaceService = {
       .from('space_reservations')
       .update({ status: 'cancelled' })
       .eq('space_id', spaceId)
-      .eq('status', 'pending');
+      .in('status', ['pending', 'confirmed']);
   },
 } as const;

@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/hooks/useTenant';
 import { useRealtime } from '@/hooks/useRealtime';
+import { useVehicleCategories } from '@/hooks/useVehicleCategories';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import { Settings, AlertTriangle, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { calculateParkingFee } from '@/lib/utils/pricing';
+import { resolveVehicleType } from '@/lib/icons/vehicleIcons';
 import { generateExitReceiptPDF } from '@/lib/utils/pdfGenerators';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CapacitySkeleton } from '@/components/ui/PageSkeletons';
@@ -100,11 +102,7 @@ export default function Capacity() {
     queryFn: () => SpaceService.getSpaces(tenantId!),
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['vehicle-categories', tenantId],
-    enabled: !!tenantId,
-    queryFn: () => VehicleService.getActiveCategories(tenantId!),
-  });
+  const { data: categories = [] } = useVehicleCategories(tenantId, { activeOnly: true });
 
   const { data: tenantPlan } = useQuery({
     queryKey: ['tenant-plan', tenant?.plan_id],
@@ -204,12 +202,15 @@ export default function Capacity() {
       const category = categoryMap[data.categoryId];
       let customerId: string | undefined;
       if (data.customerPhone) customerId = await CustomerService.upsert(tenantId, data.customerPhone, data.customerName);
-      const vehicleType = category?.icon || 'car';
+      const vehicleType = resolveVehicleType(category?.icon);
       const vehicleId = data.vehicleId || await VehicleService.upsert(tenantId, data.plate, vehicleType, customerId);
       await ParkingService.createSession({
         tenantId, vehicleId, customerId, plate: data.plate, vehicleType,
         customerName: data.customerName, customerPhone: data.customerPhone,
-        spaceNumber: String(data.spaceNumber), ratePerHour: category?.rate_per_hour || 0, notes: data.notes,
+        spaceNumber: String(data.spaceNumber), ratePerHour: category?.rate_per_hour || 0,
+        fractionMinutes: category?.fraction_minutes,
+        vehicleCategoryId: category?.id,
+        notes: data.notes,
       });
       const matchSpace = parkingSpaces.find(s => s.space_number === String(data.spaceNumber));
       if (matchSpace) {
@@ -229,9 +230,13 @@ export default function Capacity() {
   const exitMutation = useMutation({
     mutationFn: async (session: ParkingSession) => {
       const exitTime = new Date().toISOString();
-      const cat = categories.find(c => c.name.toLowerCase() === session.vehicle_type?.toLowerCase()) || categories.find(c => c.icon === session.vehicle_type);
-      const ratePerHour = cat?.rate_per_hour || session.rate_per_hour || 0;
-      const fractionMin = cat?.fraction_minutes || 15;
+      const sessionCategoryId = (session as any).vehicle_category_id as string | null | undefined;
+      const cat =
+        (sessionCategoryId && categories.find(c => c.id === sessionCategoryId)) ||
+        categories.find(c => c.name.toLowerCase() === session.vehicle_type?.toLowerCase()) ||
+        categories.find(c => c.icon === session.vehicle_type);
+      const ratePerHour = session.rate_per_hour || cat?.rate_per_hour || 0;
+      const fractionMin = (session as any).fraction_minutes || cat?.fraction_minutes || 15;
       const fee = calculateParkingFee(session.entry_time, exitTime, ratePerHour, fractionMin);
       await ParkingService.completeSession({ sessionId: session.id, exitTime, hoursParked: Math.round(fee.totalMinutes / 60 * 100) / 100, totalAmount: fee.total });
       if (session.space_number) {
