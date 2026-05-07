@@ -819,7 +819,7 @@ export default function LandingPage() {
 
       {/* ═══ FOOTER ═══ */}
       <footer className="border-t border-border py-12 bg-muted/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <Link to="/" className="flex items-center gap-2.5">
               <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8" />
@@ -835,6 +835,17 @@ export default function LandingPage() {
                 </a>
               ))}
             </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-4 border-t border-border/60">
+            <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Términos y Condiciones
+            </Link>
+            <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Política de Privacidad
+            </Link>
+            <a href="mailto:soporte@parkiupar.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              soporte@parkiupar.com
+            </a>
           </div>
         </div>
       </footer>

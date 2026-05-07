@@ -24,6 +24,8 @@ const NoInternetConnection = lazy(() => import('@/pages/auth/NoInternetConnectio
 
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const Terms = lazy(() => import('@/pages/legal/Terms'));
+const Privacy = lazy(() => import('@/pages/legal/Privacy'));
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Parking = lazy(() => import('@/pages/parking/ParkingTab'));
@@ -56,6 +58,8 @@ export const PUBLIC_ROUTES: RouteDefinition[] = [
   { path: '/', component: LandingPage, access: 'public' },
   { path: '/map-public', component: MapPage, access: 'public' },
   { path: '/reset-password', component: ResetPassword, access: 'public' },
+  { path: '/terms', component: Terms, access: 'public' },
+  { path: '/privacy', component: Privacy, access: 'public' },
 ];
 
 export const PUBLIC_ONLY_ROUTES: RouteDefinition[] = [
