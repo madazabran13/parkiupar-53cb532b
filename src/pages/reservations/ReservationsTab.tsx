@@ -107,25 +107,21 @@ export default function ReservationsTab() {
     },
   });
 
-  const { pending, confirmed, history } = useMemo(() => {
+  const { pending, history } = useMemo(() => {
     const now = Date.now();
     const pending: AdminReservation[] = [];
-    const confirmed: AdminReservation[] = [];
     const history: AdminReservation[] = [];
     for (const r of reservations) {
       const expired = new Date(r.expires_at).getTime() <= now;
       if (r.status === 'pending' && !expired) pending.push(flatten(r, 'pending'));
-      else if (r.status === 'confirmed' && !expired) confirmed.push(flatten(r, 'confirmed'));
       else {
-        const eff = r.status === 'pending' && expired
+        const eff = (r.status === 'pending' || r.status === 'confirmed') && expired
           ? 'expired'
-          : r.status === 'confirmed' && expired
-            ? 'expired'
-            : r.status;
+          : r.status;
         history.push(flatten(r, eff));
       }
     }
-    return { pending, confirmed, history };
+    return { pending, history };
   }, [reservations]);
 
   const confirmMutation = useMutation({
@@ -215,20 +211,6 @@ export default function ReservationsTab() {
     },
   ], [baseColumns]);
 
-  const confirmedColumns: Column<AdminReservation>[] = useMemo(() => [
-    ...baseColumns,
-    {
-      key: 'confirmed_at',
-      label: 'Confirmada',
-      hideOnMobile: true,
-      render: (r) => (
-        <span className="text-xs text-muted-foreground">
-          {r.confirmed_at ? formatDateTime(r.confirmed_at) : '—'}
-        </span>
-      ),
-    },
-  ], [baseColumns]);
-
   const historyColumns: Column<AdminReservation>[] = useMemo(() => [
     ...baseColumns,
     {
@@ -278,22 +260,13 @@ export default function ReservationsTab() {
       )}
 
       <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex">
+        <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-flex">
           <TabsTrigger value="pending" className="gap-1.5">
             <Timer className="h-4 w-4" />
             Pendientes
             {pending.length > 0 && (
               <span className="ml-1 rounded-full bg-amber-500 text-white text-[10px] px-1.5 py-0.5 leading-none">
                 {pending.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="confirmed" className="gap-1.5">
-            <CheckCircle2 className="h-4 w-4" />
-            Confirmadas
-            {confirmed.length > 0 && (
-              <span className="ml-1 rounded-full bg-green-600 text-white text-[10px] px-1.5 py-0.5 leading-none">
-                {confirmed.length}
               </span>
             )}
           </TabsTrigger>
@@ -328,25 +301,6 @@ export default function ReservationsTab() {
                   Rechazar
                 </Button>
               </div>
-            )}
-          />
-        </TabsContent>
-
-        <TabsContent value="confirmed">
-          <DataTable
-            columns={confirmedColumns}
-            data={confirmed}
-            searchPlaceholder="Buscar por placa, cliente, espacio..."
-            actions={(r) => (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => setRejectTarget(r)}
-              >
-                <XCircle className="h-3.5 w-3.5" />
-                Cancelar
-              </Button>
             )}
           />
         </TabsContent>
