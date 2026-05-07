@@ -290,13 +290,29 @@ export default function MapPage() {
 
   const matchedReserveRate = useMemo(() => {
     if (reserveTenantRates.length === 0) return null;
-    const label = VEHICLE_TYPE_LABELS[reserveVehicleType].toLowerCase();
-    const exact = reserveTenantRates.find(r => r.name.toLowerCase() === label);
-    if (exact) return exact;
-    const partial = reserveTenantRates.find(
-      r => r.name.toLowerCase().includes(label) || label.includes(r.name.toLowerCase()),
-    );
-    return partial || null;
+    const normalize = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    const synonyms: Record<VehicleType, string[]> = {
+      car: ['carro', 'auto', 'automovil', 'vehiculo', 'particular'],
+      motorcycle: ['moto', 'motocicleta', 'motos'],
+      truck: ['camion', 'camiones', 'pesado', 'truck'],
+      bicycle: ['bicicleta', 'bici', 'bike'],
+    };
+    const candidates = synonyms[reserveVehicleType] || [
+      normalize(VEHICLE_TYPE_LABELS[reserveVehicleType]),
+    ];
+    const normalizedRates = reserveTenantRates.map((r) => ({ rate: r, n: normalize(r.name) }));
+    for (const cand of candidates) {
+      const exact = normalizedRates.find((nr) => nr.n === cand);
+      if (exact) return exact.rate;
+    }
+    for (const cand of candidates) {
+      const partial = normalizedRates.find(
+        (nr) => nr.n.includes(cand) || cand.includes(nr.n),
+      );
+      if (partial) return partial.rate;
+    }
+    return null;
   }, [reserveTenantRates, reserveVehicleType]);
 
   const allCategoryNames = useMemo(() => {
