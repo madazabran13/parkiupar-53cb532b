@@ -10,6 +10,7 @@ export interface VisitRecord {
   total_amount: number | null;
   status: string;
   space_number: string | null;
+  space_reservation_id: string | null;
   notes: string | null;
   tenant: {
     id: string;
@@ -65,6 +66,7 @@ export const VisitService = {
         total_amount,
         status,
         space_number,
+        space_reservation_id,
         notes,
         tenant:tenants!parking_sessions_tenant_id_fkey ( id, name, address, city, phone, latitude, longitude )
       `)

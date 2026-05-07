@@ -159,9 +159,15 @@ export default function VisitsTab() {
   });
 
   const items = useMemo<CombinedItem[]>(() => {
+    // Dedup: si una visita está vinculada a una reserva (space_reservation_id),
+    // la reserva ya está representada por la visita. Mostrar ambas sería duplicado.
+    const linkedReservationIds = new Set(
+      visits.map(v => v.space_reservation_id).filter((x): x is string => !!x)
+    );
+    const reservationsDeduped = reservations.filter(r => !linkedReservationIds.has(r.id));
     const all = [
       ...visits.map(visitToItem),
-      ...reservations.map(reservationToItem),
+      ...reservationsDeduped.map(reservationToItem),
     ];
     all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return all;

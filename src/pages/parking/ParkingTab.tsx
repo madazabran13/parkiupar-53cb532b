@@ -183,8 +183,13 @@ export default function Parking() {
 
   const entryMutation = useMutation({
     mutationFn: async () => {
-      const { data: activeSession } = await supabase.from('parking_sessions').select('id, tenant_id').eq('plate', plate.toUpperCase()).eq('status', 'active').maybeSingle();
+      const normalizedPlate = plate.toUpperCase();
+      const { data: activeSession } = await supabase.from('parking_sessions').select('id, tenant_id').eq('plate', normalizedPlate).eq('status', 'active').maybeSingle();
       if (activeSession) throw new Error(activeSession.tenant_id === tenantId ? 'Este vehículo ya se encuentra dentro del parqueadero' : 'Este vehículo se encuentra activo en otro parqueadero de la red');
+      const { data: activeReservation } = await supabase.from('space_reservations').select('id, tenant_id').eq('plate', normalizedPlate).in('status', ['pending', 'confirmed', 'arrived']).maybeSingle();
+      if (activeReservation && activeReservation.tenant_id !== tenantId) {
+        throw new Error('Este vehículo tiene una reserva activa en otro parqueadero de la red');
+      }
       let customerId: string | null = null; let vehicleId: string | null = null;
       if (customerPhone.trim()) {
         const { data: ec } = await supabase.from('customers').select('id').eq('tenant_id', tenantId!).eq('phone', customerPhone).single();
@@ -203,7 +208,15 @@ export default function Parking() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success('Vehículo registrado'); setEntryOpen(false); resetForm(); queryClient.invalidateQueries({ queryKey: ['sessions-active'] }); },
-    onError: (e: any) => toast.error(e.message || 'Error al registrar entrada'),
+    onError: (e: any) => {
+      // 23505 = unique_violation; el partial unique index sobre plate WHERE status='active'
+      // garantiza atomicidad si la verificación previa fue evadida por una race condition.
+      if (e?.code === '23505' && /parking_sessions_unique_active_plate/.test(e?.message || '')) {
+        toast.error('Este vehículo ya está registrado como activo en algún parqueadero');
+        return;
+      }
+      toast.error(e.message || 'Error al registrar entrada');
+    },
   });
 
   const exitMutation = useMutation({
