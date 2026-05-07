@@ -84,22 +84,23 @@ function reservationToItem(r: ReservationRecord, linkedVisit?: VisitRecord): Com
   // Estado: si hay visit vinculada, deriva del visit (refleja la realidad).
   // Si no hay visit, deriva de la reserva (pending/confirmed/expired/cancelled).
   let state: StateFilter;
+  let label: string;
   if (linkedVisit) {
-    if (linkedVisit.status === 'active') state = 'active';
-    else if (linkedVisit.status === 'cancelled') state = 'cancelled';
-    else state = 'completed';
+    if (linkedVisit.status === 'active') { state = 'active'; label = 'En curso'; }
+    else if (linkedVisit.status === 'cancelled') { state = 'cancelled'; label = STATE_LABEL.cancelled; }
+    else { state = 'completed'; label = STATE_LABEL.completed; }
   } else {
     const expired = new Date(r.expires_at).getTime() <= Date.now();
-    if (r.status === 'cancelled') state = 'cancelled';
-    else if (r.status === 'expired') state = 'expired';
-    else if ((r.status === 'pending' || r.status === 'confirmed') && expired) state = 'expired';
-    else state = 'active'; // pending, confirmed no expiradas
+    if (r.status === 'cancelled') { state = 'cancelled'; label = STATE_LABEL.cancelled; }
+    else if (r.status === 'expired') { state = 'expired'; label = STATE_LABEL.expired; }
+    else if ((r.status === 'pending' || r.status === 'confirmed') && expired) { state = 'expired'; label = STATE_LABEL.expired; }
+    else { state = 'active'; label = 'Pendiente'; } // pending/confirmed sin llegada confirmada
   }
   return {
     id: `r-${r.id}`,
     kind: 'reservation',
     state,
-    state_label: STATE_LABEL[state],
+    state_label: label,
     raw_status: linkedVisit?.status || r.status,
     tenant: r.tenant,
     tenant_name: r.tenant?.name || '',
@@ -311,7 +312,7 @@ export default function VisitsTab() {
           <Badge variant="outline" className={`text-xs ${STATE_STYLE[r.state] || ''}`}>
             {r.state_label}
           </Badge>
-          {r.kind === 'reservation' && r.state === 'active' && r.expires_at && (
+          {r.kind === 'reservation' && r.state === 'active' && r.expires_at && !r.raw_visit && (
             <CountdownCell expiresAt={r.expires_at} />
           )}
         </div>
@@ -336,7 +337,7 @@ export default function VisitsTab() {
         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${tenant.name} ${tenant.address}`)}`
         : null;
     const phoneUrl = tenant?.phone ? `tel:${tenant.phone.replace(/\s+/g, '')}` : null;
-    const isActiveReservation = r.kind === 'reservation' && r.state === 'active';
+    const isActiveReservation = r.kind === 'reservation' && r.state === 'active' && !r.raw_visit;
 
     return (
       <div className="flex items-center gap-1">
