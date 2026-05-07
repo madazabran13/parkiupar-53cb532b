@@ -634,6 +634,7 @@ export type Database = {
           status: string
           tenant_id: string
           updated_at: string
+          vehicle_type: string
         }
         Insert: {
           confirmed_at?: string | null
@@ -649,6 +650,7 @@ export type Database = {
           status?: string
           tenant_id: string
           updated_at?: string
+          vehicle_type?: string
         }
         Update: {
           confirmed_at?: string | null
@@ -664,6 +666,7 @@ export type Database = {
           status?: string
           tenant_id?: string
           updated_at?: string
+          vehicle_type?: string
         }
         Relationships: [
           {
@@ -1101,6 +1104,14 @@ export type Database = {
         }
         Returns: number
       }
+      cancel_reservation: {
+        Args: { p_reservation_id: string }
+        Returns: undefined
+      }
+      confirm_reservation: {
+        Args: { p_reservation_id: string }
+        Returns: undefined
+      }
       get_user_id_by_email: { Args: { p_email: string }; Returns: string }
       get_user_role:
         | { Args: never; Returns: string }
@@ -1130,6 +1141,7 @@ export type Database = {
           p_space_id: string
           p_tenant_id: string
           p_timeout_minutes?: number
+          p_vehicle_type?: string
         }
         Returns: string
       }

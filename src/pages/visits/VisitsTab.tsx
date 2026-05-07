@@ -289,6 +289,10 @@ function ReservationDetailDialog({
           {t?.city && <Row label="Ciudad" value={t.city} />}
           {t?.phone && <Row label="Teléfono" value={t.phone} />}
           <Row label="Placa" value={<span className="font-mono">{reservation.plate || '—'}</span>} />
+          <Row
+            label="Tipo de vehículo"
+            value={VEHICLE_TYPE_LABELS[reservation.vehicle_type as VehicleType] || reservation.vehicle_type || 'Carro'}
+          />
           <Row label="Reservada" value={formatDateTime(reservation.reserved_at)} />
           <Row label="Expira" value={formatDateTime(reservation.expires_at)} />
           {reservation.confirmed_at && (

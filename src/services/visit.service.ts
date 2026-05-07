@@ -27,6 +27,7 @@ export type ReservationStatus = 'pending' | 'confirmed' | 'expired' | 'cancelled
 export interface ReservationRecord {
   id: string;
   plate: string | null;
+  vehicle_type: string;
   status: ReservationStatus | string;
   reserved_at: string;
   expires_at: string;
@@ -82,6 +83,7 @@ export const VisitService = {
       .select(`
         id,
         plate,
+        vehicle_type,
         status,
         reserved_at,
         expires_at,

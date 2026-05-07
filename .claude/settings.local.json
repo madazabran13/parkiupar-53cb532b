@@ -42,7 +42,9 @@
       "Bash(npm i *)",
       "Bash(node ./sim.mjs)",
       "Bash(grep -oE \"throw new \\(Error|TypeError\\)\\\\\\(\\\\\"[^\\\\\"]{1,80}\\\\\"\\\\\\)\" /tmp/idx-prod.js)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__get_advisors"
     ]
   }
 }

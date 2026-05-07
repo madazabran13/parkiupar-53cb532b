@@ -183,6 +183,7 @@ export interface SpaceReservation {
   customer_name: string | null;
   customer_phone: string | null;
   plate: string | null;
+  vehicle_type: VehicleType;
   status: ReservationStatus;
   reserved_at: string;
   expires_at: string;

@@ -50,6 +50,7 @@ const AuditLog = lazy(() => import('@/pages/reports/AuditLogTab'));
 const SuperAdmin = lazy(() => import('@/pages/admin/SuperAdmin'));
 
 const Visits = lazy(() => import('@/pages/visits/VisitsTab'));
+const Reservations = lazy(() => import('@/pages/reservations/ReservationsTab'));
 
 export const PUBLIC_ROUTES: RouteDefinition[] = [
   { path: '/', component: LandingPage, access: 'public' },
@@ -86,6 +87,7 @@ export const PROTECTED_ROUTES: RouteDefinition[] = [
   { path: '/parking', component: Parking, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
   { path: '/capacity', component: Capacity, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
   { path: '/customers', component: Customers, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
+  { path: '/reservations', component: Reservations, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
   { path: '/monthly-subscriptions', component: MonthlySubscriptions, access: 'protected', allowedRoles: ADMIN_ONLY, withLayout: true },
 
   { path: '/map', component: MapPage, access: 'protected', allowedRoles: ALL_TENANT_ROLES, withLayout: true },

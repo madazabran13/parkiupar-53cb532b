@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate, Car, RefreshCw, LogOut, BookmarkCheck, Timer } from 'lucide-react';
-import type { Tenant, VehicleCategory, TenantSchedule, ParkingSpace } from '@/types';
+import type { Tenant, VehicleCategory, TenantSchedule, ParkingSpace, VehicleType } from '@/types';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -131,6 +131,7 @@ export default function MapPage() {
   const [reservePlate, setReservePlate] = useState('');
   const [reservePhone, setReservePhone] = useState('');
   const [reserveName, setReserveName] = useState('');
+  const [reserveVehicleType, setReserveVehicleType] = useState<VehicleType>('car');
 
   // Fetch available spaces for reservation - with realtime
   const { data: availableSpaces = [] } = useQuery({
@@ -172,6 +173,7 @@ export default function MapPage() {
     setReservePlate('');
     setReservePhone(useSessionContact ? sessionPhone : '');
     setReserveName(useSessionContact ? sessionName : '');
+    setReserveVehicleType('car');
     setReserveDialogOpen(true);
   };
 
@@ -200,6 +202,7 @@ export default function MapPage() {
         p_space_id: targetSpace.id,
         p_plate: reservePlate.toUpperCase(),
         p_customer_phone: phoneToUse,
+        p_vehicle_type: reserveVehicleType,
         p_customer_name: nameToUse || null,
         p_timeout_minutes: timeoutMins,
       });
@@ -798,6 +801,19 @@ export default function MapPage() {
               <Label>Placa del vehículo *</Label>
               <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-lg tracking-wider h-12" />
             </div>
+            <div className="space-y-2">
+              <Label>Tipo de vehículo *</Label>
+              <Select value={reserveVehicleType} onValueChange={(v) => setReserveVehicleType(v as VehicleType)}>
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]).map((vt) => (
+                    <SelectItem key={vt} value={vt}>{VEHICLE_TYPE_LABELS[vt]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {useSessionContact ? (
               <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-sm space-y-1">
                 <p className="font-semibold text-primary text-xs uppercase tracking-wide">A nombre de</p>
@@ -882,9 +898,24 @@ export default function MapPage() {
                 </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label>Placa del vehículo *</Label>
-              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-base tracking-wider" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Placa del vehículo *</Label>
+                <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-base tracking-wider" />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de vehículo *</Label>
+                <Select value={reserveVehicleType} onValueChange={(v) => setReserveVehicleType(v as VehicleType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(VEHICLE_TYPE_LABELS) as VehicleType[]).map((vt) => (
+                      <SelectItem key={vt} value={vt}>{VEHICLE_TYPE_LABELS[vt]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             {useSessionContact ? (
               <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-sm space-y-1">

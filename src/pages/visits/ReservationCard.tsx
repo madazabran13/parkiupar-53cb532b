@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Phone, Info, Timer, Navigation, BookmarkCheck, XCircle, CheckCircle2 } from 'lucide-react';
+import { MapPin, Phone, Info, Timer, Navigation, BookmarkCheck, XCircle, CheckCircle2, Car } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils/formatters';
+import { useCountdown } from '@/hooks/useCountdown';
+import { VEHICLE_TYPE_LABELS, type VehicleType } from '@/types';
 import type { ReservationRecord, ReservationStatus } from '@/services/visit.service';
 
 interface Props {
@@ -24,27 +25,6 @@ const STATUS_CONFIG: Record<string, { variant: 'default' | 'secondary' | 'destru
   expired: { variant: 'destructive', icon: XCircle, className: '' },
   cancelled: { variant: 'destructive', icon: XCircle, className: '' },
 };
-
-function useCountdown(expiresAt: string, active: boolean) {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!active) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [active]);
-
-  const remainingMs = new Date(expiresAt).getTime() - now;
-  const expired = remainingMs <= 0;
-  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return {
-    expired,
-    label: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
-    minutes,
-  };
-}
 
 export function ReservationCard({ reservation, onShowDetail }: Props) {
   const status = (reservation.status as ReservationStatus) || 'pending';
@@ -93,6 +73,12 @@ export function ReservationCard({ reservation, onShowDetail }: Props) {
           <div>
             <p className="text-muted-foreground">Placa</p>
             <p className="font-mono font-semibold text-foreground">{reservation.plate || '—'}</p>
+          </div>
+          <div className="col-span-2 flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="gap-1">
+              <Car className="h-3 w-3" />
+              {VEHICLE_TYPE_LABELS[reservation.vehicle_type as VehicleType] || reservation.vehicle_type || 'Carro'}
+            </Badge>
           </div>
           <div className="col-span-2">
             <p className="text-muted-foreground">Reservada</p>

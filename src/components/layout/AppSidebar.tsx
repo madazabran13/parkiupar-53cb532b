@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Car, Users, DollarSign, BarChart3, Grid3X3,
   Building2, CreditCard, Settings, Map, LogOut, UserCog, RefreshCw, Shield, Moon, Sun, Wallet,
-  Clock, CalendarDays, Printer, MessageSquare, Bug, History,
+  Clock, CalendarDays, Printer, MessageSquare, Bug, History, BookmarkCheck,
 } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,6 +37,7 @@ const MODULE_KEY_MAP: Record<string, string> = {
   '/monthly-subscriptions': 'monthly_subscriptions',
   '/testimonials': 'testimonials',
   '/visits': 'visits',
+  '/reservations': 'capacity',
 };
 
 type MenuItem = {
@@ -60,6 +61,7 @@ const SECTIONS: { label: string; items: MenuItem[] }[] = [
     items: [
       { label: 'Vehículos', icon: Car, path: '/parking', roles: ['admin'] },
       { label: 'Aforo', icon: Grid3X3, path: '/capacity', roles: ['admin'] },
+      { label: 'Reservas', icon: BookmarkCheck, path: '/reservations', roles: ['admin'] },
       { label: 'Clientes', icon: Users, path: '/customers', roles: ['admin'] },
       { label: 'Mensualidades', icon: CalendarDays, path: '/monthly-subscriptions', roles: ['admin'] },
     ],
