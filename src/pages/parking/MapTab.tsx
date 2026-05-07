@@ -132,6 +132,17 @@ export default function MapPage() {
   const [reservePhone, setReservePhone] = useState('');
   const [reserveName, setReserveName] = useState('');
   const [reserveVehicleType, setReserveVehicleType] = useState<VehicleType>('car');
+  const [isDesktop, setIsDesktop] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 640px)').matches : true,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // Fetch available spaces for reservation - with realtime
   const { data: availableSpaces = [] } = useQuery({
@@ -271,6 +282,22 @@ export default function MapPage() {
       return map;
     },
   });
+
+  const reserveTenantRates = useMemo(() => {
+    if (!reserveTenant) return [] as VehicleCategory[];
+    return ratesMap[reserveTenant.id] || [];
+  }, [reserveTenant, ratesMap]);
+
+  const matchedReserveRate = useMemo(() => {
+    if (reserveTenantRates.length === 0) return null;
+    const label = VEHICLE_TYPE_LABELS[reserveVehicleType].toLowerCase();
+    const exact = reserveTenantRates.find(r => r.name.toLowerCase() === label);
+    if (exact) return exact;
+    const partial = reserveTenantRates.find(
+      r => r.name.toLowerCase().includes(label) || label.includes(r.name.toLowerCase()),
+    );
+    return partial || null;
+  }, [reserveTenantRates, reserveVehicleType]);
 
   const allCategoryNames = useMemo(() => {
     const names = new Set<string>();
@@ -751,8 +778,8 @@ export default function MapPage() {
       </div>
 
       {/* Public Reservation - Full screen on mobile, dialog on desktop */}
-      {reserveDialogOpen && (
-        <div className="fixed inset-0 z-[9999] bg-background flex flex-col sm:hidden animate-in fade-in slide-in-from-bottom duration-300">
+      {reserveDialogOpen && !isDesktop && (
+        <div className="fixed inset-0 z-[9999] bg-background flex flex-col animate-in fade-in slide-in-from-bottom duration-300">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
               <BookmarkCheck className="h-5 w-5 text-primary" />
@@ -813,6 +840,7 @@ export default function MapPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <RateInfo rate={matchedReserveRate} hasRates={reserveTenantRates.length > 0} vehicleType={reserveVehicleType} />
             </div>
             {useSessionContact ? (
               <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-sm space-y-1">
@@ -855,8 +883,8 @@ export default function MapPage() {
       )}
 
       {/* Desktop/Tablet Reservation Dialog */}
-      <Dialog open={reserveDialogOpen} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-auto z-[9999] hidden sm:flex sm:flex-col">
+      <Dialog open={reserveDialogOpen && isDesktop} onOpenChange={(open) => { setReserveDialogOpen(open); if (!open) { setSelectedSpaceId(null); setDetailTenant(null); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-auto z-[9999] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookmarkCheck className="h-5 w-5 text-primary" />
@@ -917,6 +945,7 @@ export default function MapPage() {
                 </Select>
               </div>
             </div>
+            <RateInfo rate={matchedReserveRate} hasRates={reserveTenantRates.length > 0} vehicleType={reserveVehicleType} />
             {useSessionContact ? (
               <div className="rounded-xl border bg-primary/5 border-primary/20 p-3 text-sm space-y-1">
                 <p className="font-semibold text-primary text-xs uppercase tracking-wide">A nombre de</p>
@@ -956,6 +985,43 @@ export default function MapPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function RateInfo({
+  rate,
+  hasRates,
+  vehicleType,
+}: {
+  rate: VehicleCategory | null;
+  hasRates: boolean;
+  vehicleType: VehicleType;
+}) {
+  if (!hasRates) return null;
+  if (rate) {
+    return (
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Tarifa {rate.name}</p>
+            <p className="font-bold text-base text-foreground">
+              ${Number(rate.rate_per_hour).toLocaleString()}<span className="text-xs font-normal text-muted-foreground"> / hora</span>
+            </p>
+          </div>
+        </div>
+        {rate.minimum_minutes > 0 && (
+          <Badge variant="outline" className="text-[10px] flex-shrink-0">
+            Mín. {rate.minimum_minutes} min
+          </Badge>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2.5 text-xs text-amber-800 dark:text-amber-400">
+      Este parqueadero no tiene tarifa registrada para <strong>{VEHICLE_TYPE_LABELS[vehicleType]}</strong>. Consulta en sitio.
     </div>
   );
 }

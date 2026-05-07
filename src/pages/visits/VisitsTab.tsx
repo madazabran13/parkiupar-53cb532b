@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { History, AlertTriangle, MapPin, Clock, Car, BookmarkCheck, Phone, Navigation } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
@@ -16,10 +17,15 @@ import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { VehicleType, SessionStatus } from '@/types';
 import { ReservationCard } from './ReservationCard';
 
+type ReservationFilter = 'all' | 'confirmed' | 'expired' | 'cancelled';
+type VisitFilter = 'all' | 'completed' | 'active' | 'cancelled';
+
 export default function VisitsTab() {
   const { profile } = useAuth();
   const phone = profile?.phone || null;
   const [detail, setDetail] = useState<ReservationRecord | null>(null);
+  const [reservationFilter, setReservationFilter] = useState<ReservationFilter>('all');
+  const [visitFilter, setVisitFilter] = useState<VisitFilter>('all');
 
   const { data: visits = [], isLoading: loadingVisits } = useQuery({
     queryKey: ['conductor-visits', phone],
@@ -34,17 +40,51 @@ export default function VisitsTab() {
     refetchInterval: 30_000,
   });
 
-  const { active, history } = useMemo(() => {
+  const { active, history, historyCounts } = useMemo(() => {
     const now = Date.now();
     const active: ReservationRecord[] = [];
     const history: ReservationRecord[] = [];
+    const counts = { all: 0, confirmed: 0, expired: 0, cancelled: 0 };
     for (const r of reservations) {
       const expired = new Date(r.expires_at).getTime() <= now;
-      if (r.status === 'pending' && !expired) active.push(r);
-      else history.push(r);
+      if (r.status === 'pending' && !expired) {
+        active.push(r);
+      } else {
+        history.push(r);
+        counts.all++;
+        const effective = r.status === 'pending' && expired ? 'expired' : r.status;
+        if (effective === 'confirmed') counts.confirmed++;
+        else if (effective === 'expired') counts.expired++;
+        else if (effective === 'cancelled') counts.cancelled++;
+      }
     }
-    return { active, history };
+    return { active, history, historyCounts: counts };
   }, [reservations]);
+
+  const filteredHistory = useMemo(() => {
+    if (reservationFilter === 'all') return history;
+    const now = Date.now();
+    return history.filter((r) => {
+      const expired = new Date(r.expires_at).getTime() <= now;
+      const effective = r.status === 'pending' && expired ? 'expired' : r.status;
+      return effective === reservationFilter;
+    });
+  }, [history, reservationFilter]);
+
+  const visitCounts = useMemo(() => {
+    const counts = { all: visits.length, completed: 0, active: 0, cancelled: 0 };
+    for (const v of visits) {
+      if (v.status === 'completed') counts.completed++;
+      else if (v.status === 'active') counts.active++;
+      else if (v.status === 'cancelled') counts.cancelled++;
+    }
+    return counts;
+  }, [visits]);
+
+  const filteredVisits = useMemo(() => {
+    if (visitFilter === 'all') return visits;
+    return visits.filter((v) => v.status === visitFilter);
+  }, [visits, visitFilter]);
 
   const totalVisits = visits.length;
   const totalSpent = visits.reduce((acc, v) => acc + (v.total_amount || 0), 0);
@@ -166,14 +206,45 @@ export default function VisitsTab() {
 
               {history.length > 0 && (
                 <section className="space-y-3">
-                  <h2 className="text-sm font-semibold text-muted-foreground">
-                    Historial ({history.length})
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {history.map((r) => (
-                      <ReservationCard key={r.id} reservation={r} onShowDetail={setDetail} />
-                    ))}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h2 className="text-sm font-semibold text-muted-foreground">
+                      Historial ({history.length})
+                    </h2>
+                    <ToggleGroup
+                      type="single"
+                      value={reservationFilter}
+                      onValueChange={(v) => v && setReservationFilter(v as ReservationFilter)}
+                      className="justify-start sm:justify-end flex-wrap"
+                      size="sm"
+                      variant="outline"
+                    >
+                      <ToggleGroupItem value="all" aria-label="Todas" className="text-xs h-8 px-2.5">
+                        Todas ({historyCounts.all})
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="confirmed" aria-label="Confirmadas" className="text-xs h-8 px-2.5">
+                        Confirmadas ({historyCounts.confirmed})
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="expired" aria-label="Expiradas" className="text-xs h-8 px-2.5">
+                        Expiradas ({historyCounts.expired})
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="cancelled" aria-label="Rechazadas" className="text-xs h-8 px-2.5">
+                        Rechazadas ({historyCounts.cancelled})
+                      </ToggleGroupItem>
+                    </ToggleGroup>
                   </div>
+                  {filteredHistory.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                        No hay reservas con ese estado.
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {filteredHistory.map((r) => (
+                        <ReservationCard key={r.id} reservation={r} onShowDetail={setDetail} />
+                      ))}
+                    </div>
+                  )}
                 </section>
               )}
             </>
@@ -222,11 +293,42 @@ export default function VisitsTab() {
               </CardContent>
             </Card>
           ) : (
-            <DataTable
-              columns={visitColumns}
-              data={visits}
-              searchPlaceholder="Buscar por placa, parqueadero..."
-            />
+            <div className="space-y-3">
+              <ToggleGroup
+                type="single"
+                value={visitFilter}
+                onValueChange={(v) => v && setVisitFilter(v as VisitFilter)}
+                className="justify-start flex-wrap"
+                size="sm"
+                variant="outline"
+              >
+                <ToggleGroupItem value="all" aria-label="Todas" className="text-xs h-8 px-2.5">
+                  Todas ({visitCounts.all})
+                </ToggleGroupItem>
+                <ToggleGroupItem value="completed" aria-label="Completadas" className="text-xs h-8 px-2.5">
+                  Completadas ({visitCounts.completed})
+                </ToggleGroupItem>
+                <ToggleGroupItem value="active" aria-label="Activas" className="text-xs h-8 px-2.5">
+                  Activas ({visitCounts.active})
+                </ToggleGroupItem>
+                <ToggleGroupItem value="cancelled" aria-label="Canceladas" className="text-xs h-8 px-2.5">
+                  Canceladas ({visitCounts.cancelled})
+                </ToggleGroupItem>
+              </ToggleGroup>
+              {filteredVisits.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                    No hay visitas con ese estado.
+                  </CardContent>
+                </Card>
+              ) : (
+                <DataTable
+                  columns={visitColumns}
+                  data={filteredVisits}
+                  searchPlaceholder="Buscar por placa, parqueadero..."
+                />
+              )}
+            </div>
           )}
         </TabsContent>
       </Tabs>
