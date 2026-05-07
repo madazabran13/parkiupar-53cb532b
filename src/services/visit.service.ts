@@ -72,7 +72,12 @@ export const VisitService = {
       .order('entry_time', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as unknown as VisitRecord[];
+    // Postgres numeric llega como string en JSON; coerciono a number una sola vez.
+    return (data || []).map((r: any) => ({
+      ...r,
+      hours_parked: r.hours_parked != null ? Number(r.hours_parked) : null,
+      total_amount: r.total_amount != null ? Number(r.total_amount) : null,
+    })) as unknown as VisitRecord[];
   },
 
   async listReservationsForConductor(phone: string | null): Promise<ReservationRecord[]> {
