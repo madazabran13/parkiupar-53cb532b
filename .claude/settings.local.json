@@ -44,7 +44,13 @@
       "Bash(grep -oE \"throw new \\(Error|TypeError\\)\\\\\\(\\\\\"[^\\\\\"]{1,80}\\\\\"\\\\\\)\" /tmp/idx-prod.js)",
       "Bash(node *)",
       "mcp__claude_ai_Supabase__list_migrations",
-      "mcp__claude_ai_Supabase__get_advisors"
+      "mcp__claude_ai_Supabase__get_advisors",
+      "mcp__claude_ai_Supabase__list_extensions",
+      "mcp__claude_ai_Supabase__get_project_url",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)"
     ]
   }
 }
