@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealtime } from '@/hooks/useRealtime';
 import { useCountdown } from '@/hooks/useCountdown';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,9 +15,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DataTable, type Column } from '@/components/ui/DataTable';
 import {
-  BookmarkCheck, CheckCircle2, XCircle, Timer, Phone, Car, User, Hash,
-  Clock, AlertTriangle,
+  BookmarkCheck, CheckCircle2, XCircle, Timer, Car, Clock, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDateTime } from '@/lib/utils/formatters';
@@ -39,6 +38,10 @@ interface AdminReservation {
   confirmed_at: string | null;
   reserved_by: string | null;
   space: { id: string; space_number: string } | null;
+  // flattened fields for DataTable filtering/sorting
+  space_number?: string;
+  vehicle_type_label?: string;
+  status_label?: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -54,6 +57,15 @@ const STATUS_STYLE: Record<string, string> = {
   expired: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
   cancelled: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
 };
+
+function flatten(r: AdminReservation, effectiveStatus?: string): AdminReservation {
+  return {
+    ...r,
+    space_number: r.space?.space_number || '',
+    vehicle_type_label: VEHICLE_TYPE_LABELS[r.vehicle_type as VehicleType] || r.vehicle_type || 'Carro',
+    status_label: STATUS_LABEL[effectiveStatus || r.status] || r.status,
+  };
+}
 
 export default function ReservationsTab() {
   const { tenantId } = useAuth();
@@ -82,7 +94,7 @@ export default function ReservationsTab() {
         `)
         .eq('tenant_id', tenantId!)
         .order('reserved_at', { ascending: false })
-        .limit(200);
+        .limit(500);
       if (error) throw error;
       return (data || []) as unknown as AdminReservation[];
     },
@@ -95,9 +107,12 @@ export default function ReservationsTab() {
     const history: AdminReservation[] = [];
     for (const r of reservations) {
       const expired = new Date(r.expires_at).getTime() <= now;
-      if (r.status === 'pending' && !expired) pending.push(r);
-      else if (r.status === 'confirmed') confirmed.push(r);
-      else history.push(r);
+      if (r.status === 'pending' && !expired) pending.push(flatten(r, 'pending'));
+      else if (r.status === 'confirmed') confirmed.push(flatten(r, 'confirmed'));
+      else {
+        const eff = r.status === 'pending' && expired ? 'expired' : r.status;
+        history.push(flatten(r, eff));
+      }
     }
     return { pending, confirmed, history };
   }, [reservations]);
@@ -108,9 +123,11 @@ export default function ReservationsTab() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Reserva confirmada');
+      toast.success('Reserva confirmada — espacio marcado como ocupado');
       setVerifyTarget(null);
       queryClient.invalidateQueries({ queryKey: ['admin-reservations', tenantId || ''] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['capacity'] });
     },
     onError: (e: any) => toast.error(e?.message || 'No se pudo confirmar la reserva'),
   });
@@ -124,11 +141,108 @@ export default function ReservationsTab() {
       toast.success('Reserva rechazada y cupo liberado');
       setRejectTarget(null);
       queryClient.invalidateQueries({ queryKey: ['admin-reservations', tenantId || ''] });
+      queryClient.invalidateQueries({ queryKey: ['parking-spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['capacity'] });
     },
     onError: (e: any) => toast.error(e?.message || 'No se pudo rechazar la reserva'),
   });
 
-  if (isLoading) return <TableSkeleton columns={5} rows={5} />;
+  const baseColumns: Column<AdminReservation>[] = useMemo(() => [
+    {
+      key: 'space_number',
+      label: 'Espacio',
+      render: (r) => (
+        <span className="font-mono font-semibold">#{r.space_number || '—'}</span>
+      ),
+    },
+    {
+      key: 'plate',
+      label: 'Placa',
+      render: (r) => <span className="font-mono font-semibold">{r.plate || '—'}</span>,
+    },
+    {
+      key: 'vehicle_type_label',
+      label: 'Tipo',
+      render: (r) => (
+        <Badge variant="secondary" className="gap-1 text-xs">
+          <Car className="h-3 w-3" />
+          {r.vehicle_type_label}
+        </Badge>
+      ),
+    },
+    {
+      key: 'customer_name',
+      label: 'Cliente',
+      render: (r) => <span className="text-sm">{r.customer_name || '—'}</span>,
+    },
+    {
+      key: 'customer_phone',
+      label: 'Teléfono',
+      hideOnMobile: true,
+      render: (r) =>
+        r.customer_phone ? (
+          <a
+            href={`tel:${r.customer_phone.replace(/\s+/g, '')}`}
+            className="text-primary hover:underline text-sm"
+          >
+            {r.customer_phone}
+          </a>
+        ) : <span className="text-muted-foreground">—</span>,
+    },
+  ], []);
+
+  const pendingColumns: Column<AdminReservation>[] = useMemo(() => [
+    ...baseColumns,
+    {
+      key: 'expires_at',
+      label: 'Vence en',
+      sortable: true,
+      filterable: false,
+      render: (r) => <CountdownCell expiresAt={r.expires_at} />,
+    },
+  ], [baseColumns]);
+
+  const confirmedColumns: Column<AdminReservation>[] = useMemo(() => [
+    ...baseColumns,
+    {
+      key: 'confirmed_at',
+      label: 'Confirmada',
+      hideOnMobile: true,
+      render: (r) => (
+        <span className="text-xs text-muted-foreground">
+          {r.confirmed_at ? formatDateTime(r.confirmed_at) : '—'}
+        </span>
+      ),
+    },
+  ], [baseColumns]);
+
+  const historyColumns: Column<AdminReservation>[] = useMemo(() => [
+    ...baseColumns,
+    {
+      key: 'reserved_at',
+      label: 'Reservada',
+      hideOnMobile: true,
+      render: (r) => (
+        <span className="text-xs text-muted-foreground">{formatDateTime(r.reserved_at)}</span>
+      ),
+    },
+    {
+      key: 'status_label',
+      label: 'Estado',
+      render: (r) => {
+        const isExpiredPending =
+          r.status === 'pending' && new Date(r.expires_at).getTime() <= Date.now();
+        const status = isExpiredPending ? 'expired' : r.status;
+        return (
+          <Badge variant="outline" className={`text-xs ${STATUS_STYLE[status] || ''}`}>
+            {STATUS_LABEL[status] || status}
+          </Badge>
+        );
+      },
+    },
+  ], [baseColumns]);
+
+  if (isLoading) return <TableSkeleton columns={6} rows={5} />;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -176,49 +290,60 @@ export default function ReservationsTab() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-3">
-          {pending.length === 0 ? (
-            <EmptyState message="No hay reservas pendientes en este momento." />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {pending.map((r) => (
-                <PendingCard
-                  key={r.id}
-                  reservation={r}
-                  onVerify={() => setVerifyTarget(r)}
-                  onReject={() => setRejectTarget(r)}
-                />
-              ))}
-            </div>
-          )}
+        <TabsContent value="pending">
+          <DataTable
+            columns={pendingColumns}
+            data={pending}
+            searchPlaceholder="Buscar por placa, cliente, espacio..."
+            actions={(r) => (
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  className="h-8 gap-1 text-xs"
+                  onClick={() => setVerifyTarget(r)}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Aceptar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setRejectTarget(r)}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  Rechazar
+                </Button>
+              </div>
+            )}
+          />
         </TabsContent>
 
-        <TabsContent value="confirmed" className="space-y-3">
-          {confirmed.length === 0 ? (
-            <EmptyState message="Todavía no has confirmado ninguna reserva." />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {confirmed.map((r) => (
-                <ConfirmedCard
-                  key={r.id}
-                  reservation={r}
-                  onCancel={() => setRejectTarget(r)}
-                />
-              ))}
-            </div>
-          )}
+        <TabsContent value="confirmed">
+          <DataTable
+            columns={confirmedColumns}
+            data={confirmed}
+            searchPlaceholder="Buscar por placa, cliente, espacio..."
+            actions={(r) => (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setRejectTarget(r)}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Cancelar
+              </Button>
+            )}
+          />
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-3">
-          {history.length === 0 ? (
-            <EmptyState message="Sin historial de reservas todavía." />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {history.map((r) => (
-                <HistoryCard key={r.id} reservation={r} />
-              ))}
-            </div>
-          )}
+        <TabsContent value="history">
+          <DataTable
+            columns={historyColumns}
+            data={history}
+            searchPlaceholder="Buscar por placa, cliente, espacio..."
+          />
         </TabsContent>
       </Tabs>
 
@@ -257,255 +382,20 @@ export default function ReservationsTab() {
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function CountdownCell({ expiresAt }: { expiresAt: string }) {
+  const c = useCountdown(expiresAt, true);
+  if (c.expired) {
+    return <Badge variant="outline" className={STATUS_STYLE.expired}>Expirada</Badge>;
+  }
+  const urgent = c.minutes < 5;
   return (
-    <Card>
-      <CardContent className="py-10 text-center text-sm text-muted-foreground">
-        {message}
-      </CardContent>
-    </Card>
-  );
-}
-
-function VehicleBadge({ value }: { value: string }) {
-  const label = VEHICLE_TYPE_LABELS[value as VehicleType] || value || 'Carro';
-  return (
-    <Badge variant="secondary" className="gap-1">
-      <Car className="h-3 w-3" />
-      {label}
-    </Badge>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <Badge variant="outline" className={STATUS_STYLE[status] || ''}>
-      {STATUS_LABEL[status] || status}
-    </Badge>
-  );
-}
-
-function PendingCard({
-  reservation, onVerify, onReject,
-}: {
-  reservation: AdminReservation;
-  onVerify: () => void;
-  onReject: () => void;
-}) {
-  const countdown = useCountdown(reservation.expires_at, true);
-  const expired = countdown.expired;
-
-  return (
-    <Card className="overflow-hidden border-amber-500/40">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-foreground">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono font-bold text-base">
-                Espacio #{reservation.space?.space_number || '—'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Reservada {formatDateTime(reservation.reserved_at)}
-            </p>
-          </div>
-          <StatusBadge status={expired ? 'expired' : 'pending'} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <InfoRow icon={<Car className="h-3.5 w-3.5" />} label="Placa">
-            <span className="font-mono font-semibold text-foreground">
-              {reservation.plate || '—'}
-            </span>
-          </InfoRow>
-          <InfoRow icon={<BookmarkCheck className="h-3.5 w-3.5" />} label="Tipo">
-            <VehicleBadge value={reservation.vehicle_type} />
-          </InfoRow>
-          <InfoRow icon={<User className="h-3.5 w-3.5" />} label="Cliente">
-            <span className="text-foreground">{reservation.customer_name || '—'}</span>
-          </InfoRow>
-          <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Teléfono">
-            {reservation.customer_phone ? (
-              <a
-                href={`tel:${reservation.customer_phone.replace(/\s+/g, '')}`}
-                className="text-primary hover:underline font-medium"
-              >
-                {reservation.customer_phone}
-              </a>
-            ) : (
-              <span>—</span>
-            )}
-          </InfoRow>
-        </div>
-
-        {!expired && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 flex items-center gap-2">
-            <Timer className="h-4 w-4 text-amber-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-[10px] text-amber-700 dark:text-amber-500 uppercase tracking-wide">
-                Vence en
-              </p>
-              <p className="font-mono font-bold text-base text-amber-800 dark:text-amber-300 tabular-nums">
-                {countdown.label}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={onReject}
-            disabled={expired}
-          >
-            <XCircle className="h-4 w-4" />
-            Rechazar
-          </Button>
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={onVerify}
-            disabled={expired}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Verificar y aceptar
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ConfirmedCard({
-  reservation, onCancel,
-}: {
-  reservation: AdminReservation;
-  onCancel: () => void;
-}) {
-  return (
-    <Card className="overflow-hidden border-green-500/40">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-foreground">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono font-bold text-base">
-                Espacio #{reservation.space?.space_number || '—'}
-              </span>
-            </div>
-            {reservation.confirmed_at && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Confirmada {formatDateTime(reservation.confirmed_at)}
-              </p>
-            )}
-          </div>
-          <StatusBadge status="confirmed" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <InfoRow icon={<Car className="h-3.5 w-3.5" />} label="Placa">
-            <span className="font-mono font-semibold text-foreground">
-              {reservation.plate || '—'}
-            </span>
-          </InfoRow>
-          <InfoRow icon={<BookmarkCheck className="h-3.5 w-3.5" />} label="Tipo">
-            <VehicleBadge value={reservation.vehicle_type} />
-          </InfoRow>
-          <InfoRow icon={<User className="h-3.5 w-3.5" />} label="Cliente">
-            <span className="text-foreground">{reservation.customer_name || '—'}</span>
-          </InfoRow>
-          <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Teléfono">
-            {reservation.customer_phone ? (
-              <a
-                href={`tel:${reservation.customer_phone.replace(/\s+/g, '')}`}
-                className="text-primary hover:underline font-medium"
-              >
-                {reservation.customer_phone}
-              </a>
-            ) : (
-              <span>—</span>
-            )}
-          </InfoRow>
-        </div>
-
-        <div className="flex justify-end pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={onCancel}
-          >
-            <XCircle className="h-4 w-4" />
-            Cancelar reserva
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function HistoryCard({ reservation }: { reservation: AdminReservation }) {
-  const isExpiredPending =
-    reservation.status === 'pending' &&
-    new Date(reservation.expires_at).getTime() <= Date.now();
-  const status = isExpiredPending ? 'expired' : reservation.status;
-
-  return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-foreground">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono font-bold text-base">
-                Espacio #{reservation.space?.space_number || '—'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Reservada {formatDateTime(reservation.reserved_at)}
-            </p>
-          </div>
-          <StatusBadge status={status} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <InfoRow icon={<Car className="h-3.5 w-3.5" />} label="Placa">
-            <span className="font-mono font-semibold text-foreground">
-              {reservation.plate || '—'}
-            </span>
-          </InfoRow>
-          <InfoRow icon={<BookmarkCheck className="h-3.5 w-3.5" />} label="Tipo">
-            <VehicleBadge value={reservation.vehicle_type} />
-          </InfoRow>
-          <InfoRow icon={<User className="h-3.5 w-3.5" />} label="Cliente">
-            <span className="text-foreground">{reservation.customer_name || '—'}</span>
-          </InfoRow>
-          <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Teléfono">
-            <span className="text-foreground">{reservation.customer_phone || '—'}</span>
-          </InfoRow>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function InfoRow({
-  icon, label, children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <p className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-        {icon} {label}
-      </p>
-      <div className="mt-0.5">{children}</div>
-    </div>
+    <span
+      className={`font-mono font-bold tabular-nums text-sm ${
+        urgent ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'
+      }`}
+    >
+      {c.label}
+    </span>
   );
 }
 
@@ -521,6 +411,9 @@ function VerifyDialog({
 
   if (!reservation) return null;
 
+  const vehicleLabel =
+    VEHICLE_TYPE_LABELS[reservation.vehicle_type as VehicleType] || reservation.vehicle_type || 'Carro';
+
   return (
     <Dialog open={!!reservation} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-md">
@@ -535,19 +428,19 @@ function VerifyDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">Espacio</span>
-              <span className="font-mono font-bold text-lg text-foreground">
+          <div className="rounded-xl border bg-muted/30 p-4 space-y-2.5">
+            <DetailLine label="Espacio">
+              <span className="font-mono font-bold text-base">
                 #{reservation.space?.space_number || '—'}
               </span>
-            </div>
-            <Separator />
+            </DetailLine>
             <DetailLine label="Placa">
-              <span className="font-mono font-bold text-base">{reservation.plate || '—'}</span>
+              <span className="font-mono font-bold">{reservation.plate || '—'}</span>
             </DetailLine>
             <DetailLine label="Tipo de vehículo">
-              <VehicleBadge value={reservation.vehicle_type} />
+              <Badge variant="secondary" className="gap-1">
+                <Car className="h-3 w-3" /> {vehicleLabel}
+              </Badge>
             </DetailLine>
             <DetailLine label="Cliente">
               <span className="font-medium">{reservation.customer_name || '—'}</span>
@@ -617,8 +510,4 @@ function DetailLine({ label, children }: { label: string; children: React.ReactN
       <div className="text-right">{children}</div>
     </div>
   );
-}
-
-function Separator() {
-  return <div className="border-t border-border" />;
 }

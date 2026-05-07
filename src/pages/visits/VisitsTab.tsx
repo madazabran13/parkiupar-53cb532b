@@ -10,15 +10,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { History, AlertTriangle, MapPin, Clock, Car, BookmarkCheck, Phone, Navigation } from 'lucide-react';
+import { History, AlertTriangle, MapPin, Clock, Car, BookmarkCheck, Phone, Navigation, Info, Timer } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/PageSkeletons';
 import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
 import { VEHICLE_TYPE_LABELS, SESSION_STATUS_LABELS } from '@/types';
 import type { VehicleType, SessionStatus } from '@/types';
-import { ReservationCard } from './ReservationCard';
+import { useCountdown } from '@/hooks/useCountdown';
 
 type ReservationFilter = 'all' | 'confirmed' | 'expired' | 'cancelled';
 type VisitFilter = 'all' | 'completed' | 'active' | 'cancelled';
+
+const RES_STATUS_LABEL: Record<string, string> = {
+  pending: 'Activa',
+  confirmed: 'Confirmada',
+  expired: 'Expirada',
+  cancelled: 'Rechazada',
+};
+
+const RES_STATUS_STYLE: Record<string, string> = {
+  pending: 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40',
+  confirmed: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/40',
+  expired: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
+  cancelled: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
+};
+
+interface ReservationRow extends ReservationRecord {
+  tenant_name: string;
+  space_number: string;
+  vehicle_type_label: string;
+  effective_status: string;
+  status_label: string;
+}
+
+function flattenReservation(r: ReservationRecord): ReservationRow {
+  const expired = new Date(r.expires_at).getTime() <= Date.now();
+  const effective = r.status === 'pending' && expired ? 'expired' : r.status;
+  return {
+    ...r,
+    tenant_name: r.tenant?.name || '',
+    space_number: r.space?.space_number || '',
+    vehicle_type_label: VEHICLE_TYPE_LABELS[r.vehicle_type as VehicleType] || r.vehicle_type || 'Carro',
+    effective_status: effective,
+    status_label: RES_STATUS_LABEL[effective] || effective,
+  };
+}
 
 export default function VisitsTab() {
   const { profile } = useAuth();
@@ -42,20 +77,20 @@ export default function VisitsTab() {
 
   const { active, history, historyCounts } = useMemo(() => {
     const now = Date.now();
-    const active: ReservationRecord[] = [];
-    const history: ReservationRecord[] = [];
+    const active: ReservationRow[] = [];
+    const history: ReservationRow[] = [];
     const counts = { all: 0, confirmed: 0, expired: 0, cancelled: 0 };
     for (const r of reservations) {
+      const flat = flattenReservation(r);
       const expired = new Date(r.expires_at).getTime() <= now;
       if (r.status === 'pending' && !expired) {
-        active.push(r);
+        active.push(flat);
       } else {
-        history.push(r);
+        history.push(flat);
         counts.all++;
-        const effective = r.status === 'pending' && expired ? 'expired' : r.status;
-        if (effective === 'confirmed') counts.confirmed++;
-        else if (effective === 'expired') counts.expired++;
-        else if (effective === 'cancelled') counts.cancelled++;
+        if (flat.effective_status === 'confirmed') counts.confirmed++;
+        else if (flat.effective_status === 'expired') counts.expired++;
+        else if (flat.effective_status === 'cancelled') counts.cancelled++;
       }
     }
     return { active, history, historyCounts: counts };
@@ -63,12 +98,7 @@ export default function VisitsTab() {
 
   const filteredHistory = useMemo(() => {
     if (reservationFilter === 'all') return history;
-    const now = Date.now();
-    return history.filter((r) => {
-      const expired = new Date(r.expires_at).getTime() <= now;
-      const effective = r.status === 'pending' && expired ? 'expired' : r.status;
-      return effective === reservationFilter;
-    });
+    return history.filter((r) => r.effective_status === reservationFilter);
   }, [history, reservationFilter]);
 
   const visitCounts = useMemo(() => {
@@ -139,6 +169,131 @@ export default function VisitsTab() {
     },
   ];
 
+  const reservationBaseColumns: Column<ReservationRow>[] = [
+    {
+      key: 'tenant_name',
+      label: 'Parqueadero',
+      render: (r) => (
+        <div className="flex flex-col min-w-0">
+          <span className="font-medium text-foreground truncate">{r.tenant?.name || '—'}</span>
+          {r.tenant?.address && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+              <MapPin className="h-3 w-3 flex-shrink-0" /> {r.tenant.address}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'space_number',
+      label: 'Espacio',
+      render: (r) => <span className="font-mono font-semibold">#{r.space_number || '—'}</span>,
+    },
+    {
+      key: 'plate',
+      label: 'Placa',
+      render: (r) => <span className="font-mono font-semibold">{r.plate || '—'}</span>,
+    },
+    {
+      key: 'vehicle_type_label',
+      label: 'Tipo',
+      render: (r) => (
+        <Badge variant="secondary" className="gap-1 text-xs">
+          <Car className="h-3 w-3" />
+          {r.vehicle_type_label}
+        </Badge>
+      ),
+    },
+  ];
+
+  const activeColumns: Column<ReservationRow>[] = [
+    ...reservationBaseColumns,
+    {
+      key: 'expires_at',
+      label: 'Vence en',
+      sortable: true,
+      filterable: false,
+      render: (r) => <CountdownCell expiresAt={r.expires_at} />,
+    },
+    {
+      key: 'status_label',
+      label: 'Estado',
+      hideOnMobile: true,
+      render: (r) => (
+        <Badge variant="outline" className={`text-xs ${RES_STATUS_STYLE[r.effective_status] || ''}`}>
+          {r.status_label}
+        </Badge>
+      ),
+    },
+  ];
+
+  const historyColumns: Column<ReservationRow>[] = [
+    ...reservationBaseColumns,
+    {
+      key: 'reserved_at',
+      label: 'Reservada',
+      hideOnMobile: true,
+      render: (r) => <span className="text-xs text-muted-foreground">{formatDateTime(r.reserved_at)}</span>,
+    },
+    {
+      key: 'status_label',
+      label: 'Estado',
+      render: (r) => (
+        <Badge variant="outline" className={`text-xs ${RES_STATUS_STYLE[r.effective_status] || ''}`}>
+          {r.status_label}
+        </Badge>
+      ),
+    },
+  ];
+
+  const renderReservationActions = (r: ReservationRow) => {
+    const tenant = r.tenant;
+    const hasGeo = tenant?.latitude != null && tenant?.longitude != null;
+    const mapsUrl = hasGeo
+      ? `https://www.google.com/maps/dir/?api=1&destination=${tenant!.latitude},${tenant!.longitude}`
+      : tenant?.address
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${tenant.name} ${tenant.address}`)}`
+        : null;
+    const phoneUrl = tenant?.phone ? `tel:${tenant.phone.replace(/\s+/g, '')}` : null;
+    const showQuickActions = r.status === 'pending' || r.effective_status === 'confirmed';
+
+    return (
+      <div className="flex items-center gap-1">
+        {showQuickActions && mapsUrl && (
+          <Button
+            variant="default"
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            onClick={() => window.open(mapsUrl, '_blank', 'noopener,noreferrer')}
+          >
+            <Navigation className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Ir</span>
+          </Button>
+        )}
+        {showQuickActions && phoneUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            onClick={() => (window.location.href = phoneUrl)}
+          >
+            <Phone className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Llamar</span>
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={() => setDetail(r)}
+        >
+          <Info className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Info</span>
+        </Button>
+      </div>
+    );
+  };
+
   if (!phone) {
     return (
       <div className="space-y-4 sm:space-y-6">
@@ -196,11 +351,12 @@ export default function VisitsTab() {
                     <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                     Activas ({active.length})
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {active.map((r) => (
-                      <ReservationCard key={r.id} reservation={r} onShowDetail={setDetail} />
-                    ))}
-                  </div>
+                  <DataTable
+                    columns={activeColumns}
+                    data={active}
+                    searchPlaceholder="Buscar por placa, parqueadero, espacio..."
+                    actions={renderReservationActions}
+                  />
                 </section>
               )}
 
@@ -232,19 +388,12 @@ export default function VisitsTab() {
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>
-                  {filteredHistory.length === 0 ? (
-                    <Card>
-                      <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                        No hay reservas con ese estado.
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {filteredHistory.map((r) => (
-                        <ReservationCard key={r.id} reservation={r} onShowDetail={setDetail} />
-                      ))}
-                    </div>
-                  )}
+                  <DataTable
+                    columns={historyColumns}
+                    data={filteredHistory}
+                    searchPlaceholder="Buscar por placa, parqueadero, espacio..."
+                    actions={renderReservationActions}
+                  />
                 </section>
               )}
             </>
@@ -315,19 +464,11 @@ export default function VisitsTab() {
                   Canceladas ({visitCounts.cancelled})
                 </ToggleGroupItem>
               </ToggleGroup>
-              {filteredVisits.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                    No hay visitas con ese estado.
-                  </CardContent>
-                </Card>
-              ) : (
-                <DataTable
-                  columns={visitColumns}
-                  data={filteredVisits}
-                  searchPlaceholder="Buscar por placa, parqueadero..."
-                />
-              )}
+              <DataTable
+                columns={visitColumns}
+                data={filteredVisits}
+                searchPlaceholder="Buscar por placa, parqueadero..."
+              />
             </div>
           )}
         </TabsContent>
@@ -335,6 +476,26 @@ export default function VisitsTab() {
 
       <ReservationDetailDialog reservation={detail} onClose={() => setDetail(null)} />
     </div>
+  );
+}
+
+function CountdownCell({ expiresAt }: { expiresAt: string }) {
+  const c = useCountdown(expiresAt, true);
+  if (c.expired) {
+    return (
+      <Badge variant="outline" className={`text-xs ${RES_STATUS_STYLE.expired}`}>
+        Expirada
+      </Badge>
+    );
+  }
+  const urgent = c.minutes < 5;
+  return (
+    <span className={`flex items-center gap-1 font-mono font-bold tabular-nums text-sm ${
+      urgent ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'
+    }`}>
+      <Timer className="h-3.5 w-3.5" />
+      {c.label}
+    </span>
   );
 }
 
@@ -350,13 +511,6 @@ function Header({ subtitle }: { subtitle?: string }) {
     </div>
   );
 }
-
-const RES_STATUS_LABEL: Record<string, string> = {
-  pending: 'Activa',
-  confirmed: 'Confirmada',
-  expired: 'Expirada',
-  cancelled: 'Rechazada',
-};
 
 function ReservationDetailDialog({
   reservation,
