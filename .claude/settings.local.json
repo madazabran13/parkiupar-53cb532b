@@ -41,7 +41,8 @@
       "Bash(node -e \"console.log\\(require\\('module'\\).builtinModules.includes\\('jsdom'\\)\\)\")",
       "Bash(npm i *)",
       "Bash(node ./sim.mjs)",
-      "Bash(grep -oE \"throw new \\(Error|TypeError\\)\\\\\\(\\\\\"[^\\\\\"]{1,80}\\\\\"\\\\\\)\" /tmp/idx-prod.js)"
+      "Bash(grep -oE \"throw new \\(Error|TypeError\\)\\\\\\(\\\\\"[^\\\\\"]{1,80}\\\\\"\\\\\\)\" /tmp/idx-prod.js)",
+      "Bash(node *)"
     ]
   }
 }

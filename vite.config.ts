@@ -47,18 +47,19 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
-          if (id.includes('react-router')) return 'router';
-          if (id.includes('react-dom') || id.includes('react/') || id.includes('scheduler')) return 'react-vendor';
-          if (id.includes('@supabase')) return 'supabase';
-          if (id.includes('@tanstack/react-query')) return 'query';
-          if (id.includes('@radix-ui')) return 'radix';
-          if (id.includes('recharts') || id.includes('d3-')) return 'charts';
+          // Solo splitear paquetes que NO comparten ciclo con la UI (Radix/Floating-UI):
+          // grandes, autocontenidos y cargados perezosamente.
           if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('dompurify')) return 'pdf';
+          if (id.includes('recharts') || id.includes('d3-')) return 'charts';
           if (id.includes('leaflet')) return 'maps';
           if (id.includes('framer-motion')) return 'motion';
           if (id.includes('date-fns')) return 'dates';
-          if (id.includes('lucide-react')) return 'icons';
-          if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod')) return 'forms';
+          if (id.includes('@supabase')) return 'supabase';
+          // Todo lo demás (react, react-dom, scheduler, react-is, react-router,
+          // @tanstack/react-query, @radix-ui/*, @floating-ui/*, react-remove-scroll,
+          // react-style-singleton, use-sync-external-store, lucide-react, hookform, zod)
+          // queda en un único `vendor` para evitar ciclos cross-chunk que dejan
+          // React.forwardRef como `undefined` durante la evaluación.
           return 'vendor';
         },
       },
