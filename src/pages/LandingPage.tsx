@@ -2,37 +2,37 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-  Car, BarChart3, Users, Shield, MapPin, CreditCard,
-  ArrowRight, ArrowUpRight, Check, Menu, X, ChevronDown,
-  Sparkles, Crown, Rocket
+  Car, BarChart3, Clock, Users, Shield, Smartphone,
+  ChevronRight, Check, MapPin, CreditCard, Settings2,
+  ArrowRight, Star, Zap, Globe, Menu, X, ChevronDown,
+  Play, MousePointerClick, Sparkles, Crown, Rocket
 } from 'lucide-react';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import heroDashboard from '@/assets/hero-dashboard.png';
 import { supabase } from '@/integrations/supabase/client';
 
 const MODULE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
-  parking: 'Gestión de vehículos',
-  capacity: 'Control de aforo',
+  parking: 'Gestión de Vehículos',
+  capacity: 'Control de Aforo',
   reports: 'Reportes',
   audit: 'Auditoría',
   customers: 'Clientes',
   rates: 'Tarifas',
-  payments: 'Pagos y facturación',
-  my_plan: 'Mi plan',
-  theme: 'Color del tema',
-  theme_color: 'Personalización del tema',
+  payments: 'Pagos y Facturación',
+  my_plan: 'Mi Plan',
+  theme: 'Color del Tema',
+  theme_color: 'Personalización del Tema',
   map: 'Mapa',
   team: 'Equipo',
-  schedules: 'Horarios de operación',
-  printing: 'Impresión de recibos',
+  schedules: 'Horarios de Operación',
+  printing: 'Impresión de Recibos',
   monthly_subscriptions: 'Mensualidades',
-  reports_download: 'Descarga de reportes PDF',
+  reports_download: 'Descarga de Reportes PDF',
   settings: 'Configuración',
 };
-
-/* ─── Counter ─── */
-function useCounter(end: number, duration = 1800, inView: boolean) {
+/* ─── Counter animation hook ─── */
+function useCounter(end: number, duration = 2000, inView: boolean) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!inView) return;
@@ -50,42 +50,44 @@ function useCounter(end: number, duration = 1800, inView: boolean) {
 
 /* ─── Data ─── */
 const features = [
-  { icon: Car, title: 'Registro vehicular', desc: 'Entradas y salidas con sólo digitar la placa. Sin papeleo, sin demoras.' },
-  { icon: CreditCard, title: 'Tarifas flexibles', desc: 'Configura tarifas por tipo de vehículo, fracciones de tiempo y mínimos.' },
-  { icon: BarChart3, title: 'Reportes en vivo', desc: 'Ingresos diarios, semanales y mensuales desde cualquier dispositivo.' },
-  { icon: Users, title: 'Clientes frecuentes', desc: 'Lleva el registro de clientes recurrentes, sus vehículos y sus visitas.' },
-  { icon: MapPin, title: 'Aforo en tiempo real', desc: 'Visualiza espacios disponibles y ocupación al instante en el mapa.' },
-  { icon: Shield, title: 'Seguridad y auditoría', desc: 'Roles, permisos y bitácora de eventos. Control granular para tu equipo.' },
+  { icon: Car, title: 'Registro Vehicular', desc: 'Entradas y salidas con solo digitar la placa. Rápido y eficiente.', color: 'from-blue-500/20 to-indigo-500/20' },
+  { icon: CreditCard, title: 'Tarifas Flexibles', desc: 'Configura tarifas por tipo de vehículo, tiempo mínimo y fracciones.', color: 'from-emerald-500/20 to-teal-500/20' },
+  { icon: BarChart3, title: 'Reportes en Tiempo Real', desc: 'Consulta ingresos diarios, semanales y mensuales desde cualquier dispositivo.', color: 'from-amber-500/20 to-orange-500/20' },
+  { icon: Users, title: 'Gestión de Clientes', desc: 'Registro de clientes frecuentes, sus vehículos y visitas.', color: 'from-purple-500/20 to-pink-500/20' },
+  { icon: MapPin, title: 'Control de Aforo', desc: 'Visualiza espacios disponibles y ocupación en tiempo real.', color: 'from-rose-500/20 to-red-500/20' },
+  { icon: Shield, title: 'Seguridad Total', desc: 'Roles de usuario, auditoría y control total de accesos.', color: 'from-cyan-500/20 to-sky-500/20' },
 ];
 
 const adminBenefits = [
-  'Reportes de ingresos en tiempo real',
-  'Detalle de vehículos en parqueo',
-  'Control de monetización por turno',
-  'Gestión de clientes y vehículos',
-  'Configuración de tarifas por tipo',
-  'Roles y permisos para tu equipo',
+  'Reportes de ingresos en dinero en tiempo real',
+  'Detalle de vehículos actualmente en parqueo',
+  'Control de vehículos monetizados por turno',
+  'Gestión de clientes y vehículos frecuentes',
+  'Configuración de tarifas por tipo de vehículo',
+  'Roles y permisos para tu equipo de trabajo',
 ];
 
 const conductorBenefits = [
-  'Disponibilidad de espacios al instante',
-  'Reserva un cupo desde tu celular',
-  'Mapa interactivo del parqueadero',
-  'Notificaciones de tu reserva',
-  'Historial completo de visitas',
-  'Acceso rápido sin filas',
+  'Consultar disponibilidad de espacios en tiempo real',
+  'Reservar un espacio desde tu celular',
+  'Ver el mapa del parqueadero',
+  'Recibir notificaciones de tu reserva',
+  'Historial de visitas y pagos',
+  'Acceso rápido sin filas ni esperas',
 ];
 
-/* ─── Section reveal ─── */
+// FAQs and testimonials are now loaded from the database
+
+/* ─── Animated section wrapper ─── */
 function Section({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
   return (
     <section ref={ref} id={id} className={className}>
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
         {children}
       </motion.div>
@@ -93,41 +95,33 @@ function Section({ children, className = '', id }: { children: React.ReactNode; 
   );
 }
 
-/* ─── Stat ─── */
-function Stat({ value, suffix, label }: { value: number; suffix: string; label: string }) {
+/* ─── Stat card with counter ─── */
+function StatCard({ value, suffix, label }: { value: number; suffix: string; label: string }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
-  const count = useCounter(value, 1600, isInView);
+  const count = useCounter(value, 1800, isInView);
   return (
-    <div ref={ref} className="border-t border-border pt-6">
-      <div className="text-5xl md:text-6xl font-display font-light tracking-tight tabular-nums text-foreground">
-        {count}<span className="text-primary">{suffix}</span>
+    <div ref={ref} className="text-center">
+      <div className="text-4xl md:text-5xl font-black text-primary tabular-nums">
+        {count}{suffix}
       </div>
-      <div className="mt-3 text-[11px] font-mono uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className="text-sm text-muted-foreground mt-2 font-medium">{label}</div>
     </div>
   );
 }
 
-/* ─── FAQ ─── */
-function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
+/* ─── FAQ Item ─── */
+function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-t border-border last:border-b">
+    <div className="border border-border rounded-2xl overflow-hidden bg-card/50 backdrop-blur-sm">
       <button
         onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="flex items-start justify-between w-full py-6 md:py-7 text-left gap-6 group"
+        className="flex items-center justify-between w-full p-5 md:p-6 text-left font-medium text-sm md:text-base hover:bg-muted/40 transition-colors"
       >
-        <div className="flex items-start gap-5 flex-1">
-          <span className="font-mono text-xs text-muted-foreground tabular-nums pt-1.5 w-8 shrink-0">
-            {String(index + 1).padStart(2, '0')}
-          </span>
-          <span className="text-base md:text-lg font-medium text-foreground group-hover:text-primary transition-colors">
-            {q}
-          </span>
-        </div>
-        <motion.div animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.25 }} className="shrink-0 mt-1">
-          <span aria-hidden className="block w-5 h-px bg-foreground relative before:absolute before:inset-0 before:rotate-90 before:bg-foreground" />
+        {q}
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.3 }}>
+          <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0 ml-4" />
         </motion.div>
       </button>
       <AnimatePresence>
@@ -136,10 +130,9 @@ function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="pb-6 pl-13 md:pl-[3.25rem] pr-6 text-sm md:text-base text-muted-foreground leading-relaxed max-w-3xl">
+            <div className="px-5 md:px-6 pb-5 md:pb-6 text-sm text-muted-foreground leading-relaxed">
               {a}
             </div>
           </motion.div>
@@ -149,96 +142,98 @@ function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
   );
 }
 
-/* ─── Eyebrow ─── */
-function Eyebrow({ index, label }: { index: string; label: string }) {
-  return (
-    <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-      <span className="tabular-nums text-foreground">{index}</span>
-      <span aria-hidden className="h-px w-8 bg-border" />
-      <span>{label}</span>
-    </div>
-  );
-}
-
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const navLinks = [
-    { href: '#capacidades', label: 'Capacidades' },
-    { href: '#planes', label: 'Planes' },
-    { href: '#perfiles', label: 'Perfiles' },
-    { href: '#testimonios', label: 'Testimonios' },
+    { href: '#inicio', label: 'Inicio' },
+    { href: '#features', label: 'Características' },
+    { href: '#pricing', label: 'Planes' },
+    { href: '#roles', label: 'Cómo Funciona' },
+    { href: '#testimonials', label: 'Testimonios' },
     { href: '#faq', label: 'FAQ' },
   ];
 
+  // Fetch plans from Supabase
   const [plans, setPlans] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.from('plans').select('*').eq('is_active', true).order('price_monthly', { ascending: true })
+    supabase
+      .from('plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price_monthly', { ascending: true })
       .then(({ data }) => { if (data) setPlans(data); });
-    supabase.from('testimonials').select('*').eq('is_approved', true).order('created_at', { ascending: false }).limit(6)
+
+    supabase
+      .from('testimonials')
+      .select('*')
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false })
+      .limit(6)
       .then(({ data }) => { if (data) setTestimonials(data); });
-    supabase.from('faqs').select('*').eq('is_active', true).order('sort_order')
+
+    supabase
+      .from('faqs')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order')
       .then(({ data }) => { if (data) setFaqs(data); });
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-foreground">
-      {/* ─── NAV ─── */}
-      <nav
-        className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300 ${
-          scrolled ? 'bg-background/85 backdrop-blur-xl border-b border-border' : 'bg-transparent border-b border-transparent'
-        }`}
-      >
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="flex items-center justify-between h-16">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* ═══ NAVBAR ═══ */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'bg-background/90 backdrop-blur-xl border-b border-border shadow-sm'
+          : 'bg-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 md:h-18">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <img src="/logo.png" alt="" aria-hidden className="h-8 w-8" width="32" height="32" />
-              <span className="text-lg font-display font-bold tracking-tight">ParkiUpar</span>
-              <span className="hidden sm:inline-block ml-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">v2.4</span>
+              <img  src="/logo.png" alt="ParkiUpar" className="h-9 w-9 transition-transform group-hover:scale-110" />
+              <span className="text-xl font-black tracking-tight text-foreground">ParkiUpar</span>
             </Link>
 
-            <div className="hidden md:flex items-center gap-7">
+            {/* Desktop nav */}
+            <div className="hidden md:flex items-center gap-1">
               {navLinks.map(link => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/60 transition-all"
                 >
                   {link.label}
                 </a>
               ))}
             </div>
 
-            <div className="hidden md:flex items-center gap-3">
-              <Link
-                to="/login"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
-              >
-                Iniciar sesión
-              </Link>
-              <Button asChild size="sm" className="rounded-full font-medium h-9 px-5">
-                <Link to="/register">
-                  Empezar
-                  <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="ghost" asChild className="rounded-full font-medium">
+                <Link to="/login">Iniciar Sesión</Link>
+              </Button>
+              <Button asChild className="rounded-full font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+                <Link to="/register">Empieza Gratis</Link>
               </Button>
             </div>
 
+            {/* Mobile menu toggle */}
             <button
-              type="button"
-              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-              aria-expanded={menuOpen}
-              className="md:hidden p-2 -mr-2 rounded-md hover:bg-muted/60 transition-colors min-h-11 min-w-11"
+              className="md:hidden p-2 rounded-xl hover:bg-muted/60 transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -246,32 +241,32 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Mobile menu */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="md:hidden bg-background border-b border-border overflow-hidden"
+              className="md:hidden bg-background/95 backdrop-blur-xl border-b border-border"
             >
-              <div className="px-5 py-4 space-y-1">
+              <div className="px-4 py-4 space-y-1">
                 {navLinks.map(link => (
                   <a
                     key={link.href}
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-3 text-base font-medium rounded-md hover:bg-muted/60 transition-colors min-h-11"
+                    className="block px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted/60 transition-colors"
                   >
                     {link.label}
                   </a>
                 ))}
-                <div className="pt-3 mt-3 border-t border-border flex flex-col gap-2">
-                  <Button variant="outline" asChild className="rounded-full w-full h-11">
-                    <Link to="/login">Iniciar sesión</Link>
+                <div className="pt-3 flex flex-col gap-2">
+                  <Button variant="outline" asChild className="rounded-xl w-full">
+                    <Link to="/login">Iniciar Sesión</Link>
                   </Button>
-                  <Button asChild className="rounded-full w-full h-11">
-                    <Link to="/register">Empezar</Link>
+                  <Button asChild className="rounded-xl w-full">
+                    <Link to="/register">Empieza Gratis</Link>
                   </Button>
                 </div>
               </div>
@@ -280,319 +275,342 @@ export default function LandingPage() {
         </AnimatePresence>
       </nav>
 
-      {/* ─── HERO ─── */}
-      <header id="inicio" className="relative pt-32 md:pt-40 pb-16 md:pb-20">
+      {/* ═══ HERO ═══ */}
+      <div id="inicio" ref={heroRef} className="relative min-h-[100svh] flex items-center overflow-hidden">
+        {/* Animated gradient blobs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-1/4 -right-32 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[140px] animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-accent/5 blur-[160px]" />
+        </div>
+
+        {/* Grid pattern overlay */}
         <div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-[640px] pointer-events-none opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage:
-              'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
-            backgroundSize: '88px 88px',
-            maskImage: 'linear-gradient(to bottom, black 30%, transparent)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent)',
+            backgroundImage: 'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
+            backgroundSize: '60px 60px'
           }}
         />
 
-        <div className="relative max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10 items-end">
-            {/* Left — text */}
-            <div className="col-span-12 lg:col-span-7 xl:col-span-7">
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <Eyebrow index="01" label="Software para parqueaderos · Colombia" />
-              </motion.div>
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Left */}
+              <div className="text-center lg:text-left space-y-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.6 }}
+                >
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+                    <Zap className="h-3.5 w-3.5" />
+                    Software de Gestión #1 en Colombia
+                  para Parqueaderos
+                  </span>
+                </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="mt-7 font-display font-semibold leading-[0.96] tracking-[-0.025em]"
-                style={{ fontSize: 'clamp(2.5rem, 7vw, 5.75rem)' }}
-              >
-                Tu parqueadero,
-                <br />
-                operado con la{' '}
-                <span className="font-serif italic font-normal text-primary [font-feature-settings:'ss01']">
-                  precisión
-                </span>
-                <br />
-                de un equipo digital.
-              </motion.h1>
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.6 }}
+                  className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-black tracking-tight leading-[1.1]"
+                >
+                  Administra tu{' '}
+                  <span className="relative">
+                    <span className="text-primary">Parqueadero</span>
+                    <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none">
+                      <path d="M1 5.5C47 2 153 2 199 5.5" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" opacity="0.4" />
+                    </svg>
+                  </span>
+                  <br />de forma inteligente
+                </motion.h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18, duration: 0.5 }}
-                className="mt-8 max-w-xl text-base md:text-lg text-muted-foreground leading-relaxed"
-              >
-                Registra entradas, controla aforo, configura tarifas y observa los ingresos en
-                vivo. Sin instalación, sin obras: sólo abres el navegador y operas.
-              </motion.p>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35, duration: 0.6 }}
+                  className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed"
+                >
+                  Plataforma web para el registro de vehículos, control de tarifas, reportes
+                  de ingresos y seguimiento en tiempo real.
+                </motion.p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.28, duration: 0.5 }}
-                className="mt-10 flex flex-col sm:flex-row gap-3"
-              >
-                <Button asChild size="lg" className="rounded-full h-12 px-7 text-base font-medium gap-2">
-                  <Link to="/register">
-                    Crear cuenta gratis
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="ghost" className="rounded-full h-12 px-7 text-base font-medium gap-2 hover:bg-muted/60">
-                  <a href="#capacidades">
-                    Ver capacidades
-                  </a>
-                </Button>
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                  className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+                >
+                    <Button size="lg" asChild className="text-lg px-10 h-12  rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
+                    <Link to="/register">
+                      Empieza Gratis
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                    </Button>
+                    <Button size="lg" variant="outline" asChild className="text-lg px-10 h-12 rounded-full hover:scale-[1.02] transition-all">
+                    <a href="#features">
+                      <Play className="mr-2 h-4 w-4" />
+                      Conocer Más
+                    </a>
+                    </Button>
+                </motion.div>
 
-              <motion.dl
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45, duration: 0.6 }}
-                className="mt-14 grid grid-cols-3 gap-x-6 gap-y-4 max-w-md font-mono text-[11px] uppercase tracking-[0.16em]"
-              >
-                <div>
-                  <dd className="text-foreground font-display font-semibold text-2xl tracking-tight normal-case">100%</dd>
-                  <dt className="mt-1 text-muted-foreground">Web · sin instalar</dt>
-                </div>
-                <div>
-                  <dd className="text-foreground font-display font-semibold text-2xl tracking-tight normal-case">24/7</dd>
-                  <dt className="mt-1 text-muted-foreground">Disponible</dt>
-                </div>
-                <div>
-                  <dd className="text-foreground font-display font-semibold text-2xl tracking-tight normal-case">PWA</dd>
-                  <dt className="mt-1 text-muted-foreground">Instalable</dt>
-                </div>
-              </motion.dl>
-            </div>
-
-            {/* Right — mockup */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="col-span-12 lg:col-span-5 xl:col-span-5 lg:pl-4"
-            >
-              <div className="relative">
-                <div className="relative rounded-xl overflow-hidden border border-border bg-card shadow-[0_30px_80px_-20px_rgb(0_0_0_/_0.18)]">
-                  <div className="h-7 px-3 flex items-center gap-1.5 border-b border-border bg-muted/40">
-                    <span className="h-2 w-2 rounded-full bg-foreground/15" />
-                    <span className="h-2 w-2 rounded-full bg-foreground/15" />
-                    <span className="h-2 w-2 rounded-full bg-foreground/15" />
-                    <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">app.parkiupar.com</span>
-                  </div>
-                  <img
-                    src={heroDashboard}
-                    alt="Vista del dashboard de ParkiUpar mostrando ingresos, aforo y vehículos activos"
-                    className="w-full block"
-                    width="900"
-                    height="600"
-                    loading="eager"
-                  />
-                </div>
-
-                <div className="absolute -left-3 sm:-left-5 bottom-10 bg-background border border-border rounded-lg p-3 shadow-md flex items-center gap-3 max-w-[180px]">
-                  <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Hoy</div>
-                    <div className="text-sm font-display font-semibold tabular-nums">$1.250.000</div>
-                  </div>
-                </div>
-
-                <div className="absolute -right-3 sm:-right-4 top-12 bg-background border border-border rounded-lg p-3 shadow-md flex items-center gap-3 max-w-[160px]">
-                  <div className="h-9 w-9 rounded-md bg-foreground/5 flex items-center justify-center">
-                    <Car className="h-4 w-4 text-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Activos</div>
-                    <div className="text-sm font-display font-semibold tabular-nums">42 vehículos</div>
-                  </div>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.6 }}
+                  className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-muted-foreground"
+                >
+                  {['Sin instalación', 'Fácil de usar', 'Soporte 24/7'].map(t => (
+                    <div key={t} className="flex items-center gap-1.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      {t}
+                    </div>
+                  ))}
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
-        </div>
-      </header>
 
-      {/* ─── STATS ─── */}
-      <Section className="py-16 md:py-20">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
-            <Stat value={100} suffix="+" label="Parqueaderos activos" />
-            <Stat value={50} suffix="K+" label="Vehículos registrados" />
-            <Stat value={99} suffix=".9%" label="Disponibilidad" />
-            <Stat value={24} suffix="/7" label="Soporte técnico" />
+              {/* Right — Dashboard mockup */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, rotateY: -8 }}
+                animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                transition={{ delay: 0.4, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                className="flex justify-center lg:justify-end perspective-1000"
+              >
+                <div className="relative">
+                  {/* Glow */}
+                  <div className="absolute -inset-8 bg-gradient-to-tr from-primary/20 via-transparent to-primary/10 rounded-3xl blur-3xl" />
+                  {/* Image container */}
+                  <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl shadow-primary/10 bg-card">
+                    <div className="h-8 bg-muted/80 flex items-center gap-1.5 px-4 border-b border-border/50">
+                      <div className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-warning/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-success/60" />
+                      <div className="ml-4 h-4 w-48 rounded-full bg-muted-foreground/10" />
+                    </div>
+                    <img
+                      src={heroDashboard}
+                      alt="Dashboard ParkiUpar - Gestión de parqueadero"
+                      className="w-full max-w-lg"
+                      loading="eager"
+                    />
+                  </div>
+                  {/* Floating badge */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.2, duration: 0.5 }}
+                    className="absolute -left-6 bottom-12 bg-card border border-border rounded-2xl p-3 shadow-lg flex items-center gap-3"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
+                      <BarChart3 className="h-5 w-5 text-success" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Ingresos hoy</div>
+                      <div className="text-sm font-bold">$1.250.000</div>
+                    </div>
+                  </motion.div>
+                  {/* Floating badge 2 */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.4, duration: 0.5 }}
+                    className="absolute -right-4 top-20 bg-card border border-border rounded-2xl p-3 shadow-lg flex items-center gap-3"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Car className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Vehículos</div>
+                      <div className="text-sm font-bold">42 activos</div>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        >
+          <span className="text-xs text-muted-foreground font-medium">Descubre más</span>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="h-8 w-5 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1"
+          >
+            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* ═══ STATS ═══ */}
+      <Section className="py-16 md:py-20 border-y border-border bg-muted/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            <StatCard value={100} suffix="+" label="Parqueaderos activos" />
+            <StatCard value={50} suffix="K+" label="Vehículos registrados" />
+            <StatCard value={99} suffix=".9%" label="Tiempo activo" />
+            <StatCard value={24} suffix="/7" label="Soporte técnico" />
           </div>
         </div>
       </Section>
 
-      {/* ─── FEATURES ─── */}
-      <Section id="capacidades" className="py-20 md:py-28 border-t border-border">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10 mb-16">
-            <div className="col-span-12 md:col-span-5">
-              <Eyebrow index="02" label="Capacidades" />
-              <h2
-                className="mt-6 font-display font-semibold leading-[0.98] tracking-[-0.02em]"
-                style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)' }}
-              >
-                Todo lo que tu operación{' '}
-                <span className="font-serif italic font-normal">necesita</span>, en un mismo lugar.
-              </h2>
-            </div>
-            <div className="col-span-12 md:col-span-6 md:col-start-7 self-end">
-              <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-lg">
-                Cada módulo está pensado para ahorrar minutos en lo que antes te tomaba horas.
-                Si dejas de hacer algo a mano, lo notamos.
-              </p>
-            </div>
+      {/* ═══ FEATURES ═══ */}
+      <Section id="features" className="py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Características</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
+              Todo lo que tu parqueadero necesita
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Herramientas diseñadas para optimizar cada aspecto de tu operación diaria.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-border">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((f, i) => (
-              <motion.article
+              <motion.div
                 key={f.title}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ delay: (i % 3) * 0.06, duration: 0.45 }}
-                className="group relative px-6 md:px-8 py-10 md:py-12 border-b border-border md:[&:nth-child(3n)]:border-r-0 md:border-r border-border last:border-b-0"
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                className="group relative rounded-2xl border border-border bg-card p-6 md:p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-8">
-                  <span className="font-mono text-xs text-muted-foreground tabular-nums">
-                    {String(i + 1).padStart(2, '0')} / 06
-                  </span>
-                  <f.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                  <f.icon className="h-7 w-7 text-foreground" />
                 </div>
-                <h3 className="font-display text-xl md:text-2xl font-semibold tracking-tight mb-3">
-                  {f.title}
-                </h3>
-                <p className="text-sm md:text-[15px] text-muted-foreground leading-relaxed max-w-sm">
-                  {f.desc}
-                </p>
-              </motion.article>
+                <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </Section>
 
-      {/* ─── PRICING ─── */}
-      <Section id="planes" className="py-20 md:py-28 border-t border-border">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10 mb-14">
-            <div className="col-span-12 md:col-span-7">
-              <Eyebrow index="03" label="Planes y precios" />
-              <h2
-                className="mt-6 font-display font-semibold leading-[0.98] tracking-[-0.02em]"
-                style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)' }}
-              >
-                Pagas por lo que{' '}
-                <span className="font-serif italic font-normal">realmente</span> usas.
-              </h2>
-            </div>
-            <div className="col-span-12 md:col-span-5 self-end">
-              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                Sin permanencias. Sin sorpresas. Cambia de plan cuando lo necesites.
-              </p>
-            </div>
+      {/* ═══ PRICING ═══ */}
+      <Section id="pricing" className="py-20 lg:py-28 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Planes y Precios</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
+              Elige el plan ideal para tu{' '}
+              <span className="text-primary">parqueadero</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Planes flexibles que se adaptan al tamaño de tu operación. Sin contratos a largo plazo.
+            </p>
           </div>
 
           {plans.length === 0 ? (
-            <div className="grid md:grid-cols-3 gap-px bg-border">
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-background p-8 animate-pulse">
-                  <div className="h-4 w-16 bg-muted rounded mb-6" />
-                  <div className="h-12 w-32 bg-muted rounded mb-8" />
+                <div key={i} className="rounded-2xl border border-border bg-card p-8 animate-pulse">
+                  <div className="h-6 w-24 bg-muted rounded mb-4" />
+                  <div className="h-10 w-32 bg-muted rounded mb-6" />
                   <div className="space-y-3">
-                    {[1, 2, 3, 4].map(j => <div key={j} className="h-3 bg-muted rounded w-full" />)}
+                    {[1, 2, 3, 4].map(j => (
+                      <div key={j} className="h-4 bg-muted rounded w-full" />
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className={`grid gap-px bg-border border border-border ${
-              plans.length === 1 ? 'md:grid-cols-1' :
-              plans.length === 2 ? 'md:grid-cols-2' :
+            <div className={`grid gap-6 max-w-5xl mx-auto ${
+              plans.length === 1 ? 'md:grid-cols-1 max-w-md' :
+              plans.length === 2 ? 'md:grid-cols-2 max-w-3xl' :
               'md:grid-cols-3'
             }`}>
               {plans.map((plan, i) => {
                 const isPopular = i === 1 && plans.length >= 3;
-                const PlanIcon = i === 0 ? Sparkles : i === 1 ? Crown : Rocket;
+                const planIcon = i === 0 ? Sparkles : i === 1 ? Crown : Rocket;
+                const PlanIcon = planIcon;
                 const modules = Array.isArray(plan.modules) ? plan.modules as string[] : [];
 
                 return (
                   <motion.div
                     key={plan.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.08, duration: 0.5 }}
-                    className={`relative bg-background p-8 md:p-10 ${isPopular ? 'lg:bg-foreground lg:text-background' : ''}`}
+                    transition={{ delay: i * 0.1, duration: 0.5 }}
+                    className={`relative rounded-2xl p-8 md:p-10 transition-all duration-300 hover:shadow-xl ${
+                      isPopular
+                        ? 'border-2 border-primary bg-card shadow-lg shadow-primary/10 scale-[1.02]'
+                        : 'border border-border bg-card hover:border-primary/30'
+                    }`}
                   >
                     {isPopular && (
-                      <span className="absolute top-6 right-6 font-mono text-[10px] uppercase tracking-[0.18em] px-2 py-1 bg-primary text-primary-foreground">
-                        Recomendado
-                      </span>
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <span className="bg-primary text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                          Más Popular
+                        </span>
+                      </div>
                     )}
 
-                    <div className="flex items-center gap-3 mb-10">
-                      <PlanIcon className={`h-5 w-5 ${isPopular ? 'lg:text-background' : 'text-primary'}`} />
-                      <span className={`font-mono text-[11px] uppercase tracking-[0.18em] ${isPopular ? 'lg:text-background/70' : 'text-muted-foreground'}`}>
-                        {plan.name}
-                      </span>
-                    </div>
-
-                    <div className="mb-2">
-                      <span className="font-display font-semibold text-5xl md:text-6xl tracking-tight tabular-nums">
-                        ${plan.price_monthly.toLocaleString('es-CO')}
-                      </span>
-                      <span className={`ml-2 text-sm ${isPopular ? 'lg:text-background/70' : 'text-muted-foreground'}`}>/mes</span>
-                    </div>
-                    {plan.description && (
-                      <p className={`text-sm leading-relaxed mb-8 ${isPopular ? 'lg:text-background/80' : 'text-muted-foreground'}`}>
-                        {plan.description}
-                      </p>
-                    )}
-
-                    <div className={`flex gap-6 mb-10 pb-8 border-b ${isPopular ? 'lg:border-background/20' : 'border-border'}`}>
-                      <div>
-                        <div className="font-display font-semibold text-2xl tabular-nums">{plan.max_spaces}</div>
-                        <div className={`mt-1 font-mono text-[10px] uppercase tracking-[0.16em] ${isPopular ? 'lg:text-background/70' : 'text-muted-foreground'}`}>
-                          Espacios
-                        </div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                        isPopular ? 'bg-primary text-primary-foreground' : 'bg-primary/10'
+                      }`}>
+                        <PlanIcon className={`h-6 w-6 ${isPopular ? '' : 'text-primary'}`} />
                       </div>
                       <div>
-                        <div className="font-display font-semibold text-2xl tabular-nums">{plan.max_users}</div>
-                        <div className={`mt-1 font-mono text-[10px] uppercase tracking-[0.16em] ${isPopular ? 'lg:text-background/70' : 'text-muted-foreground'}`}>
-                          Usuarios
-                        </div>
+                        <h3 className="text-xl font-black">{plan.name}</h3>
+                        {plan.description && (
+                          <p className="text-xs text-muted-foreground">{plan.description}</p>
+                        )}
                       </div>
                     </div>
 
-                    <ul className="space-y-3 mb-10 min-h-[140px]">
+                    <div className="mb-8">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black">
+                          ${plan.price_monthly.toLocaleString('es-CO')}
+                        </span>
+                        <span className="text-muted-foreground text-sm font-medium">/mes</span>
+                      </div>
+                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                        <span>📦 <span className="font-semibold text-foreground">{plan.max_spaces}</span> espacios</span>
+                        <span>👥 <span className="font-semibold text-foreground">{plan.max_users}</span> usuarios</span>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-3 mb-8">
                       {modules.map((mod: string) => (
-                        <li key={mod} className="flex items-start gap-2.5 text-[13px]">
-                          <Check className={`h-4 w-4 shrink-0 mt-0.5 ${isPopular ? 'lg:text-background' : 'text-primary'}`} strokeWidth={2.5} />
-                          <span className={isPopular ? 'lg:text-background/90' : 'text-muted-foreground'}>
-                            {MODULE_LABELS[mod] || mod}
-                          </span>
+                        <li key={mod} className="flex items-center gap-2.5 text-sm">
+                          <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${
+                            isPopular ? 'bg-primary/15' : 'bg-primary/10'
+                          }`}>
+                            <Check className="h-3 w-3 text-primary" />
+                          </div>
+                          <span className="text-muted-foreground">{MODULE_LABELS[mod] || mod}</span>
                         </li>
                       ))}
                     </ul>
 
                     <Button
                       asChild
-                      variant={isPopular ? 'secondary' : 'outline'}
-                      className={`w-full rounded-full h-12 font-medium ${isPopular ? '' : 'hover:bg-foreground hover:text-background'}`}
+                      className={`w-full rounded-xl h-12 font-semibold transition-all ${
+                        isPopular
+                          ? 'shadow-lg shadow-primary/20 hover:shadow-primary/30'
+                          : ''
+                      }`}
+                      variant={isPopular ? 'default' : 'outline'}
                     >
                       <Link to="/register">
-                        Empezar con {plan.name}
-                        <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                        Empezar Ahora
+                        <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
                   </motion.div>
@@ -603,288 +621,231 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* ─── ROLES / PROFILES ─── */}
-      <Section id="perfiles" className="py-20 md:py-28 border-t border-border">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10 mb-14">
-            <div className="col-span-12 md:col-span-6">
-              <Eyebrow index="04" label="Cómo funciona" />
-              <h2
-                className="mt-6 font-display font-semibold leading-[0.98] tracking-[-0.02em]"
-                style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)' }}
-              >
-                Dos perfiles,{' '}
-                <span className="font-serif italic font-normal">una sola</span> plataforma.
-              </h2>
-            </div>
+      {/* ═══ ROLES ═══ */}
+      <Section id="roles" className="py-20 lg:py-28 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Cómo Funciona</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
+              Gestionar tu parqueadero es{' '}
+              <span className="text-primary">muy fácil</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Nuestro sistema se adapta a dos perfiles principales
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-px bg-border border border-border">
-            <div className="bg-background p-8 md:p-12">
-              <div className="flex items-center justify-between mb-10">
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Perfil A
-                </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
-                  Administrador
-                </span>
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Admin card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="rounded-2xl border-2 border-primary/20 bg-card p-6 md:p-8 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
+              <div className="relative">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                    <Settings2 className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Administrador</h3>
+                    <p className="text-xs text-primary font-semibold">Control total del negocio</p>
+                  </div>
+                </div>
+                <ul className="space-y-3">
+                  {adminBenefits.map(b => (
+                    <li key={b} className="flex items-start gap-2.5 text-sm">
+                      <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-primary" />
+                      </div>
+                      <span className="text-muted-foreground">{b}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="font-display text-3xl md:text-4xl font-semibold tracking-tight mb-3">
-                Quien gestiona el negocio.
-              </h3>
-              <p className="text-muted-foreground mb-10 max-w-md">
-                Configuras tarifas, supervisas la operación y observas los ingresos en tiempo real.
-              </p>
-              <ul className="space-y-3">
-                {adminBenefits.map(b => (
-                  <li key={b} className="flex items-start gap-3 text-sm border-t border-border pt-3">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </motion.div>
 
-            <div className="bg-background p-8 md:p-12">
-              <div className="flex items-center justify-between mb-10">
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Perfil B
-                </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
-                  Conductor
-                </span>
+            {/* Conductor card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="rounded-2xl border border-border bg-card p-6 md:p-8 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
+              <div className="relative">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                    <Car className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Conductor</h3>
+                    <p className="text-xs text-muted-foreground font-semibold">Reservas y consulta de disponibilidad</p>
+                  </div>
+                </div>
+                <ul className="space-y-3">
+                  {conductorBenefits.map(b => (
+                    <li key={b} className="flex items-start gap-2.5 text-sm">
+                      <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <span className="text-muted-foreground">{b}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="font-display text-3xl md:text-4xl font-semibold tracking-tight mb-3">
-                Quien estaciona y reserva.
-              </h3>
-              <p className="text-muted-foreground mb-10 max-w-md">
-                Consulta espacios libres, reserva un cupo y se entera cuando su llegada se confirma.
-              </p>
-              <ul className="space-y-3">
-                {conductorBenefits.map(b => (
-                  <li key={b} className="flex items-start gap-3 text-sm border-t border-border pt-3">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </motion.div>
           </div>
         </div>
       </Section>
 
-      {/* ─── TESTIMONIALS ─── */}
-      <Section id="testimonios" className="py-20 md:py-28 border-t border-border">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10 mb-14">
-            <div className="col-span-12 md:col-span-7">
-              <Eyebrow index="05" label="Testimonios" />
-              <h2
-                className="mt-6 font-display font-semibold leading-[0.98] tracking-[-0.02em]"
-                style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)' }}
-              >
-                Lo que dicen{' '}
-                <span className="font-serif italic font-normal">quienes ya operan</span> con
-                ParkiUpar.
-              </h2>
-            </div>
+      {/* ═══ TESTIMONIALS ═══ */}
+      <Section id="testimonials" className="py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">Testimonios</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
+              Lo que dicen nuestros clientes
+            </h2>
           </div>
 
           {testimonials.length === 0 ? (
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground py-12">
-              · Sin testimonios publicados aún ·
-            </p>
+            <p className="text-center text-muted-foreground py-12">Aún no hay testimonios publicados</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-border border border-border">
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {testimonials.map((t: any, i: number) => (
-                <motion.figure
+                <motion.div
                   key={t.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: (i % 3) * 0.06, duration: 0.45 }}
-                  className="bg-background p-8 md:p-10 flex flex-col"
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="rounded-2xl border border-border bg-card p-6 md:p-8 hover:shadow-lg transition-shadow"
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground tabular-nums">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div className="flex gap-0.5" aria-label={`Calificación ${t.rating} de 5`}>
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <span
-                          key={j}
-                          aria-hidden
-                          className={`h-1 w-3 rounded-full ${j < t.rating ? 'bg-primary' : 'bg-border'}`}
-                        />
-                      ))}
+                  <div className="flex gap-0.5 mb-5">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <Star key={j} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                    {Array.from({ length: 5 - t.rating }).map((_, j) => (
+                      <Star key={`e${j}`} className="h-4 w-4 text-muted-foreground/30" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">"{t.review}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-primary">{t.full_name?.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{t.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{t.business_name || 'Cliente'}</p>
                     </div>
                   </div>
-                  <blockquote className="font-serif text-lg md:text-xl leading-snug text-foreground mb-8 flex-1">
-                    "{t.review}"
-                  </blockquote>
-                  <figcaption className="flex items-center gap-3 pt-6 border-t border-border">
-                    <div className="h-9 w-9 rounded-full bg-foreground/5 flex items-center justify-center font-display font-semibold text-sm">
-                      {t.full_name?.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{t.full_name}</div>
-                      <div className="text-xs text-muted-foreground truncate">{t.business_name || 'Cliente verificado'}</div>
-                    </div>
-                  </figcaption>
-                </motion.figure>
+                </motion.div>
               ))}
             </div>
           )}
         </div>
       </Section>
 
-      {/* ─── FAQ ─── */}
-      <Section id="faq" className="py-20 md:py-28 border-t border-border">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10">
-            <div className="col-span-12 md:col-span-4">
-              <Eyebrow index="06" label="Preguntas" />
-              <h2
-                className="mt-6 font-display font-semibold leading-[0.98] tracking-[-0.02em] mb-6"
-                style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
+      {/* ═══ FAQ ═══ */}
+      <Section id="faq" className="py-20 lg:py-28 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">FAQ</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-black tracking-tight">
+              Preguntas Frecuentes
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No hay preguntas frecuentes disponibles</p>
+            ) : (
+              faqs.map((faq: any) => (
+                <FaqItem key={faq.id} q={faq.question} a={faq.answer} />
+              ))
+            )}
+          </div>
+        </div>
+      </Section>
+
+      {/* ═══ CTA ═══ */}
+      <Section className="py-20 lg:py-28">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl overflow-hidden">
+            {/* Gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
+            <div className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
+                backgroundSize: '40px 40px, 60px 60px'
+              }}
+            />
+            
+            <div className="relative px-8 py-16 md:px-16 md:py-20 text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
               >
-                Las dudas{' '}
-                <span className="font-serif italic font-normal">más comunes</span>.
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-                Si la tuya no está aquí, escríbenos a{' '}
-                <a href="mailto:soporte@parkiupar.com" className="text-foreground underline underline-offset-4 decoration-border hover:decoration-primary transition-colors">
-                  soporte@parkiupar.com
-                </a>.
-              </p>
-            </div>
-            <div className="col-span-12 md:col-span-8">
-              {faqs.length === 0 ? (
-                <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground py-12 border-t border-border">
-                  · Cargando preguntas ·
-                </p>
-              ) : (
-                <div>
-                  {faqs.map((faq: any, i: number) => (
-                    <FaqItem key={faq.id} q={faq.question} a={faq.answer} index={i} />
-                  ))}
+                <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-foreground/10 mb-8">
+                  <Globe className="h-8 w-8 text-primary-foreground" />
                 </div>
-              )}
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-primary-foreground mb-5">
+                  ¿Listo para digitalizar tu parqueadero?
+                </h2>
+                <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto mb-10">
+                  Únete a los parqueaderos que ya optimizaron su operación con ParkiUpar.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button size="lg" variant="secondary"  asChild className="text-lg px-10 h-12  rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
+                    <Link to="/register">Crear Cuenta Gratis <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                  </Button>
+                      <Button size="lg" variant="secondary" asChild className="text-lg px-10 h-12 rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.02]">
+                    <Link to="/login">Iniciar Sesión</Link>
+                    </Button>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
       </Section>
 
-      {/* ─── CTA ─── */}
-      <Section className="border-t border-border">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12 py-24 md:py-32">
-          <div className="grid grid-cols-12 gap-6 lg:gap-10">
-            <div className="col-span-12 md:col-span-9 lg:col-span-8">
-              <Eyebrow index="07" label="Empezar" />
-              <h2
-                className="mt-6 font-display font-semibold leading-[0.95] tracking-[-0.025em]"
-                style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)' }}
-              >
-                Lleva tu parqueadero{' '}
-                <span className="font-serif italic font-normal">al siguiente</span> nivel.
-              </h2>
-              <p className="mt-8 max-w-xl text-base md:text-lg text-muted-foreground leading-relaxed">
-                Crea tu cuenta gratis hoy y empieza a operar en menos de 10 minutos. Sin tarjeta,
-                sin obligaciones.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row gap-3">
-                <Button asChild size="lg" className="rounded-full h-12 px-7 text-base font-medium gap-2">
-                  <Link to="/register">
-                    Crear cuenta gratis
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="rounded-full h-12 px-7 text-base font-medium">
-                  <Link to="/login">Iniciar sesión</Link>
-                </Button>
-              </div>
+      {/* ═══ FOOTER ═══ */}
+      <footer className="border-t border-border py-12 bg-muted/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <Link to="/" className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="ParkiUpar" className="h-8 w-8" />
+              <span className="font-black text-foreground">ParkiUpar</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} ParkiUpar. Todos los derechos reservados.
+            </p>
+            <div className="flex gap-6">
+              {navLinks.map(link => (
+                <a key={link.href} href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {link.label}
+                </a>
+              ))}
             </div>
           </div>
-        </div>
-      </Section>
-
-      {/* ─── FOOTER ─── */}
-      <footer className="border-t border-border bg-muted/20">
-        <div className="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-12 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-8 md:gap-10">
-            <div className="col-span-2 md:col-span-5">
-              <Link to="/" className="flex items-center gap-2.5">
-                <img src="/logo.png" alt="" aria-hidden className="h-8 w-8" width="32" height="32" />
-                <span className="font-display font-bold text-lg tracking-tight">ParkiUpar</span>
-              </Link>
-              <p className="mt-5 text-sm text-muted-foreground max-w-xs leading-relaxed">
-                Software web para la gestión integral de parqueaderos en Colombia. Hecho con
-                cuidado en Valledupar.
-              </p>
-              <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                v2.4 · Estable
-              </p>
-            </div>
-
-            <div className="md:col-span-3 md:col-start-7">
-              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-4">
-                Plataforma
-              </div>
-              <ul className="space-y-2.5 text-sm">
-                {navLinks.map(l => (
-                  <li key={l.href}>
-                    <a href={l.href} className="text-muted-foreground hover:text-foreground transition-colors">
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="md:col-span-2">
-              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-4">
-                Legal
-              </div>
-              <ul className="space-y-2.5 text-sm">
-                <li>
-                  <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Términos
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Privacidad
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className="md:col-span-2">
-              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-4">
-                Contacto
-              </div>
-              <ul className="space-y-2.5 text-sm">
-                <li>
-                  <a href="mailto:soporte@parkiupar.com" className="text-muted-foreground hover:text-foreground transition-colors">
-                    soporte@parkiupar.com
-                  </a>
-                </li>
-                <li>
-                  <a href="mailto:privacidad@parkiupar.com" className="text-muted-foreground hover:text-foreground transition-colors">
-                    privacidad@parkiupar.com
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              © {new Date().getFullYear()} ParkiUpar · Todos los derechos reservados
-            </p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Hecho en Colombia
-            </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-4 border-t border-border/60">
+            <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Términos y Condiciones
+            </Link>
+            <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Política de Privacidad
+            </Link>
+            <a href="mailto:soporte@parkiupar.com" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              soporte@parkiupar.com
+            </a>
           </div>
         </div>
       </footer>
