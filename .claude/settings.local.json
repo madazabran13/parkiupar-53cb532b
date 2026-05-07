@@ -27,7 +27,21 @@
       "Bash(npm ls *)",
       "Bash(git check-ignore *)",
       "mcp__claude_ai_Supabase__list_projects",
-      "mcp__claude_ai_Supabase__generate_typescript_types"
+      "mcp__claude_ai_Supabase__generate_typescript_types",
+      "WebFetch(domain:parkiupar.vercel.app)",
+      "Bash(grep -oE \"Missing[^\\\\\"']{0,60}|Configuraci[^\\\\\"']{0,60}\" /tmp/idx.js)",
+      "Bash(npx vite *)",
+      "Bash(echo \"preview-pid=$!\")",
+      "Bash(xxd /tmp/prod.html)",
+      "Bash(xxd /tmp/local.html)",
+      "Bash(kill 291)",
+      "Bash(pkill -f \"vite preview\")",
+      "Bash(grep -oE \"throw new [A-Z][a-zA-Z]+\\\\\\(\\\\\"[^\\\\\"]{1,80}\\\\\"\" /tmp/idx-prod.js)",
+      "Bash(node /tmp/probe.mjs)",
+      "Bash(node -e \"console.log\\(require\\('module'\\).builtinModules.includes\\('jsdom'\\)\\)\")",
+      "Bash(npm i *)",
+      "Bash(node ./sim.mjs)",
+      "Bash(grep -oE \"throw new \\(Error|TypeError\\)\\\\\\(\\\\\"[^\\\\\"]{1,80}\\\\\"\\\\\\)\" /tmp/idx-prod.js)"
     ]
   }
 }
