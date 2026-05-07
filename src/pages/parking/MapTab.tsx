@@ -13,6 +13,7 @@ import { MapPin, Phone, Search, List, X, DollarSign, Navigation, Filter, Locate,
 import type { Tenant, VehicleCategory, TenantSchedule, ParkingSpace, VehicleType } from '@/types';
 import { VEHICLE_TYPE_LABELS } from '@/types';
 import { resolveVehicleIcon, resolveVehicleType } from '@/lib/icons/vehicleIcons';
+import { isValidPlate, normalizePlate } from '@/lib/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapSkeleton } from '@/components/ui/PageSkeletons';
@@ -201,6 +202,7 @@ export default function MapPage() {
         : availableSpaces[0];
       if (!targetSpace) throw new Error('No hay cupos disponibles');
       if (!reservePlate.trim()) throw new Error('La placa es obligatoria');
+      if (!isValidPlate(reservePlate)) throw new Error('La placa no es válida (ej: ABC123 o ABC12D)');
 
       const phoneToUse = useSessionContact ? sessionPhone : reservePhone.trim();
       const nameToUse = useSessionContact ? sessionName : reserveName.trim();
@@ -215,7 +217,7 @@ export default function MapPage() {
       const { error } = await supabase.rpc('reserve_parking_space', {
         p_tenant_id: reserveTenant.id,
         p_space_id: targetSpace.id,
-        p_plate: reservePlate.toUpperCase(),
+        p_plate: normalizePlate(reservePlate),
         p_customer_phone: phoneToUse,
         p_vehicle_type: reserveVehicleType,
         p_customer_name: nameToUse || null,
@@ -234,7 +236,15 @@ export default function MapPage() {
       queryClient.invalidateQueries({ queryKey: ['public-spaces'] });
       queryClient.invalidateQueries({ queryKey: ['map-tenants'] });
     },
-    onError: (e: any) => toast.error(e.message || 'Error al reservar'),
+    onError: (e: any) => {
+      const hint = e?.hint || '';
+      const msg = e?.message || '';
+      if (hint === 'duplicate_active_reservation' || /reserva activa/i.test(msg)) {
+        toast.error('Ya tienes una reserva activa con esta placa o usuario. Espera a que termine antes de reservar otra.');
+        return;
+      }
+      toast.error(msg || 'Error al reservar');
+    },
   });
 
   const { data: tenants = [], isLoading: loadingMap } = useQuery({
@@ -297,6 +307,9 @@ export default function MapPage() {
     if (!reserveCategoryId) return null;
     return reserveTenantRates.find((r) => r.id === reserveCategoryId) || null;
   }, [reserveTenantRates, reserveCategoryId]);
+
+  const plateValid = !reservePlate || isValidPlate(reservePlate);
+  const plateReady = reservePlate.trim().length > 0 && isValidPlate(reservePlate);
 
   // Auto-seleccionar primera categoría cuando carguen las del parqueadero
   useEffect(() => {
@@ -849,7 +862,16 @@ export default function MapPage() {
             )}
             <div className="space-y-2">
               <Label>Placa del vehículo *</Label>
-              <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-lg tracking-wider h-12" />
+              <Input
+                placeholder="ABC123"
+                value={reservePlate}
+                onChange={(e) => setReservePlate(e.target.value.toUpperCase())}
+                className={`uppercase font-mono text-lg tracking-wider h-12 ${!plateValid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                aria-invalid={!plateValid}
+              />
+              {!plateValid && (
+                <p className="text-xs text-destructive">Formato inválido. Ej: ABC123 o ABC12D</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Tipo de vehículo *</Label>
@@ -911,7 +933,7 @@ export default function MapPage() {
           <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-lg safe-bottom">
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0 || (reserveTenantRates.length > 0 && !reserveCategoryId) || reserveTenantRates.length === 0}
+              disabled={!plateReady || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0 || (reserveTenantRates.length > 0 && !reserveCategoryId) || reserveTenantRates.length === 0}
               className="w-full h-14 text-base gap-2 rounded-xl"
               size="lg"
             >
@@ -969,7 +991,16 @@ export default function MapPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Placa del vehículo *</Label>
-                <Input placeholder="ABC123" value={reservePlate} onChange={(e) => setReservePlate(e.target.value.toUpperCase())} className="uppercase font-mono text-base tracking-wider" />
+                <Input
+                  placeholder="ABC123"
+                  value={reservePlate}
+                  onChange={(e) => setReservePlate(e.target.value.toUpperCase())}
+                  className={`uppercase font-mono text-base tracking-wider ${!plateValid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  aria-invalid={!plateValid}
+                />
+                {!plateValid && (
+                  <p className="text-xs text-destructive">Formato inválido. Ej: ABC123 o ABC12D</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Tipo de vehículo *</Label>
@@ -1033,7 +1064,7 @@ export default function MapPage() {
             <Button variant="outline" onClick={() => { setReserveDialogOpen(false); setSelectedSpaceId(null); setDetailTenant(null); }}>Cancelar</Button>
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={!reservePlate.trim() || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0 || (reserveTenantRates.length > 0 && !reserveCategoryId) || reserveTenantRates.length === 0}
+              disabled={!plateReady || (!useSessionContact && (!reservePhone.trim() || !reserveName.trim())) || reserveMutation.isPending || availableSpaces.length === 0 || (reserveTenantRates.length > 0 && !reserveCategoryId) || reserveTenantRates.length === 0}
               className="gap-2"
             >
               <BookmarkCheck className="h-4 w-4" />

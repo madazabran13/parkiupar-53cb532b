@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { VisitService, type VisitRecord, type ReservationRecord } from '@/services/visit.service';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -59,11 +61,40 @@ function flattenReservation(r: ReservationRecord): ReservationRow {
 }
 
 export default function VisitsTab() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const phone = profile?.phone || null;
+  const queryClient = useQueryClient();
   const [detail, setDetail] = useState<ReservationRecord | null>(null);
   const [reservationFilter, setReservationFilter] = useState<ReservationFilter>('all');
   const [visitFilter, setVisitFilter] = useState<VisitFilter>('all');
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`conductor-notifications:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const title: string = payload?.new?.title || '';
+          const message: string = payload?.new?.message || '';
+          if (title === 'Reserva confirmada' || title === 'Reserva rechazada' || title === 'Reserva cancelada') {
+            queryClient.invalidateQueries({ queryKey: ['conductor-reservations'] });
+            if (title === 'Reserva confirmada') toast.success(title, { description: message });
+            else toast.warning(title, { description: message });
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   const { data: visits = [], isLoading: loadingVisits } = useQuery({
     queryKey: ['conductor-visits', phone],
