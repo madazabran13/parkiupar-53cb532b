@@ -1,8 +1,8 @@
 /**
  * ReservationService — Repository for space reservations.
- * Single Responsibility: reservation CRUD and queries.
+ * Consume el endpoint `/reservations` (con filtros space_id/pending_for_space).
  */
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import type { SpaceReservation } from '@/types';
 
 export interface CreateReservationDTO {
@@ -17,28 +17,17 @@ export interface CreateReservationDTO {
 
 export const ReservationService = {
   async create(dto: CreateReservationDTO): Promise<void> {
-    const { error } = await supabase.from('space_reservations').insert({
-      tenant_id: dto.tenantId,
+    await api.reservations.create({
       space_id: dto.spaceId,
-      reserved_by: dto.reservedBy || null,
-      customer_name: dto.customerName || null,
-      customer_phone: dto.customerPhone || null,
-      plate: dto.plate?.toUpperCase() || null,
-      status: 'pending',
+      customer_name: dto.customerName,
+      customer_phone: dto.customerPhone,
+      plate: dto.plate?.toUpperCase(),
       expires_at: dto.expiresAt,
     });
-    if (error) throw error;
   },
 
   async getPendingForSpace(spaceId: string): Promise<SpaceReservation | null> {
-    const { data } = await supabase
-      .from('space_reservations')
-      .select('*')
-      .eq('space_id', spaceId)
-      .in('status', ['pending', 'confirmed'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    return (data as unknown as SpaceReservation) || null;
+    const items = await api.reservations.list({ space_id: spaceId, pending_for_space: true });
+    return (items?.[0] as unknown as SpaceReservation) ?? null;
   },
 } as const;

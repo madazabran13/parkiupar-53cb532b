@@ -1,59 +1,39 @@
 /**
  * VehicleService — Repository for vehicles and vehicle categories.
- * Single Responsibility: vehicle lookup and creation.
+ * Consume el endpoint `/vehicles` de las Edge Functions.
  */
-import { supabase } from '@/integrations/supabase/client';
-import type { Vehicle, VehicleCategory, VehicleRate } from '@/types';
+import { api } from '@/lib/api';
+import type { Vehicle, VehicleCategory, VehicleRate, VehicleType } from '@/types';
 
 export const VehicleService = {
-  async findByPlate(tenantId: string, plate: string): Promise<(Vehicle & { customers?: { full_name: string; phone: string } }) | null> {
-    const { data } = await supabase
-      .from('vehicles')
-      .select('*, customers:customer_id(full_name, phone)')
-      .eq('tenant_id', tenantId)
-      .eq('plate', plate.toUpperCase())
-      .single();
-    return data ? (data as any) : null;
+  async findByPlate(
+    _tenantId: string,
+    plate: string,
+  ): Promise<(Vehicle & { customers?: { full_name: string; phone: string } | null }) | null> {
+    return api.vehicles.findByPlate(plate) as Promise<
+      (Vehicle & { customers?: { full_name: string; phone: string } | null }) | null
+    >;
   },
 
-  async upsert(tenantId: string, plate: string, vehicleType: string, customerId?: string): Promise<string> {
-    const { data: existing } = await supabase
-      .from('vehicles')
-      .select('id')
-      .eq('tenant_id', tenantId)
-      .eq('plate', plate.toUpperCase())
-      .single();
-    if (existing) return existing.id;
-
-    const { data: created } = await supabase
-      .from('vehicles')
-      .insert({
-        tenant_id: tenantId,
-        plate: plate.toUpperCase(),
-        vehicle_type: vehicleType as any,
-        customer_id: customerId || null,
-      })
-      .select('id')
-      .single();
-    return created?.id || '';
+  async upsert(
+    _tenantId: string,
+    plate: string,
+    vehicleType: string,
+    customerId?: string,
+  ): Promise<string> {
+    const res = await api.vehicles.upsert({
+      plate,
+      vehicle_type: vehicleType as VehicleType,
+      customer_id: customerId ?? null,
+    });
+    return res?.id ?? '';
   },
 
-  async getActiveCategories(tenantId: string): Promise<VehicleCategory[]> {
-    const { data } = await supabase
-      .from('vehicle_categories')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('is_active', true)
-      .order('name');
-    return (data || []) as unknown as VehicleCategory[];
+  async getActiveCategories(_tenantId: string): Promise<VehicleCategory[]> {
+    return api.vehicles.categories({ active: true });
   },
 
-  async getActiveRates(tenantId: string): Promise<VehicleRate[]> {
-    const { data } = await supabase
-      .from('vehicle_rates')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('is_active', true);
-    return (data || []) as unknown as VehicleRate[];
+  async getActiveRates(_tenantId: string): Promise<VehicleRate[]> {
+    return api.vehicles.rates({ active: true });
   },
 } as const;

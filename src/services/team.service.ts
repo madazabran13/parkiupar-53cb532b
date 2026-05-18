@@ -1,50 +1,45 @@
 /**
- * TeamService — Repository for team/user management via Edge Functions.
- * Single Responsibility: user CRUD operations through the manage-users function.
+ * TeamService — Repository for team/user management.
+ *
+ * Consume el endpoint `/team` documentado en Edge Functions. El antiguo flujo
+ * `manage-users` queda deprecado. La firma pública se conserva para no romper
+ * a los consumidores.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
+import type { AppRole } from '@/types';
 
 export const TeamService = {
   async listUsers() {
-    const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'list' } });
-    if (error) throw error;
-    if (data.error) throw new Error(data.error);
-    return data.users || [];
+    return api.team.list();
   },
 
   async createUser(payload: {
     email: string; password: string; full_name: string;
     role: string; modules: string[] | null;
   }) {
-    const { data, error } = await supabase.functions.invoke('manage-users', {
-      body: { action: 'create', ...payload },
+    const created = await api.team.invite({
+      email: payload.email,
+      password: payload.password,
+      full_name: payload.full_name,
+      role: payload.role as 'admin' | 'conductor',
     });
-    if (error) throw error;
-    if (data.error) throw new Error(data.error);
-    return data;
+
+    // El endpoint POST no acepta `user_modules`; lo aplicamos en un PUT posterior.
+    if (payload.modules) {
+      await api.team.update(created.id, { user_modules: payload.modules });
+    }
+    return created;
   },
 
   async updateRole(userId: string, role: string) {
-    const { data, error } = await supabase.functions.invoke('manage-users', {
-      body: { action: 'update_role', user_id: userId, role },
-    });
-    if (error) throw error;
-    if (data.error) throw new Error(data.error);
+    await api.team.updateRole(userId, role as Exclude<AppRole, 'superadmin'>);
   },
 
   async updateModules(userId: string, modules: string[] | null) {
-    const { data, error } = await supabase.functions.invoke('manage-users', {
-      body: { action: 'update_modules', user_id: userId, modules },
-    });
-    if (error) throw error;
-    if (data.error) throw new Error(data.error);
+    await api.team.update(userId, { user_modules: modules ?? [] });
   },
 
   async toggleActive(userId: string, isActive: boolean) {
-    const { data, error } = await supabase.functions.invoke('manage-users', {
-      body: { action: 'toggle_active', user_id: userId, is_active: isActive },
-    });
-    if (error) throw error;
-    if (data.error) throw new Error(data.error);
+    await api.team.update(userId, { is_active: isActive });
   },
 } as const;

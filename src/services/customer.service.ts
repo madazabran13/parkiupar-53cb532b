@@ -1,44 +1,40 @@
 /**
  * CustomerService — Repository for customer management.
- * Single Responsibility: customer lookup and upsert.
+ * Consume `/customers` Edge Function vía `@/lib/api`.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { api, ApiError } from '@/lib/api';
 
 export const CustomerService = {
-  async upsert(tenantId: string, phone: string, fullName: string): Promise<string> {
-    const { data: existing } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('tenant_id', tenantId)
-      .eq('phone', phone)
-      .single();
+  async upsert(_tenantId: string, phone: string, fullName: string): Promise<string> {
+    const existing = await api.customers.list({ q: phone, pageSize: 5 });
+    const match = existing.items.find((c) => c.phone === phone);
 
-    if (existing) {
-      if (fullName) {
-        await supabase.from('customers').update({ full_name: fullName }).eq('id', existing.id);
+    if (match) {
+      if (fullName && fullName !== match.full_name) {
+        await api.customers.update(match.id, { full_name: fullName });
       }
-      return existing.id;
+      return match.id;
     }
 
-    const { data: created } = await supabase
-      .from('customers')
-      .insert({
-        tenant_id: tenantId,
-        phone,
+    try {
+      const created = await api.customers.create({
         full_name: fullName || 'Sin nombre',
-      })
-      .select('id')
-      .single();
-    return created?.id || '';
+        phone,
+      });
+      return created.id;
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        // Otra request lo creó en paralelo; releemos.
+        const retry = await api.customers.list({ q: phone, pageSize: 5 });
+        const found = retry.items.find((c) => c.phone === phone);
+        return found?.id ?? '';
+      }
+      throw err;
+    }
   },
 
-  async searchByName(tenantId: string, query: string, limit = 5) {
-    const { data } = await supabase
-      .from('customers')
-      .select('id, full_name, phone')
-      .eq('tenant_id', tenantId)
-      .ilike('full_name', `%${query}%`)
-      .limit(limit);
-    return data || [];
+  async searchByName(_tenantId: string, query: string, limit = 5) {
+    const res = await api.customers.list({ q: query, pageSize: limit });
+    return res.items.map((c) => ({ id: c.id, full_name: c.full_name, phone: c.phone }));
   },
 } as const;

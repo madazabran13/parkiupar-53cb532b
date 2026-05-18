@@ -1,31 +1,31 @@
 /**
  * IncidentService — Repository for incident reports.
- * Single Responsibility: incident CRUD and status management.
+ * Consume `/incidents` Edge Function vía `@/lib/api`.
+ * Los campos `user_id`, `user_name` y `tenant_id` los infiere el endpoint del JWT.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
+import type { IncidentCategory, IncidentStatus } from '@/lib/types';
 
 export const IncidentService = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('incident_reports')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    return api.incidents.list();
   },
 
   async create(payload: {
     user_id: string; user_name: string; tenant_id: string | null;
     title: string; description: string; category: string;
   }) {
-    const { error } = await supabase.from('incident_reports').insert(payload as any);
-    if (error) throw error;
+    await api.incidents.create({
+      title: payload.title,
+      description: payload.description,
+      category: payload.category as IncidentCategory,
+    });
   },
 
   async updateStatus(id: string, status: string, adminNotes?: string) {
-    const update: Record<string, any> = { status };
-    if (adminNotes !== undefined) update.admin_notes = adminNotes;
-    const { error } = await supabase.from('incident_reports').update(update).eq('id', id);
-    if (error) throw error;
+    await api.incidents.update(id, {
+      status: status as IncidentStatus,
+      ...(adminNotes !== undefined ? { admin_notes: adminNotes } : {}),
+    });
   },
 } as const;

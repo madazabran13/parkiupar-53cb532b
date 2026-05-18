@@ -1,52 +1,44 @@
 /**
  * TenantService — Repository for tenant profile and settings management.
- * Single Responsibility: tenant updates, profile updates, plan requests.
+ * Consume los endpoints `/me` y `/billing/plan-requests`.
  */
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
+import type { UpdateProfilePayload, UpdateTenantPayload } from '@/lib/types';
 
 export const TenantService = {
-  async updateTenant(tenantId: string, payload: {
-    name: string; address: string | null; phone: string | null;
-    email: string | null; latitude: number | null; longitude: number | null;
-  }) {
-    const { error } = await supabase.from('tenants').update(payload).eq('id', tenantId);
-    if (error) throw error;
+  async updateTenant(
+    _tenantId: string,
+    payload: UpdateTenantPayload,
+  ) {
+    await api.me.updateTenant(payload);
   },
 
-  async updateProfile(userId: string, payload: { full_name: string; phone: string | null }) {
-    const { error } = await supabase.from('user_profiles').update(payload).eq('id', userId);
-    if (error) throw error;
+  async updateProfile(_userId: string, payload: UpdateProfilePayload) {
+    await api.me.updateProfile(payload);
   },
 
-  async getCustomersByTenant(tenantId: string) {
-    const { data } = await supabase.from('customers').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false });
-    return data || [];
-  },
-
-  async getCustomerSessions(customerId: string) {
-    const { data } = await supabase.from('parking_sessions').select('*').eq('customer_id', customerId).order('entry_time', { ascending: false });
-    return data || [];
+  async getCustomersByTenant(_tenantId: string) {
+    return api.me.customers();
   },
 
   async getCustomerSubscriptions(customerId: string) {
-    const { data } = await supabase.from('monthly_subscriptions').select('*').eq('customer_id', customerId).order('start_date', { ascending: false });
-    return data || [];
+    return api.me.customerSubscriptions(customerId);
   },
 
-  async getPlanRequests(tenantId: string) {
-    const { data } = await supabase
-      .from('plan_requests')
-      .select('*, requested_plan:plans!plan_requests_requested_plan_id_fkey(name, price_monthly)')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
-    return data || [];
+  async getPlanRequests(_tenantId: string) {
+    return api.billing.planRequests();
   },
 
   async createPlanRequest(payload: {
-    tenant_id: string; current_plan_id: string | null;
-    requested_plan_id: string; message: string | null;
+    tenant_id: string;
+    current_plan_id: string | null;
+    requested_plan_id: string;
+    message: string | null;
   }) {
-    const { error } = await supabase.from('plan_requests').insert(payload);
-    if (error) throw error;
+    await api.billing.createPlanRequest({
+      current_plan_id: payload.current_plan_id,
+      requested_plan_id: payload.requested_plan_id,
+      message: payload.message,
+    });
   },
 } as const;
