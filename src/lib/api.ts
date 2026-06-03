@@ -1,13 +1,14 @@
 /**
  * api — cliente HTTP tipado para las Edge Functions de Supabase.
  *
- * Base URL: `${VITE_SUPABASE_URL}/functions/v1`
+ * Base URL: `${SUPABASE_URL}/functions/v1` (importado desde `@/config/env`)
  * Auth:     Authorization: Bearer <access_token> (extraído de supabase.auth.getSession())
  * Errores:  Las Edge Functions devuelven `{ data, error }`. Si `error` no es null o
  *           el HTTP no es 2xx, lanzamos `ApiError` con `status`, `code`, `message`.
  *           En 401 se hace signOut y se redirige a /login.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL } from '@/config/env';
 import type {
   ApiEnvelope,
   AuditLog,
@@ -69,12 +70,6 @@ import type {
   VisitRecord,
   VisitReservationRecord,
 } from './types';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-
-if (!SUPABASE_URL) {
-  throw new Error('Missing VITE_SUPABASE_URL — la capa de API no puede inicializar.');
-}
 
 const BASE_URL = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1`;
 

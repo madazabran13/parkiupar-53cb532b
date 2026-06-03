@@ -4,16 +4,14 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WifiOff, RefreshCw, ArrowLeft } from 'lucide-react';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/config/env';
 
 async function testConnectivity(): Promise<boolean> {
   try {
-    // Test connectivity by pinging Supabase
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl) return navigator.onLine;
-    const res = await fetch(`${supabaseUrl}/rest/v1/`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
       method: 'HEAD',
       headers: {
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+        apikey: SUPABASE_PUBLISHABLE_KEY,
       },
       signal: AbortSignal.timeout(5000),
     });

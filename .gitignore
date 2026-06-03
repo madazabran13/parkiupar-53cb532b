@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# QA reports & test artifacts
+reports/
+coverage/
+.nyc_output/
+.stryker-tmp/
+playwright-report/
+test-results/
+*.lcov
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
