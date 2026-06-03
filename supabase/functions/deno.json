@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "test": "deno test --allow-env --allow-net --allow-read _shared/",
+    "test:coverage": "deno test --allow-env --allow-net --allow-read --coverage=../../reports/coverage/back/raw _shared/ && deno coverage ../../reports/coverage/back/raw --lcov --output=../../reports/coverage/back/lcov.info",
+    "test:integration": "deno test --allow-env --allow-net --allow-read --allow-run tests/integration/"
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.ns"],
+    "strict": true
+  },
+  "fmt": { "useTabs": false, "lineWidth": 100, "indentWidth": 2, "semiColons": true, "singleQuote": false }
+}

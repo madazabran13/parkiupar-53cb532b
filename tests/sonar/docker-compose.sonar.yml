@@ -1,0 +1,35 @@
+# Arranca un SonarQube Community Edition local para análisis sin SonarCloud.
+#
+# Uso:
+#   docker compose -f tests/sonar/docker-compose.sonar.yml up -d
+#   # Espera ~60s a que arranque, abre http://localhost:9000 (admin/admin)
+#   # Crea un token en My Account → Security, expórtalo como SONAR_TOKEN.
+#
+#   # Lanza el análisis (requiere sonar-scanner CLI o el contenedor sonarsource/sonar-scanner-cli):
+#   docker run --rm \
+#     -e SONAR_HOST_URL=http://host.docker.internal:9000 \
+#     -e SONAR_TOKEN=$SONAR_TOKEN \
+#     -v "$PWD":/usr/src \
+#     sonarsource/sonar-scanner-cli
+#
+# Para detenerlo:
+#   docker compose -f tests/sonar/docker-compose.sonar.yml down
+
+services:
+  sonarqube:
+    image: sonarqube:10.6-community
+    container_name: parkiupar-sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
+volumes:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
