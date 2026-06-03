@@ -16,7 +16,8 @@ Documento de referencia para el equipo de QA. Describe la pirámide de pruebas, 
 | 3 | Integración front | Vitest + MSW (mock de fetch) | `src/lib/api.ts` contra handlers HTTP | `npm run test:integration` |
 | 3' | Integración back | Deno test + stack Supabase local | Edge Functions contra Postgres + GoTrue locales | `npm run test:back:integration` |
 | 4 | Mutación | StrykerJS + vitest-runner | Lógica crítica de `pricing/validators/formatters` | `npm run test:mutation` |
-| 5 | E2E | Playwright (Chromium) | Flujos completos servidos por `vite preview` | `npm run test:e2e` |
+| 5 | E2E (headless CI) | Playwright (Chromium) | Flujos completos servidos por `vite preview` | `npm run test:e2e` |
+| 5b | E2E (debug / autoría) | Cypress (Chrome) | Mismos flujos, runner interactivo y time-travel debugger | `npm run test:cypress:open` |
 | 6 | Performance | JMeter (vía Docker) | Endpoints Supabase bajo carga | `npm run test:performance` |
 | 7 | Calidad estática | SonarQube CE local + sonar-scanner-cli | Bugs, smells, cobertura, duplicación | `npm run sonar:up && npm run sonar:scan` |
 
@@ -106,6 +107,15 @@ Stryker corre vitest por mutante con `coverageAnalysis: perTest`. Si el score ba
 
 ### 2.7 E2E (nivel 5)
 
+Tenemos **dos runners E2E** en paralelo, atacando la misma SPA servida por `vite preview` en `:4173`:
+
+| Runner | Cuándo usarlo | Ventaja |
+| ------ | ------------- | ------- |
+| **Playwright** | CI headless, smoke rápido, auth con storageState | Multi-browser, paralelismo nativo, fixtures sólidos |
+| **Cypress** | Desarrollo local, debugging de un flujo nuevo, demos QA | Time-travel debugger, runner interactivo, comandos custom |
+
+#### 2.7.1 Playwright
+
 Primera vez:
 
 ```bash
@@ -121,6 +131,35 @@ npm run test:e2e:report     # abre el último HTML report
 ```
 
 Los specs viven en `tests/e2e/specs/`. El spec autenticado (`reservation-authenticated.spec.ts`) requiere `E2E_USER` y `E2E_PASS`; si no están, se saltea.
+
+#### 2.7.2 Cypress
+
+Primera vez no necesita instalar browsers (usa Chrome del host o Electron bundled).
+
+```bash
+npm run build                 # cypress corre contra el bundle preview
+npm run test:cypress          # headless, JUnit en reports/junit/, video en reports/cypress/videos
+npm run test:cypress:open     # runner interactivo con time-travel
+```
+
+`start-server-and-test` levanta `vite preview` antes y lo mata al terminar — no hace falta dejar otro shell.
+
+Los specs viven en `tests/cypress/e2e/*.cy.ts`. Comando custom disponible:
+
+```ts
+cy.loginViaSupabase();   // hace login programático vs auth/v1/token y setea localStorage
+```
+
+Para que ese comando funcione exportá antes:
+
+```bash
+export CYPRESS_SUPABASE_URL=https://<proj>.supabase.co
+export CYPRESS_SUPABASE_ANON_KEY=<anon>
+export CYPRESS_E2E_USER=<email>
+export CYPRESS_E2E_PASS=<pass>
+```
+
+Sin esas vars, el spec autenticado (`reservation-authenticated.cy.ts`) se saltea.
 
 ### 2.8 Performance (nivel 6)
 
@@ -176,6 +215,9 @@ Toda la salida se centraliza en `reports/` (ignorada por git).
 | Stryker HTML | `reports/mutation/html/index.html` | Browser |
 | Stryker JSON | `reports/mutation/mutation.json` | CI |
 | Playwright HTML | `reports/playwright/html/index.html` | `npm run test:e2e:report` |
+| Cypress JUnit | `reports/junit/cypress-*.junit.xml` | CI |
+| Cypress videos | `reports/cypress/videos/` | Browser |
+| Cypress screenshots (solo en fallos) | `reports/cypress/screenshots/` | Browser |
 | JMeter HTML | `reports/jmeter/html/index.html` | Browser |
 | JMeter JTL | `reports/jmeter/result.jtl` | CI / análisis |
 | SonarQube | `http://localhost:9000/dashboard?id=parkiupar` | Browser |
@@ -202,6 +244,10 @@ Si el score global cae bajo 60 hay que agregar tests antes de mergear a QA.
 ### 4.3 Playwright
 
 `reports/playwright/html/`. Cada test fallido trae trace + video + screenshot. `npm run test:e2e:report` abre el index.
+
+### 4.3.1 Cypress
+
+`reports/cypress/videos/` contiene un MP4 por spec (siempre). `reports/cypress/screenshots/` solo aparece cuando hay fallos. JUnit por spec en `reports/junit/cypress-*.junit.xml` para ingestar en Sonar/Azure DevOps.
 
 ### 4.4 JMeter
 
@@ -282,6 +328,11 @@ feature/* → Dev → QA → main
     ├── e2e/
     │   ├── playwright.config.ts
     │   └── specs/*.spec.ts
+    ├── cypress/
+    │   ├── cypress.config.ts
+    │   ├── support/{e2e,commands}.ts
+    │   ├── fixtures/
+    │   └── e2e/*.cy.ts
     ├── performance/
     │   ├── parkiupar.jmx
     │   ├── run-jmeter.sh
